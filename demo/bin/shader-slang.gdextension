@@ -1,0 +1,56 @@
+[configuration]
+
+entry_symbol = "shader_slang_init"
+compatibility_minimum = "4.1"
+
+[libraries]
+; Relative paths ensure that our GDExtension can be placed anywhere in the project directory.
+macos.single.debug = "./macos/libshader-slang.macos.template_debug.dylib"
+macos.double.debug = "./macos/libshader-slang.macos.template_debug.double.dylib"
+macos.single.release = "./macos/libshader-slang.macos.template_release.dylib"
+macos.double.release = "./macos/libshader-slang.macos.template_debug.double.dylib"
+
+ios.arm64.single.debug = "./ios/libshader-slang.ios.template_debug.arm64.dylib"
+ios.arm64.double.debug = "./ios/libshader-slang.ios.template_debug.arm64.double.dylib"
+ios.arm64.single.release = "./ios/libshader-slang.ios.template_release.arm64.dylib"
+ios.arm64.double.release = "./ios/libshader-slang.ios.template_release.arm64.double.dylib"
+
+windows.x86_32.single.debug = "./windows/shader-slang.windows.template_debug.x86_32.dll"
+windows.x86_32.double.debug = "./windows/shader-slang.windows.template_debug.x86_32.double.dll"
+windows.x86_32.single.release = "./windows/shader-slang.windows.template_release.x86_32.dll"
+windows.x86_32.double.release = "./windows/shader-slang.windows.template_release.x86_32.double.dll"
+
+windows.x86_64.single.debug = "./windows/shader-slang.windows.template_debug.x86_64.dll"
+windows.x86_64.double.debug = "./windows/shader-slang.windows.template_debug.x86_64.double.dll"
+windows.x86_64.single.release = "./windows/shader-slang.windows.template_release.x86_64.dll"
+windows.x86_64.double.release = "./windows/shader-slang.windows.template_release.x86_64.double.dll"
+
+linux.x86_64.single.debug = "./linux/libshader-slang.linux.template_debug.x86_64.so"
+linux.x86_64.double.debug = "./linux/libshader-slang.linux.template_debug.x86_64.double.so"
+linux.x86_64.single.release = "./linux/libshader-slang.linux.template_release.x86_64.so"
+linux.x86_64.double.release = "./linux/libshader-slang.linux.template_release.x86_64.double.so"
+
+linux.arm64.single.debug = "./linux/libshader-slang.linux.template_debug.arm64.so"
+linux.arm64.double.debug = "./linux/libshader-slang.linux.template_debug.arm64.double.so"
+linux.arm64.single.release = "./linux/libshader-slang.linux.template_release.arm64.so"
+linux.arm64.double.release = "./linux/libshader-slang.linux.template_release.arm64.double.so"
+
+linux.rv64.single.debug = "./linux/libshader-slang.linux.template_debug.rv64.so"
+linux.rv64.double.debug = "./linux/libshader-slang.linux.template_debug.rv64.double.so"
+linux.rv64.single.release = "./linux/libshader-slang.linux.template_release.rv64.so"
+linux.rv64.double.release = "./linux/libshader-slang.linux.template_release.rv64.double.so"
+
+android.x86_64.single.debug = "./android/libshader-slang.android.template_debug.x86_64.so"
+android.x86_64.double.debug = "./android/libshader-slang.android.template_debug.x86_64.double.so"
+android.x86_64.single.release = "./android/libshader-slang.android.template_release.x86_64.so"
+android.x86_64.double.release = "./android/libshader-slang.android.template_release.x86_64.double.so"
+
+android.arm64.single.debug = "./android/libshader-slang.android.template_debug.arm64.so"
+android.arm64.double.debug = "./android/libshader-slang.android.template_debug.arm64.double.so"
+android.arm64.single.release = "./android/libshader-slang.android.template_release.arm64.so"
+android.arm64.double.release = "./android/libshader-slang.android.template_release.arm64.double.so"
+
+web.wasm32.single.debug = "./web/libshader-slang.web.template_debug.wasm32.nothreads.wasm"
+web.wasm32.double.debug = "./web/libshader-slang.web.template_release.wasm32.double.nothreads.wasm"
+web.wasm32.single.release = "./web/libshader-slang.web.template_release.wasm32.nothreads.wasm"
+web.wasm32.double.release = "./web/libshader-slang.web.template_release.wasm32.double.nothreads.wasm"

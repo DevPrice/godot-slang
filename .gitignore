@@ -19,6 +19,8 @@ demo/bin/windows/*
 !demo/bin/*.gdextension
 .sconsign*.dblite
 
+/bin/
+
 # Ignore custom.py
 custom.py
 
