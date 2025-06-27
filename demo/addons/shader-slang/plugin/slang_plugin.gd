@@ -13,7 +13,7 @@ func _enter_tree() -> void:
 	editor_settings.add_property_info({
 		"name": SlangShaderImporter.get_editor_setting_slangc_location(),
 		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
+		"hint": PROPERTY_HINT_GLOBAL_FILE,
 		"hint_string": "*.exe",
 	})
 	if not ProjectSettings.has_setting(SlangShaderImporter.get_editor_setting_gen_path()):

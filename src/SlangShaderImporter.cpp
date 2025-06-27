@@ -1,5 +1,10 @@
 #include "SlangShaderImporter.h"
 
+#include "godot_cpp/classes/dir_access.hpp"
+#include "godot_cpp/classes/editor_file_system.hpp"
+#include "godot_cpp/classes/project_settings.hpp"
+#include "godot_cpp/classes/resource_loader.hpp"
+
 #include <SlangShader.h>
 
 #include <godot_cpp/classes/editor_interface.hpp>
@@ -68,17 +73,52 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 		return ERR_FILE_CANT_OPEN;
 	}
 
-	/*const String compiler_path = EditorInterface::get_singleton()->get_editor_settings()->get_setting("");
-	Array output{};
-	if (const int32_t compile_error = OS::get_singleton()->execute(compiler_path, PackedStringArray(), output)) {
+	const ProjectSettings *project_settings = ProjectSettings::get_singleton();
+	const EditorInterface *editor_interface = EditorInterface::get_singleton();
+	if (!project_settings || !editor_interface) {
+		return FAILED;
+	}
+
+	const String gen_dir = project_settings->get_setting(get_editor_setting_gen_path());
+	const String glsl_filename = gen_dir.path_join(p_source_file.get_basename().trim_prefix("res://") + ".glsl");
+
+	if (const auto make_dir_err = DirAccess::make_dir_recursive_absolute(project_settings->globalize_path(glsl_filename.get_base_dir()))) {
+		return make_dir_err;
+	}
+
+	const String compiler_path = editor_interface->get_editor_settings()->get_setting(get_editor_setting_slangc_location());
+	const Array output{};
+	const PackedStringArray arguments({project_settings->globalize_path(p_source_file), "-target", "glsl", "-entry", "computeMain"});
+	if (const int32_t compile_error = OS::get_singleton()->execute(compiler_path, arguments, output)) {
 		return static_cast<Error>(compile_error);
-	}*/
+	}
+	if (output.is_empty()) {
+		return FAILED;
+	}
 
-	Ref slang_shader = memnew(SlangShader);
+	const Ref<FileAccess> glsl_file = FileAccess::open(glsl_filename, FileAccess::WRITE);
+	if (glsl_file.is_null()) return ERR_FILE_CANT_OPEN;
 
-	String out_filename = p_save_path + String(".") + _get_save_extension();
+	const String glsl_source = output.is_empty() ? "" : output[0];
+	if (!glsl_file->store_string(String("#[compute]\n%s") % glsl_source)) {
+		return ERR_FILE_CANT_WRITE;
+	}
+	glsl_file->close();
+
+	editor_interface->get_resource_filesystem()->update_file(glsl_filename);
+	if (const Error append_error = const_cast<SlangShaderImporter *>(this)->append_import_external_resource(glsl_filename)) {
+		return append_error;
+	}
+
+	const_cast<TypedArray<String> &>(p_gen_files).push_back(glsl_filename);
+
+	const Ref slang_shader = memnew(SlangShader);
+	slang_shader->set_shader_file(ResourceLoader::get_singleton()->load(glsl_filename));
+
+	const String out_filename = p_save_path + String(".") + _get_save_extension();
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
+
 String SlangShaderImporter::get_editor_setting_slangc_location() {
 	const static String slangc_location = "slang/import/compiler";
 	return slangc_location;
