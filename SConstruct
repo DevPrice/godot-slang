@@ -6,6 +6,7 @@ from methods import print_error
 
 
 libname = "shader-slang"
+libdir = "addons/{}".format(libname)
 projectdir = "demo"
 
 localEnv = Environment(tools=["default"], PLATFORM="")
@@ -54,11 +55,11 @@ suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
 lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
 
 library = env.SharedLibrary(
-    "bin/{}/{}".format(env['platform'], lib_filename),
+    "{}/{}/{}".format(libdir, env['platform'], lib_filename),
     source=sources,
 )
 
-copy = env.Install("{}/bin/{}/".format(projectdir, env["platform"]), library)
+copy = env.Install("{}/{}/{}/".format(projectdir, libdir, env["platform"]), library)
 
 default_args = [library, copy]
 Default(*default_args)

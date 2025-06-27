@@ -3,23 +3,23 @@
 .godot/
 
 # Ignore library files but not the gdextension file
-demo/bin/*
-!demo/bin/android
-demo/bin/android/*
-!demo/bin/android/.gitkeep
-!demo/bin/linux
-demo/bin/linux/*
-!demo/bin/linux/.gitkeep
-!demo/bin/macos
-demo/bin/macos/*
-!demo/bin/macos/.gitkeep
-!demo/bin/windows
-demo/bin/windows/*
-!demo/bin/windows/.gitkeep
-!demo/bin/*.gdextension
+demo/addons/shader-slang/*
+!demo/addons/shader-slang/android
+demo/addons/shader-slang/android/*
+!demo/addons/shader-slang/android/.gitkeep
+!demo/addons/shader-slang/linux
+demo/addons/shader-slang/linux/*
+!demo/addons/shader-slang/linux/.gitkeep
+!demo/addons/shader-slang/macos
+demo/addons/shader-slang/macos/*
+!demo/addons/shader-slang/macos/.gitkeep
+!demo/addons/shader-slang/windows
+demo/addons/shader-slang/windows/*
+!demo/addons/shader-slang/windows/.gitkeep
+!demo/addons/shader-slang/*.gdextension
 .sconsign*.dblite
 
-/bin/
+/addons/shader-slang/
 
 # Ignore custom.py
 custom.py
