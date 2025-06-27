@@ -1,0 +1,15 @@
+[remap]
+
+importer="slang.shader.importer"
+type="SlangShader"
+uid="uid://dntoy45m2j3bj"
+path="res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres"
+
+[deps]
+
+source_file="res://grayscale.slang"
+dest_files=["res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres"]
+
+[params]
+
+shader_type=0

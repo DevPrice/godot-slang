@@ -14,3 +14,7 @@ config/name="shader-slang demo"
 run/main_scene="uid://dh0oj81pufivs"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/shader-slang/plugin/plugin.cfg")
