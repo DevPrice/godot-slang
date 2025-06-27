@@ -6,7 +6,7 @@ from methods import print_error
 
 
 libname = "shader-slang"
-libdir = "addons/{}".format(libname)
+libdir = "addons/{}/bin".format(libname)
 projectdir = "demo"
 
 localEnv = Environment(tools=["default"], PLATFORM="")

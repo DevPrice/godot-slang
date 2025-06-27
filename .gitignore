@@ -3,23 +3,23 @@
 .godot/
 
 # Ignore library files but not the gdextension file
-demo/addons/shader-slang/*
-!demo/addons/shader-slang/android
-demo/addons/shader-slang/android/*
-!demo/addons/shader-slang/android/.gitkeep
-!demo/addons/shader-slang/linux
-demo/addons/shader-slang/linux/*
-!demo/addons/shader-slang/linux/.gitkeep
-!demo/addons/shader-slang/macos
-demo/addons/shader-slang/macos/*
-!demo/addons/shader-slang/macos/.gitkeep
-!demo/addons/shader-slang/windows
-demo/addons/shader-slang/windows/*
-!demo/addons/shader-slang/windows/.gitkeep
-!demo/addons/shader-slang/*.gdextension
+demo/addons/shader-slang/bin/*
+!demo/addons/shader-slang/bin/android
+demo/addons/shader-slang/bin/android/*
+!demo/addons/shader-slang/bin/android/.gitkeep
+!demo/addons/shader-slang/bin/linux
+demo/addons/shader-slang/bin/linux/*
+!demo/addons/shader-slang/bin/linux/.gitkeep
+!demo/addons/shader-slang/bin/macos
+demo/addons/shader-slang/bin/macos/*
+!demo/addons/shader-slang/bin/macos/.gitkeep
+!demo/addons/shader-slang/bin/windows
+demo/addons/shader-slang/bin/windows/*
+!demo/addons/shader-slang/bin/windows/.gitkeep
+!demo/addons/shader-slang/bin/*.gdextension
 .sconsign*.dblite
 
-/addons/shader-slang/
+/addons/shader-slang/bin/
 
 # Ignore custom.py
 custom.py
