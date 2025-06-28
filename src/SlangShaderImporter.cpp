@@ -117,41 +117,91 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 }
 
 Error SlangShaderImporter::slang_compile_glsl(const String &p_source_file, String &out_glsl_source) {
-	SlangSession* session = spCreateSession(nullptr);
-	SlangCompileRequest* request = spCreateCompileRequest(session);
+	Slang::ComPtr<slang::IGlobalSession> globalSession;
+	createGlobalSession(globalSession.writeRef());
 
-	const int translationUnitIndex = spAddTranslationUnit(
-		request,
-		SLANG_SOURCE_LANGUAGE_SLANG,
-		nullptr
-	);
+	slang::SessionDesc sessionDesc = {};
+	slang::TargetDesc targetDesc = {};
+	targetDesc.format = SLANG_GLSL;
+	targetDesc.profile = globalSession->findProfile("glsl_450");
 
-	spAddTranslationUnitSourceFile(request, translationUnitIndex, p_source_file.utf8().get_data());
+	sessionDesc.targets = &targetDesc;
+	sessionDesc.targetCount = 1;
 
-	const int targetIndex = spAddCodeGenTarget(request, SLANG_GLSL);
+	Slang::ComPtr<slang::ISession> session;
+	globalSession->createSession(sessionDesc, session.writeRef());
 
-	spSetTargetProfile(request, targetIndex, spFindProfile(session, "glsl_450"));
-
-	const int entryPointIndex = spAddEntryPoint(
-		request,
-		translationUnitIndex,
-		"computeMain",
-		SLANG_STAGE_COMPUTE
-	);
-
-	const SlangResult result = spCompile(request);
-	if (result != SLANG_OK) {
-		const char* diagnostics = spGetDiagnosticOutput(request);
-		UtilityFunctions::push_error("Slang compilation failed:\n%s\n", diagnostics);
-		spDestroyCompileRequest(request);
-		spDestroySession(session);
-		return FAILED;
+	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
+	if (shader_file.is_null()) {
+		return ERR_FILE_CANT_OPEN;
 	}
 
-	out_glsl_source = spGetEntryPointSource(request, entryPointIndex);
+	const String shader_source = shader_file->get_as_text(true);
 
-	spDestroyCompileRequest(request);
-	spDestroySession(session);
+	Slang::ComPtr<slang::IModule> slangModule;
+	{
+		Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+		slangModule = session->loadModuleFromSourceString(
+				"main_module",
+				p_source_file.utf8().get_data(),
+				shader_source.utf8().get_data(),
+				diagnosticsBlob.writeRef());
+		if (!slangModule) {
+			return FAILED;
+		}
+	}
+
+	Slang::ComPtr<slang::IEntryPoint> entryPoint;
+	{
+		Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+		const auto entryPointFunction = "computeMain";
+		slangModule->findEntryPointByName(entryPointFunction, entryPoint.writeRef());
+		if (!entryPoint) {
+			UtilityFunctions::push_error(String("Slang: Error getting entry point '%s'") % String(entryPointFunction));
+			return FAILED;
+		}
+	}
+
+	const std::array<slang::IComponentType *, 2> componentTypes = {
+		slangModule,
+		entryPoint
+	};
+
+	Slang::ComPtr<slang::IComponentType> composedProgram;
+	{
+		Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+		const SlangResult result = session->createCompositeComponentType(
+				componentTypes.data(),
+				componentTypes.size(),
+				composedProgram.writeRef(),
+				diagnosticsBlob.writeRef());
+		if (result != OK) {
+			return FAILED;
+		}
+	}
+
+	Slang::ComPtr<slang::IComponentType> linkedProgram;
+	{
+		Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+		const SlangResult result = composedProgram->link(
+				linkedProgram.writeRef(),
+				diagnosticsBlob.writeRef());
+		if (result != OK) {
+			return FAILED;
+		}
+	}
+
+	Slang::ComPtr<slang::IBlob> compiledBlob;
+	{
+		Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+		const SlangResult result = linkedProgram->getEntryPointCode(
+			0, 0, compiledBlob.writeRef(), diagnosticsBlob.writeRef());
+		if (result != OK) {
+			return FAILED;
+		}
+	}
+
+	out_glsl_source = String::utf8(static_cast<char const *>(compiledBlob->getBufferPointer()), compiledBlob->getBufferSize());
 
 	return OK;
 }
