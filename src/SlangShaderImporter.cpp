@@ -1,20 +1,21 @@
 #include "SlangShaderImporter.h"
 
-#include "godot_cpp/classes/dir_access.hpp"
-#include "godot_cpp/classes/editor_file_system.hpp"
-#include "godot_cpp/classes/project_settings.hpp"
-#include "godot_cpp/classes/resource_loader.hpp"
+#include "slang-com-helper.h"
+#include "slang-com-ptr.h"
+#include "slang.h"
+
+#include <godot_cpp/classes/dir_access.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/resource_saver.hpp>
 
 #include <SlangShader.h>
 
-#include <godot_cpp/classes/editor_interface.hpp>
-#include <godot_cpp/classes/editor_settings.hpp>
-#include <godot_cpp/classes/file_access.hpp>
-#include <godot_cpp/classes/os.hpp>
-#include <godot_cpp/classes/resource_saver.hpp>
 
-void SlangShaderImporter::_bind_methods() {
-	BIND_STATIC_METHOD(SlangShaderImporter, get_editor_setting_slangc_location)
+void SlangShaderImporter::_bind_methods(){
 	BIND_STATIC_METHOD(SlangShaderImporter, get_editor_setting_gen_path)
 }
 
@@ -35,7 +36,7 @@ String SlangShaderImporter::_get_preset_name(int32_t p_preset_index) const {
 }
 
 PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
-	return PackedStringArray({"slang"});
+	return PackedStringArray({ "slang" });
 }
 
 TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String &p_path, int32_t p_preset_index) const {
@@ -86,20 +87,16 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 		return make_dir_err;
 	}
 
-	const String compiler_path = editor_interface->get_editor_settings()->get_setting(get_editor_setting_slangc_location());
-	const Array output{};
-	const PackedStringArray arguments({project_settings->globalize_path(p_source_file), "-target", "glsl", "-entry", "computeMain"});
-	if (const int32_t compile_error = OS::get_singleton()->execute(compiler_path, arguments, output)) {
-		return static_cast<Error>(compile_error);
-	}
-	if (output.is_empty()) {
-		return FAILED;
+	String glsl_source{};
+	if (const Error compile_error = slang_compile_glsl(project_settings->globalize_path(p_source_file), glsl_source)) {
+		return compile_error;
 	}
 
 	const Ref<FileAccess> glsl_file = FileAccess::open(glsl_filename, FileAccess::WRITE);
-	if (glsl_file.is_null()) return ERR_FILE_CANT_OPEN;
+	if (glsl_file.is_null()) {
+		return ERR_FILE_CANT_OPEN;
+	}
 
-	const String glsl_source = output.is_empty() ? "" : output[0];
 	if (!glsl_file->store_string(String("#[compute]\n%s") % glsl_source)) {
 		return ERR_FILE_CANT_WRITE;
 	}
@@ -119,10 +116,46 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
 
-String SlangShaderImporter::get_editor_setting_slangc_location() {
-	const static String slangc_location = "slang/import/compiler";
-	return slangc_location;
+Error SlangShaderImporter::slang_compile_glsl(const String &p_source_file, String &out_glsl_source) {
+	SlangSession* session = spCreateSession(nullptr);
+	SlangCompileRequest* request = spCreateCompileRequest(session);
+
+	const int translationUnitIndex = spAddTranslationUnit(
+		request,
+		SLANG_SOURCE_LANGUAGE_SLANG,
+		nullptr
+	);
+
+	spAddTranslationUnitSourceFile(request, translationUnitIndex, p_source_file.utf8().get_data());
+
+	const int targetIndex = spAddCodeGenTarget(request, SLANG_GLSL);
+
+	spSetTargetProfile(request, targetIndex, spFindProfile(session, "glsl_450"));
+
+	const int entryPointIndex = spAddEntryPoint(
+		request,
+		translationUnitIndex,
+		"computeMain",
+		SLANG_STAGE_COMPUTE
+	);
+
+	const SlangResult result = spCompile(request);
+	if (result != SLANG_OK) {
+		const char* diagnostics = spGetDiagnosticOutput(request);
+		UtilityFunctions::push_error("Slang compilation failed:\n%s\n", diagnostics);
+		spDestroyCompileRequest(request);
+		spDestroySession(session);
+		return FAILED;
+	}
+
+	out_glsl_source = spGetEntryPointSource(request, entryPointIndex);
+
+	spDestroyCompileRequest(request);
+	spDestroySession(session);
+
+	return OK;
 }
+
 String SlangShaderImporter::get_editor_setting_gen_path() {
 	const static String gen_path = "slang/import/generated_glsl_dir";
 	return gen_path;

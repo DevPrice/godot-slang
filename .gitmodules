@@ -2,3 +2,6 @@
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp.git
 	branch = 4.3
+[submodule "slang"]
+	path = slang
+	url = https://github.com/shader-slang/slang.git

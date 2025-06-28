@@ -6,7 +6,10 @@
 #include <godot_cpp/godot.hpp>
 
 #include <SlangShader.h>
+
+#ifdef TOOLS_ENABLED
 #include <SlangShaderImporter.h>
+#endif
 
 using namespace godot;
 
@@ -15,7 +18,9 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(SlangShader);
 	}
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+#ifdef TOOLS_ENABLED
 		GDREGISTER_CLASS(SlangShaderImporter);
+#endif
 	}
 }
 

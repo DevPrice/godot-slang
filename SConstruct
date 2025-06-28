@@ -39,6 +39,19 @@ Run the following command to download godot-cpp:
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
 env.Append(CPPPATH=["src/"])
+
+if env["target"] == "editor":
+    env.Append(CPPDEFINES=['SLANG_STATIC'])
+    env.Append(CPPPATH=["slang/build/RelWithDebInfo/include"])
+    env.Append(LIBS=[
+        "ole32",
+        "slang/build/RelWithDebInfo/lib/slang.lib",
+        "slang/build/RelWithDebInfo/lib/compiler-core.lib",
+        "slang/build/RelWithDebInfo/lib/core.lib",
+        "slang/build/external/miniz/RelWithDebInfo/miniz.lib",
+        "slang/build/external/lz4/build/cmake/RelWithDebInfo/lz4.lib",
+    ])
+
 sources = Glob("src/*.cpp")
 
 if env["target"] in ["editor", "template_debug"]:

@@ -1,7 +1,7 @@
 #[compute]
 #version 450
-layout(row_major) uniform;
-layout(row_major) buffer;
+layout(column_major) uniform;
+layout(column_major) buffer;
 
 #line 1 0
 layout(rgba32f)
