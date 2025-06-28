@@ -12,8 +12,8 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
 
-#include <SlangShader.h>
-
+#include <slang_shader.h>
+#include <compute_shader_kernel.h>
 
 void SlangShaderImporter::_bind_methods(){
 	BIND_STATIC_METHOD(SlangShaderImporter, get_editor_setting_gen_path)
@@ -69,11 +69,6 @@ bool SlangShaderImporter::_get_option_visibility(const String &p_path, const Str
 }
 
 Error SlangShaderImporter::_import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const {
-	const Ref<FileAccess> file = FileAccess::open(p_source_file, FileAccess::READ);
-	if (file.is_null()) {
-		return ERR_FILE_CANT_OPEN;
-	}
-
 	const ProjectSettings *project_settings = ProjectSettings::get_singleton();
 	const EditorInterface *editor_interface = EditorInterface::get_singleton();
 	if (!project_settings || !editor_interface) {
@@ -110,7 +105,11 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	const_cast<TypedArray<String> &>(p_gen_files).push_back(glsl_filename);
 
 	const Ref slang_shader = memnew(SlangShader);
-	slang_shader->set_shader_file(ResourceLoader::get_singleton()->load(glsl_filename));
+	const Ref kernel = memnew(ComputeShaderKernel);
+	kernel->set_shader_file(ResourceLoader::get_singleton()->load(glsl_filename));
+	TypedArray<ComputeShaderKernel> kernels;
+	kernels.push_back(kernel);
+	slang_shader->set_kernels(kernels);
 
 	const String out_filename = p_save_path + String(".") + _get_save_extension();
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
