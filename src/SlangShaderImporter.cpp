@@ -16,9 +16,7 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
-void SlangShaderImporter::_bind_methods(){
-	BIND_STATIC_METHOD(SlangShaderImporter, get_editor_setting_gen_path)
-}
+void SlangShaderImporter::_bind_methods() { }
 
 String SlangShaderImporter::_get_importer_name() const {
 	return "slang.shader.importer";
@@ -73,13 +71,6 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	const ProjectSettings *project_settings = ProjectSettings::get_singleton();
 	if (!project_settings) {
 		return FAILED;
-	}
-
-	const String gen_dir = project_settings->get_setting(get_editor_setting_gen_path());
-	const String glsl_filename = gen_dir.path_join(p_source_file.get_basename().trim_prefix("res://") + ".glsl");
-
-	if (const auto make_dir_err = DirAccess::make_dir_recursive_absolute(project_settings->globalize_path(glsl_filename.get_base_dir()))) {
-		return make_dir_err;
 	}
 
 	String glsl_source{};
@@ -196,9 +187,4 @@ Error SlangShaderImporter::slang_compile_glsl(const String &p_source_file, Strin
 	out_glsl_source = String::utf8(static_cast<char const *>(compiledBlob->getBufferPointer()), compiledBlob->getBufferSize());
 
 	return OK;
-}
-
-String SlangShaderImporter::get_editor_setting_gen_path() {
-	const static String gen_path = "slang/import/generated_glsl_dir";
-	return gen_path;
 }

@@ -25,6 +25,4 @@ public:
 	[[nodiscard]] Error _import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const override;
 
 	static Error slang_compile_glsl(const String &p_source_file, String &out_glsl_source);
-
-	static String get_editor_setting_gen_path();
 };
