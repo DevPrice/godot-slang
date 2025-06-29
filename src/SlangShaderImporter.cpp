@@ -89,6 +89,7 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	if (const Error save_err = ResourceSaver::get_singleton()->save(spirv)) {
 		return save_err;
 	}
+	const_cast<TypedArray<String> &>(p_gen_files).push_back(spirv->get_path());
 
 	kernel->set_spirv(spirv);
 	TypedArray<ComputeShaderKernel> kernels;

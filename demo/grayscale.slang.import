@@ -3,11 +3,14 @@
 importer="slang.shader.importer"
 type="SlangShader"
 uid="uid://caw0g2ilnq77w"
-valid=false
+path="res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres"
 
 [deps]
 
+files=["res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.spirv.res"]
+
 source_file="res://grayscale.slang"
+dest_files=["res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres", "res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.spirv.res"]
 
 [params]
 
