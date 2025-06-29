@@ -24,5 +24,5 @@ public:
 	[[nodiscard]] bool _get_option_visibility(const String &p_path, const StringName &p_option_name, const Dictionary &p_options) const override;
 	[[nodiscard]] Error _import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const override;
 
-	static Error slang_compile_glsl(const String &p_source_file, String &out_glsl_source);
+	static Error slang_compile_spirv(const String &p_source_file, PackedByteArray &out_spirv);
 };

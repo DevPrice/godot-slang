@@ -8,7 +8,6 @@
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/classes/rd_shader_source.hpp>
 #include <godot_cpp/classes/rd_shader_spirv.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
@@ -71,21 +70,14 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	const Ref slang_shader = memnew(ComputeShaderFile);
 	TypedArray<ComputeShaderKernel> kernels;
 
-	String glsl_source{};
-	if (const Error compile_error = slang_compile_glsl(ProjectSettings::get_singleton()->globalize_path(p_source_file), glsl_source)) {
+	PackedByteArray spirv_bytes{};
+	if (const Error compile_error = slang_compile_spirv(ProjectSettings::get_singleton()->globalize_path(p_source_file), spirv_bytes)) {
 		UtilityFunctions::print("Failed to compile Slang shader!");
 		return compile_error;
 	}
 
-	const Ref shader_source = memnew(RDShaderSource);
-	shader_source->set_language(RenderingDevice::SHADER_LANGUAGE_GLSL);
-	shader_source->set_stage_source(RenderingDevice::SHADER_STAGE_COMPUTE, glsl_source);
-
-	const Ref<RDShaderSPIRV> spirv = RenderingServer::get_singleton()->get_rendering_device()->shader_compile_spirv_from_source(shader_source);
-	if (spirv.is_null()) {
-		UtilityFunctions::print("Failed to compile SPIR-V!");
-		return FAILED;
-	}
+	const Ref spirv = memnew(RDShaderSPIRV);
+	spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, spirv_bytes);
 
 	const Ref kernel = memnew(ComputeShaderKernel);
 	kernel->set_spirv(spirv);
@@ -96,14 +88,14 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
 
-Error SlangShaderImporter::slang_compile_glsl(const String &p_source_file, String &out_glsl_source) {
+Error SlangShaderImporter::slang_compile_spirv(const String &p_source_file, PackedByteArray &out_spirv) {
 	Slang::ComPtr<slang::IGlobalSession> globalSession;
 	createGlobalSession(globalSession.writeRef());
 
 	slang::SessionDesc sessionDesc = {};
 	slang::TargetDesc targetDesc = {};
-	targetDesc.format = SLANG_GLSL;
-	targetDesc.profile = globalSession->findProfile("glsl_450");
+	targetDesc.format = SLANG_SPIRV;
+	targetDesc.profile = globalSession->findProfile("spirv_1_5");
 
 	sessionDesc.targets = &targetDesc;
 	sessionDesc.targetCount = 1;
@@ -181,7 +173,9 @@ Error SlangShaderImporter::slang_compile_glsl(const String &p_source_file, Strin
 		}
 	}
 
-	out_glsl_source = String::utf8(static_cast<char const *>(compiledBlob->getBufferPointer()), compiledBlob->getBufferSize());
+	out_spirv.clear();
+	out_spirv.resize(compiledBlob->getBufferSize());
+	memcpy(out_spirv.ptrw(), compiledBlob->getBufferPointer(), compiledBlob->getBufferSize());
 
 	return OK;
 }
