@@ -48,11 +48,11 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String &p_
 }
 
 String SlangShaderImporter::_get_save_extension() const {
-	return "tres";
+	return "res";
 }
 
 String SlangShaderImporter::_get_resource_type() const {
-	return "SlangShader";
+	return "ComputeShaderFile";
 }
 
 float SlangShaderImporter::_get_priority() const {
@@ -68,31 +68,27 @@ bool SlangShaderImporter::_get_option_visibility(const String &p_path, const Str
 }
 
 Error SlangShaderImporter::_import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const {
-	const ProjectSettings *project_settings = ProjectSettings::get_singleton();
-	if (!project_settings) {
-		return FAILED;
-	}
+	const Ref slang_shader = memnew(ComputeShaderFile);
+	TypedArray<ComputeShaderKernel> kernels;
 
 	String glsl_source{};
-	if (const Error compile_error = slang_compile_glsl(project_settings->globalize_path(p_source_file), glsl_source)) {
+	if (const Error compile_error = slang_compile_glsl(ProjectSettings::get_singleton()->globalize_path(p_source_file), glsl_source)) {
+		UtilityFunctions::print("Failed to compile Slang shader!");
 		return compile_error;
 	}
 
-	const Ref slang_shader = memnew(ComputeShaderFile);
-	const Ref kernel = memnew(ComputeShaderKernel);
 	const Ref shader_source = memnew(RDShaderSource);
 	shader_source->set_language(RenderingDevice::SHADER_LANGUAGE_GLSL);
 	shader_source->set_stage_source(RenderingDevice::SHADER_STAGE_COMPUTE, glsl_source);
 
 	const Ref<RDShaderSPIRV> spirv = RenderingServer::get_singleton()->get_rendering_device()->shader_compile_spirv_from_source(shader_source);
-	spirv->set_path(p_save_path + String(".spirv.res"));
-	if (const Error save_err = ResourceSaver::get_singleton()->save(spirv)) {
-		return save_err;
+	if (spirv.is_null()) {
+		UtilityFunctions::print("Failed to compile SPIR-V!");
+		return FAILED;
 	}
-	const_cast<TypedArray<String> &>(p_gen_files).push_back(spirv->get_path());
 
+	const Ref kernel = memnew(ComputeShaderKernel);
 	kernel->set_spirv(spirv);
-	TypedArray<ComputeShaderKernel> kernels;
 	kernels.push_back(kernel);
 	slang_shader->set_kernels(kernels);
 
