@@ -7,10 +7,8 @@ path="res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tre
 
 [deps]
 
-files=["res://gen/grayscale.glsl"]
-
 source_file="res://grayscale.slang"
-dest_files=["res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres", "res://gen/grayscale.glsl"]
+dest_files=["res://.godot/imported/grayscale.slang-4677a188f46d8b5cb1eefdb95d60835c.tres"]
 
 [params]
 

@@ -5,11 +5,12 @@
 #include "slang.h"
 
 #include <godot_cpp/classes/dir_access.hpp>
-#include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
-#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/rd_shader_source.hpp>
+#include <godot_cpp/classes/rd_shader_spirv.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
 
 #include <compute_shader_file.h>
@@ -87,26 +88,19 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 		return compile_error;
 	}
 
-	const Ref<FileAccess> glsl_file = FileAccess::open(glsl_filename, FileAccess::WRITE);
-	if (glsl_file.is_null()) {
-		return ERR_FILE_CANT_OPEN;
-	}
-
-	if (!glsl_file->store_string(String("#[compute]\n%s") % glsl_source)) {
-		return ERR_FILE_CANT_WRITE;
-	}
-	glsl_file->close();
-
-	editor_interface->get_resource_filesystem()->update_file(glsl_filename);
-	if (const Error append_error = const_cast<SlangShaderImporter *>(this)->append_import_external_resource(glsl_filename)) {
-		return append_error;
-	}
-
-	const_cast<TypedArray<String> &>(p_gen_files).push_back(glsl_filename);
-
 	const Ref slang_shader = memnew(ComputeShaderFile);
 	const Ref kernel = memnew(ComputeShaderKernel);
-	kernel->set_shader_file(ResourceLoader::get_singleton()->load(glsl_filename));
+	const Ref shader_source = memnew(RDShaderSource);
+	shader_source->set_language(RenderingDevice::SHADER_LANGUAGE_GLSL);
+	shader_source->set_stage_source(RenderingDevice::SHADER_STAGE_COMPUTE, glsl_source);
+
+	const Ref<RDShaderSPIRV> spirv = RenderingServer::get_singleton()->get_rendering_device()->shader_compile_spirv_from_source(shader_source);
+	spirv->set_path(p_save_path + String(".spirv.res"));
+	if (const Error save_err = ResourceSaver::get_singleton()->save(spirv)) {
+		return save_err;
+	}
+
+	kernel->set_spirv(spirv);
 	TypedArray<ComputeShaderKernel> kernels;
 	kernels.push_back(kernel);
 	slang_shader->set_kernels(kernels);
