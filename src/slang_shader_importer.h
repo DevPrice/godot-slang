@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
 
 using namespace godot;
@@ -24,5 +25,5 @@ public:
 	[[nodiscard]] bool _get_option_visibility(const String &p_path, const StringName &p_option_name, const Dictionary &p_options) const override;
 	[[nodiscard]] Error _import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const override;
 
-	static Error slang_compile_spirv(const String &p_source_file, PackedByteArray &out_spirv);
+	static Error slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels);
 };

@@ -10,6 +10,7 @@ using namespace godot;
 class ComputeShaderKernel : public Resource {
 	GDCLASS(ComputeShaderKernel, Resource);
 
+	GET_SET_PROPERTY(String, kernel_name)
 	GET_SET_PROPERTY(Ref<RDShaderSPIRV>, spirv)
 
 protected:

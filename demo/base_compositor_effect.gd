@@ -124,20 +124,6 @@ func _render_view(render_data: RenderData, view: int, groups: Vector3i) -> void:
 
 	_render_shader(_pipeline, _shader, uniforms, PackedByteArray(), groups)
 
-func _render_backbuffer(render_data: RenderData, view: int) -> void:
-	var render_scene_buffers: RenderSceneBuffersRD = render_data.get_render_scene_buffers()
-	var size := render_scene_buffers.get_internal_size()
-	var groups := Vector3i(
-		(size.x - 1) / 8 + 1,
-		(size.y - 1) / 8 + 1,
-		1,
-	)
-	var uniforms: Array[RDUniform] = [
-		_create_uniform_buffer(0, render_data),
-		_create_texture_sampler(1, render_scene_buffers.get_color_layer(view)),
-		_create_image(2, _get_backbuffer_texture(render_data)),
-	]
-
 func _render_shader(pipeline: RID, shader: RID, uniforms: Array[RDUniform], push_constant: PackedByteArray, groups: Vector3i) -> void:
 	var uniform_set := UniformSetCacheRD.get_cache(shader, 0, uniforms)
 	var compute_list := rd.compute_list_begin()

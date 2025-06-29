@@ -59,9 +59,9 @@ void ClassName::set_##Name(Type* p_##Name) { \
     ClassDB::bind_method(D_METHOD("get_" #Name), &ClassName::get_##Name); \
     ClassDB::bind_method(D_METHOD("set_" #Name, "p_" #Name), &ClassName::set_##Name);
 
-#define BIND_GET_SET(ClassName, Name, VariantType) \
+#define BIND_GET_SET(ClassName, Name, VariantType, ...) \
     BIND_GET_SET_METHOD(ClassName, Name) \
-    ClassDB::add_property(#ClassName, PropertyInfo(VariantType, #Name), "set_" #Name, "get_" #Name);
+    ClassDB::add_property(#ClassName, PropertyInfo(VariantType, #Name, ##__VA_ARGS__), "set_" #Name, "get_" #Name);
 
 #define BIND_GET_SET_RESOURCE(ClassName, Name, Type, ...) \
     BIND_GET_SET_METHOD(ClassName, Name) \

@@ -9,7 +9,7 @@
 #include <compute_shader_kernel.h>
 
 #ifdef TOOLS_ENABLED
-#include <SlangShaderImporter.h>
+#include <slang_shader_importer.h>
 #endif
 
 using namespace godot;
