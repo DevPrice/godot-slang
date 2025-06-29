@@ -71,8 +71,7 @@ bool SlangShaderImporter::_get_option_visibility(const String &p_path, const Str
 
 Error SlangShaderImporter::_import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const {
 	const ProjectSettings *project_settings = ProjectSettings::get_singleton();
-	const EditorInterface *editor_interface = EditorInterface::get_singleton();
-	if (!project_settings || !editor_interface) {
+	if (!project_settings) {
 		return FAILED;
 	}
 

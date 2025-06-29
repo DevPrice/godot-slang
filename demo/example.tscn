@@ -1,6 +1,66 @@
-[gd_scene load_steps=2 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=12 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://bgq87xxylxm55" path="res://example.gd" id="1_jdh55"]
+[ext_resource type="ComputeShaderFile" uid="uid://caw0g2ilnq77w" path="res://grayscale.slang" id="2_8lvy3"]
+[ext_resource type="Script" uid="uid://c5n5squylo54a" path="res://base_compositor_effect.gd" id="2_n51mc"]
 
-[node name="Node" type="Node"]
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_n51mc"]
+sky_material = SubResource("ProceduralSkyMaterial_2jas5")
+
+[sub_resource type="Environment" id="Environment_8lvy3"]
+background_mode = 2
+sky = SubResource("Sky_n51mc")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="CompositorEffect" id="CompositorEffect_8lvy3"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 4
+needs_motion_vectors = false
+needs_normal_roughness = false
+script = ExtResource("2_n51mc")
+compute_shader = ExtResource("2_8lvy3")
+metadata/_custom_type_script = "uid://c5n5squylo54a"
+
+[sub_resource type="Compositor" id="Compositor_wcwec"]
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_8lvy3")])
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
+albedo_color = Color(0.2, 1, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ei00m"]
+albedo_color = Color(0.748747, 1, 0.518099, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugfer"]
+albedo_color = Color(1, 0.486275, 1, 1)
+
+[node name="Node" type="Node3D"]
 script = ExtResource("1_jdh55")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_8lvy3")
+compositor = SubResource("Compositor_wcwec")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+material_override = SubResource("StandardMaterial3D_wcwec")
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+material_override = SubResource("StandardMaterial3D_ei00m")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+material_override = SubResource("StandardMaterial3D_ugfer")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.946812, 0.321787, 0, -0.321787, 0.946812, 0, 2, 4)

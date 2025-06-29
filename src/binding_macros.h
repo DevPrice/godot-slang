@@ -63,9 +63,9 @@ void ClassName::set_##Name(Type* p_##Name) { \
     BIND_GET_SET_METHOD(ClassName, Name) \
     ClassDB::add_property(#ClassName, PropertyInfo(VariantType, #Name), "set_" #Name, "get_" #Name);
 
-#define BIND_GET_SET_RESOURCE(ClassName, Name, Type) \
+#define BIND_GET_SET_RESOURCE(ClassName, Name, Type, ...) \
     BIND_GET_SET_METHOD(ClassName, Name) \
-    ClassDB::add_property(#ClassName, PropertyInfo(Variant::OBJECT, #Name, PROPERTY_HINT_RESOURCE_TYPE, #Type), "set_" #Name, "get_" #Name);
+    ClassDB::add_property(#ClassName, PropertyInfo(Variant::OBJECT, #Name, PROPERTY_HINT_RESOURCE_TYPE, #Type, ##__VA_ARGS__), "set_" #Name, "get_" #Name);
 
 #define BIND_GET_SET_NODE(ClassName, Name, Type) \
     BIND_GET_SET_METHOD(ClassName, Name) \
