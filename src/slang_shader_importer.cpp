@@ -157,9 +157,18 @@ Error SlangShaderImporter::slang_compile_kernels(const String &p_source_file, Ty
 
 		const String entry_point_name = entry_point->getFunctionReflection()->getName();
 
-		slang::EntryPointReflection *entry_point_reflection = linked_program->getLayout()->getEntryPointByIndex(entry_point_index);
+		Slang::ComPtr<slang::IBlob> compiled_blob;
 		{
-			slang::Attribute *shader_attribute = entry_point_reflection->getFunction()->findAttributeByName(global_session, "shader");
+			Slang::ComPtr<slang::IBlob> diagnostics_blob;
+			const SlangResult result = linked_program->getEntryPointCode(
+				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
+			if (result != OK) {
+				return FAILED;
+			}
+		}
+
+		{
+			slang::Attribute *shader_attribute = entry_point->getFunctionReflection()->findAttributeByName(global_session, "shader");
 			if (!shader_attribute) {
 				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
 				continue;
@@ -172,18 +181,8 @@ Error SlangShaderImporter::slang_compile_kernels(const String &p_source_file, Ty
 			}
 			const String shader_name = String::utf8(shader_value, value_size);
 			if (shader_name != String("compute")) {
-				UtilityFunctions::push_warning(String("Slang: Skipping compilation of non-compute kernel '%s' (non-compute shader)") % shader_name);
+				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % shader_name);
 				continue;
-			}
-		}
-
-		Slang::ComPtr<slang::IBlob> compiled_blob;
-		{
-			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = linked_program->getEntryPointCode(
-				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
-			if (result != OK) {
-				return FAILED;
 			}
 		}
 
@@ -195,7 +194,7 @@ Error SlangShaderImporter::slang_compile_kernels(const String &p_source_file, Ty
 		spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, spirv_bytes);
 
 		const Ref kernel = memnew(ComputeShaderKernel);
-		kernel->set_kernel_name(entry_point_reflection->getName());
+		kernel->set_kernel_name(entry_point_name);
 		kernel->set_spirv(spirv);
 		out_kernels.push_back(kernel);
 	}
