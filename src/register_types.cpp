@@ -5,8 +5,8 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
-#include <slang_shader.h>
 
 #ifdef TOOLS_ENABLED
 #include <SlangShaderImporter.h>
@@ -17,7 +17,7 @@ using namespace godot;
 void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		GDREGISTER_CLASS(ComputeShaderKernel);
-		GDREGISTER_CLASS(SlangShader);
+		GDREGISTER_CLASS(ComputeShaderFile);
 	}
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 #ifdef TOOLS_ENABLED

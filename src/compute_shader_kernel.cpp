@@ -1,6 +1,6 @@
 #include "compute_shader_kernel.h"
 
-void ComputeShaderKernel::_bind_methods(){
+void ComputeShaderKernel::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderKernel, shader_file, RDShaderFile)
 	BIND_METHOD(ComputeShaderKernel, get_spirv)
 }

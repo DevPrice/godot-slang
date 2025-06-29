@@ -12,7 +12,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
 
-#include <slang_shader.h>
+#include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
 void SlangShaderImporter::_bind_methods(){
@@ -104,7 +104,7 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 
 	const_cast<TypedArray<String> &>(p_gen_files).push_back(glsl_filename);
 
-	const Ref slang_shader = memnew(SlangShader);
+	const Ref slang_shader = memnew(ComputeShaderFile);
 	const Ref kernel = memnew(ComputeShaderKernel);
 	kernel->set_shader_file(ResourceLoader::get_singleton()->load(glsl_filename));
 	TypedArray<ComputeShaderKernel> kernels;

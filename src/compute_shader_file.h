@@ -10,8 +10,8 @@
 
 using namespace godot;
 
-class SlangShader : public Resource {
-	GDCLASS(SlangShader, Resource)
+class ComputeShaderFile : public Resource {
+	GDCLASS(ComputeShaderFile, Resource)
 
 	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
 
@@ -19,6 +19,6 @@ protected:
 	static void _bind_methods();
 
 public:
-	SlangShader() = default;
-	~SlangShader() override = default;
+	ComputeShaderFile() = default;
+	~ComputeShaderFile() override = default;
 };
