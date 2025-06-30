@@ -106,11 +106,11 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 			if size.x == 0 or size.y == 0:
 				return
 
-			var local_size := _get_local_size()
+			var local_size := compute_shader.kernels[0].thread_group_size
 			var groups := Vector3i(
 				(size.x - 1) / local_size.x + 1,
 				(size.y - 1) / local_size.y + 1,
-				1,
+				local_size.z,
 			)
 
 			# Loop through views just in case we're doing stereo rendering. No extra cost if this is mono.
@@ -181,9 +181,6 @@ static func _create_ssbo(binding: int, id: RID) -> RDUniform:
 
 func _get_shader_file() -> RDShaderFile:
 	return null
-
-func _get_local_size() -> Vector2i:
-	return Vector2i(8, 8)
 
 func _get_uniforms(_render_data: RenderData, _view: int) -> Array[RDUniform]:
 	## TEMP

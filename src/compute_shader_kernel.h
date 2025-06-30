@@ -14,6 +14,7 @@ class ComputeShaderKernel : public Resource {
 
 	GET_SET_PROPERTY(String, kernel_name)
 	GET_SET_PROPERTY(Ref<RDShaderSPIRV>, spirv)
+	GET_SET_PROPERTY(Vector3, thread_group_size)
 	GET_SET_PROPERTY(Dictionary, user_attributes)
 	GET_SET_PROPERTY(Dictionary, parameters)
 

@@ -197,6 +197,13 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		kernel->set_kernel_name(entry_point_name);
 		kernel->set_spirv(spirv);
 
+		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(entry_point_index);
+		{
+			SlangUInt sizes[3];
+			entry_point_layout->getComputeThreadGroupSize(3, sizes);
+			kernel->set_thread_group_size(Vector3(sizes[0], sizes[1], sizes[2]));
+		}
+
 		Dictionary entry_point_attributes{};
 		for (size_t attribute_index = 0; attribute_index < entry_point->getFunctionReflection()->getUserAttributeCount(); ++attribute_index) {
 			if (slang::Attribute* attribute = entry_point->getFunctionReflection()->getUserAttributeByIndex(attribute_index)) {
