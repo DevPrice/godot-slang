@@ -139,21 +139,6 @@ func _render_shader(pipeline: RID, shader: RID, uniforms: Array[RDUniform], push
 static func _get_normal_roughness_texture(render_scene_buffers: RenderSceneBuffersRD) -> RID:
 	return render_scene_buffers.get_texture("forward_clustered", "normal_roughness")
 
-func _get_backbuffer_texture(render_data: RenderData) -> RID:
-	var render_scene_buffers: RenderSceneBuffersRD = render_data.get_render_scene_buffers()
-	return render_scene_buffers.create_texture(
-		_context,
-		"backbuffer",
-		RenderingDevice.DATA_FORMAT_R16G16B16A16_SNORM,
-		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_STORAGE_BIT,
-		RenderingDevice.TextureSamples.TEXTURE_SAMPLES_1,
-		render_scene_buffers.get_internal_size(),
-		1,
-		1,
-		false,
-		false,
-	)
-
 static func _create_uniform(binding: int, uniform_type: RenderingDevice.UniformType, ids: Array[RID]) -> RDUniform:
 	var uniform := RDUniform.new()
 	uniform.binding = binding
