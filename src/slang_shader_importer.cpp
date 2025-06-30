@@ -68,7 +68,7 @@ bool SlangShaderImporter::_get_option_visibility(const String &p_path, const Str
 
 Error SlangShaderImporter::_import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const {
 	TypedArray<ComputeShaderKernel> kernels;
-	if (const Error compile_error = slang_compile_kernels(ProjectSettings::get_singleton()->globalize_path(p_source_file), kernels)) {
+	if (const Error compile_error = _slang_compile_kernels(ProjectSettings::get_singleton()->globalize_path(p_source_file), kernels)) {
 		UtilityFunctions::push_error("Failed to compile Slang shader kernels!");
 		return compile_error;
 	}
@@ -80,7 +80,7 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
 
-Error SlangShaderImporter::slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels) {
+Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels) {
 	Slang::ComPtr<slang::IGlobalSession> global_session;
 	createGlobalSession(global_session.writeRef());
 
@@ -196,8 +196,102 @@ Error SlangShaderImporter::slang_compile_kernels(const String &p_source_file, Ty
 		const Ref kernel = memnew(ComputeShaderKernel);
 		kernel->set_kernel_name(entry_point_name);
 		kernel->set_spirv(spirv);
+
+		Dictionary entry_point_attributes{};
+		for (size_t attribute_index = 0; attribute_index < entry_point->getFunctionReflection()->getUserAttributeCount(); ++attribute_index) {
+			if (slang::Attribute* attribute = entry_point->getFunctionReflection()->getUserAttributeByIndex(attribute_index)) {
+				Dictionary arguments{};
+				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+					String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
+					arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+				}
+				entry_point_attributes.set(attribute->getName(), arguments);
+			}
+		}
+		kernel->set_user_attributes(entry_point_attributes);
+
 		out_kernels.push_back(kernel);
 	}
 
 	return OK;
+}
+
+String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index, slang::ProgramLayout* layout) {
+	// TODO: Surely there is a better way to do this
+	if (attribute && layout) {
+		if (slang::TypeReflection* attribute_type = layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data())) {
+			return attribute_type->getFieldByIndex(argument_index)->getName();
+		}
+	}
+	return String("argument") + String::num_int64(argument_index);
+}
+
+Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
+	switch (type->getKind()) {
+		case SLANG_TYPE_KIND_SCALAR:
+			switch (type->getScalarType()) {
+				case SLANG_SCALAR_TYPE_BOOL:
+					return Variant::BOOL;
+				case SLANG_SCALAR_TYPE_FLOAT16:
+				case SLANG_SCALAR_TYPE_FLOAT32:
+				case SLANG_SCALAR_TYPE_FLOAT64:
+					return Variant::FLOAT;
+				case SLANG_SCALAR_TYPE_INT32:
+				case SLANG_SCALAR_TYPE_UINT32:
+				case SLANG_SCALAR_TYPE_INT64:
+				case SLANG_SCALAR_TYPE_UINT64:
+				case SLANG_SCALAR_TYPE_INT8:
+				case SLANG_SCALAR_TYPE_UINT8:
+				case SLANG_SCALAR_TYPE_INT16:
+				case SLANG_SCALAR_TYPE_UINT16:
+					return Variant::INT;
+				default: return Variant::NIL;
+			}
+		case SLANG_TYPE_KIND_STRUCT:
+			if (String(type->getName()) == "String") {
+				// TODO: Is there a better way to detect the String type?
+				return Variant::STRING;
+			}
+			break;
+		// TODO: Support the other types
+		default: return Variant::NIL;
+	}
+	return Variant::NIL;
+}
+
+Variant SlangShaderImporter::_to_godot_value(slang::Attribute* attribute, const uint32_t argument_index) {
+	if (slang::TypeReflection* type = attribute->getArgumentType(argument_index)) {
+		switch (_to_godot_type(type)) {
+			case Variant::BOOL: {
+				int value{};
+				if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
+					return static_cast<bool>(value);
+				}
+				break;
+			}
+			case Variant::INT: {
+				int value{};
+				if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
+					return value;
+				}
+				break;
+			}
+			case Variant::FLOAT: {
+				float value{};
+				if (attribute->getArgumentValueFloat(argument_index, &value) == SLANG_OK) {
+					return value;
+				}
+				break;
+			}
+			case Variant::STRING: {
+				size_t size{};
+				if (const char* value = attribute->getArgumentValueString(argument_index, &size)) {
+					return String::utf8(value, size);
+				}
+				break;
+			}
+			default: return Variant{};
+		}
+	}
+	return Variant{};
 }

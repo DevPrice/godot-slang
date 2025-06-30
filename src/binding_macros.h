@@ -75,9 +75,9 @@ void ClassName::set_##Name(Type* p_##Name) { \
     BIND_GET_SET_METHOD(ClassName, Name) \
     ClassDB::add_property(#ClassName, PropertyInfo(Variant::INT, #Name, PROPERTY_HINT_ENUM, Values), "set_" #Name, "get_" #Name);
 
-#define BIND_GET_SET_STRING_ARRAY(ClassName, Name) \
+#define BIND_GET_SET_ARRAY(ClassName, Name, Type) \
     BIND_GET_SET_METHOD(ClassName, Name) \
-    ClassDB::add_property(#ClassName, PropertyInfo(Variant::ARRAY, #Name, PROPERTY_HINT_TYPE_STRING, String::num(Variant::STRING)), "set_" #Name, "get_" #Name);
+    ClassDB::add_property(#ClassName, PropertyInfo(Variant::ARRAY, #Name, PROPERTY_HINT_TYPE_STRING, String::num(Type)), "set_" #Name, "get_" #Name);
 
 #define BIND_GET_SET_RESOURCE_ARRAY(ClassName, Name, Type) \
     BIND_GET_SET_METHOD(ClassName, Name) \

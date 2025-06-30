@@ -25,5 +25,9 @@ public:
 	[[nodiscard]] bool _get_option_visibility(const String &p_path, const StringName &p_option_name, const Dictionary &p_options) const override;
 	[[nodiscard]] Error _import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const override;
 
-	static Error slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels);
+private:
+	static Error _slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels);
+	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
+	static Variant::Type _to_godot_type(slang::TypeReflection *type);
+	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);
 };
