@@ -84,16 +84,16 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 	Slang::ComPtr<slang::IGlobalSession> global_session;
 	createGlobalSession(global_session.writeRef());
 
-	slang::SessionDesc sessionDesc = {};
-	slang::TargetDesc targetDesc = {};
-	targetDesc.format = SLANG_SPIRV;
-	targetDesc.profile = global_session->findProfile("spirv_1_5");
+	slang::SessionDesc session_desc = {};
+	slang::TargetDesc target_desc = {};
+	target_desc.format = SLANG_SPIRV;
+	target_desc.profile = global_session->findProfile("spirv_1_5");
 
-	sessionDesc.targets = &targetDesc;
-	sessionDesc.targetCount = 1;
+	session_desc.targets = &target_desc;
+	session_desc.targetCount = 1;
 
 	Slang::ComPtr<slang::ISession> session;
-	global_session->createSession(sessionDesc, session.writeRef());
+	global_session->createSession(session_desc, session.writeRef());
 
 	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
 	if (shader_file.is_null()) {
@@ -131,13 +131,13 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			entry_point
 		};
 
-		Slang::ComPtr<slang::IComponentType> composedProgram;
+		Slang::ComPtr<slang::IComponentType> composed_program;
 		{
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = session->createCompositeComponentType(
 					componentTypes.data(),
 					componentTypes.size(),
-					composedProgram.writeRef(),
+					composed_program.writeRef(),
 					diagnostics_blob.writeRef());
 			if (result != OK) {
 				return FAILED;
@@ -147,7 +147,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		Slang::ComPtr<slang::IComponentType> linked_program;
 		{
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = composedProgram->link(
+			const SlangResult result = composed_program->link(
 					linked_program.writeRef(),
 					diagnostics_blob.writeRef());
 			if (result != OK) {
@@ -204,18 +204,41 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			kernel->set_thread_group_size(Vector3(sizes[0], sizes[1], sizes[2]));
 		}
 
-		Dictionary entry_point_attributes{};
-		for (size_t attribute_index = 0; attribute_index < entry_point->getFunctionReflection()->getUserAttributeCount(); ++attribute_index) {
-			if (slang::Attribute* attribute = entry_point->getFunctionReflection()->getUserAttributeByIndex(attribute_index)) {
-				Dictionary arguments{};
-				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-					String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
-					arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+		{
+			Dictionary entry_point_attributes{};
+			for (size_t attribute_index = 0; attribute_index < entry_point->getFunctionReflection()->getUserAttributeCount(); ++attribute_index) {
+				if (slang::Attribute* attribute = entry_point->getFunctionReflection()->getUserAttributeByIndex(attribute_index)) {
+					Dictionary arguments{};
+					for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+						String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
+						arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+					}
+					entry_point_attributes.set(attribute->getName(), arguments);
 				}
-				entry_point_attributes.set(attribute->getName(), arguments);
 			}
+			kernel->set_user_attributes(entry_point_attributes);
 		}
-		kernel->set_user_attributes(entry_point_attributes);
+
+		slang::IMetadata *metadata;
+		if (linked_program->getEntryPointMetadata(entry_point_index, 0, &metadata) == SLANG_OK) {
+			Dictionary parameters{};
+			if (slang::TypeLayoutReflection* global_params_layout = linked_program->getLayout()->getGlobalParamsTypeLayout()) {
+				for (size_t field_index = 0; field_index < global_params_layout->getFieldCount(); ++field_index) {
+					Dictionary field_info{};
+					slang::VariableLayoutReflection* field = global_params_layout->getFieldByIndex(field_index);
+					bool used{};
+					if (metadata->isParameterLocationUsed(SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT, field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
+						field_info.set("name", field->getName());
+						field_info.set("type", _to_godot_type(field->getType()));
+						field_info.set("binding_index", field->getBindingIndex());
+						field_info.set("descriptor_set", field->getBindingSpace());
+						field_info.set("binding_range_offset", global_params_layout->getFieldBindingRangeOffset(field_index));
+						parameters.set(field->getName(), field_info);
+					}
+				}
+			}
+			kernel->set_parameters(parameters);
+		}
 
 		out_kernels.push_back(kernel);
 	}
