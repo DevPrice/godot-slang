@@ -92,10 +92,11 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 					local_size.z,
 				)
 				for view in range(view_count):
-					_task.set_shader_parameter(
-						"scene_color",
-						_create_image(kernel.parameters.scene_color.binding_index, render_scene_buffers.get_color_layer(view)),
-					)
+					if kernel.parameters.has("scene_color"):
+						_task.set_shader_parameter(
+							"scene_color",
+							_create_image(kernel.parameters.scene_color.binding_index, render_scene_buffers.get_color_layer(view)),
+						)
 					_task.dispatch_at(i, groups)
 
 #region utility functions
