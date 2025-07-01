@@ -119,7 +119,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		}
 	}
 
-	for (size_t entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
+	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		{
 			slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef());
@@ -131,7 +131,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		}
 
 		Slang::ComPtr<slang::IComponentType> composed_program;
-		if (entry_point) {
+		{
 			const std::array<slang::IComponentType *, 2> componentTypes = {
 				slang_module,
 				entry_point
@@ -160,8 +160,6 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			}
 		}
 
-		const String entry_point_name = entry_point->getFunctionReflection()->getName();
-
 		Slang::ComPtr<slang::IBlob> compiled_blob;
 		if (linked_program) {
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
@@ -172,8 +170,15 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			}
 		}
 
+		const auto entry_point_function = entry_point->getFunctionReflection();
+		if (!entry_point_function) {
+			UtilityFunctions::push_error("Slang: Failed to reflect entry point function.");
+			return FAILED;
+		}
+		const String entry_point_name = entry_point_function->getName();
+
 		{
-			slang::Attribute *shader_attribute = entry_point->getFunctionReflection()->findAttributeByName(global_session, "shader");
+			slang::Attribute *shader_attribute = entry_point_function->findAttributeByName(global_session, "shader");
 			if (!shader_attribute) {
 				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
 				continue;
@@ -190,7 +195,6 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 				continue;
 			}
 		}
-
 
 		const Ref kernel = memnew(ComputeShaderKernel);
 		kernel->set_kernel_name(entry_point_name);
@@ -222,8 +226,8 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 
 		{
 			Dictionary entry_point_attributes{};
-			for (size_t attribute_index = 0; attribute_index < entry_point->getFunctionReflection()->getUserAttributeCount(); ++attribute_index) {
-				if (slang::Attribute* attribute = entry_point->getFunctionReflection()->getUserAttributeByIndex(attribute_index)) {
+			for (size_t attribute_index = 0; attribute_index < entry_point_function->getUserAttributeCount(); ++attribute_index) {
+				if (slang::Attribute* attribute = entry_point_function->getUserAttributeByIndex(attribute_index)) {
 					Dictionary arguments{};
 					for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
 						String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
