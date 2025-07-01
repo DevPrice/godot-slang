@@ -131,7 +131,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		}
 
 		Slang::ComPtr<slang::IComponentType> composed_program;
-		{
+		if (entry_point) {
 			const std::array<slang::IComponentType *, 2> componentTypes = {
 				slang_module,
 				entry_point

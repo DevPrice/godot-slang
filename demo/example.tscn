@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bgq87xxylxm55" path="res://example.gd" id="1_jdh55"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://grayscale.slang" id="2_8lvy3"]
-[ext_resource type="Script" uid="uid://c5n5squylo54a" path="res://base_compositor_effect.gd" id="3_wcwec"]
+[ext_resource type="Script" uid="uid://whkm038scwsb" path="res://compute_shader_effect.gd" id="4_wcwec"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -17,19 +17,19 @@ sky = SubResource("Sky_n51mc")
 tonemap_mode = 2
 glow_enabled = true
 
-[sub_resource type="CompositorEffect" id="CompositorEffect_ei00m"]
+[sub_resource type="CompositorEffect" id="CompositorEffect_wcwec"]
 resource_local_to_scene = false
 resource_name = ""
 enabled = true
 effect_callback_type = 4
 needs_motion_vectors = false
 needs_normal_roughness = false
-script = ExtResource("3_wcwec")
+script = ExtResource("4_wcwec")
 compute_shader = ExtResource("2_8lvy3")
-metadata/_custom_type_script = "uid://c5n5squylo54a"
+metadata/_custom_type_script = "uid://whkm038scwsb"
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
-compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_ei00m")])
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_wcwec")])
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)

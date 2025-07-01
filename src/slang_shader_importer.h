@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slang.h"
+
 #include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
 

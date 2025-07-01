@@ -1,5 +1,5 @@
 @tool
-class_name BaseCompositorEffect extends CompositorEffect
+class_name ComputeShaderEffect extends CompositorEffect
 
 @export var compute_shader: ComputeShaderFile:
 	set(value):
@@ -10,11 +10,10 @@ var _context: StringName = &"compositor_effect"
 
 var rd: RenderingDevice
 
-var _shader: RID
-var _pipeline: RID
-
 var _linear_sampler: RID
 var _nearest_sampler: RID
+
+var _task: ComputeShaderTask
 
 func _init() -> void:
 	RenderingServer.call_on_render_thread.call_deferred(_initialize_compute)
@@ -23,8 +22,6 @@ func _notification(what) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		# When this is called it should be safe to clean up our shader.
 		# If not we'll crash anyway because we can no longer call our _render_callback.
-		if _shader.is_valid():
-			rd.free_rid(_shader)
 		if _linear_sampler.is_valid():
 			rd.free_rid(_linear_sampler)
 		if _nearest_sampler.is_valid():
@@ -44,6 +41,9 @@ func reload_shader() -> void:
 		printerr("No shader file specified!")
 		return
 
+	_task = ComputeShaderTask.new()
+	_task.kernels = compute_shader.kernels
+
 	if Engine.is_editor_hint():
 		Engine.get_singleton("EditorInterface").get_resource_filesystem().resources_reimported.connect(
 			func (resources: PackedStringArray):
@@ -51,23 +51,6 @@ func reload_shader() -> void:
 					RenderingServer.call_on_render_thread(reload_shader),
 			Object.CONNECT_ONE_SHOT,
 		)
-
-	var kernel := compute_shader.kernels[0] if not compute_shader.kernels.is_empty() else null
-	if not kernel:
-		return
-
-	var shader_spirv := kernel.get_spirv()
-	if not shader_spirv:
-		printerr("Failed to create spirv from shader resource!")
-		return
-
-	# TODO: We should free the old RID, but that gives an error for some reason?
-	_shader = rd.shader_create_from_spirv(shader_spirv)
-
-	if _shader:
-		_pipeline = rd.compute_pipeline_create(_shader)
-	else:
-		_pipeline = RID()
 
 func _create_sampler(filter: RenderingDevice.SamplerFilter, repeat_mode: RenderingDevice.SamplerRepeatMode) -> RID:
 	var sampler_state: RDSamplerState = RDSamplerState.new()
@@ -88,7 +71,7 @@ func _get_nearest_sampler() -> RID:
 	return _nearest_sampler
 
 func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) -> void:
-	if rd and _shader.is_valid() and _pipeline.is_valid() and p_effect_callback_type == effect_callback_type:
+	if rd and _task and p_effect_callback_type == effect_callback_type:
 		# Get our render scene buffers object, this gives us access to our render buffers.
 		# Note that implementation differs per renderer hence the need for the cast.
 		var render_scene_buffers: RenderSceneBuffersRD = p_render_data.get_render_scene_buffers()
@@ -98,34 +81,22 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 			if size.x == 0 or size.y == 0:
 				return
 
-			var local_size := compute_shader.kernels[0].thread_group_size
-			var groups := Vector3i(
-				(size.x - 1) / local_size.x + 1,
-				(size.y - 1) / local_size.y + 1,
-				local_size.z,
-			)
-
 			# Loop through views just in case we're doing stereo rendering. No extra cost if this is mono.
 			var view_count := render_scene_buffers.get_view_count()
-			for view in range(view_count):
-				_render_view(p_render_data, view, groups)
-
-func _render_view(render_data: RenderData, view: int, groups: Vector3i) -> void:
-	# Create a uniform set, this will be cached, the cache will be cleared if our viewports configuration is changed
-	var uniforms := _get_uniforms(render_data, view)
-
-	_render_shader(_pipeline, _shader, uniforms, PackedByteArray(), groups)
-
-func _render_shader(pipeline: RID, shader: RID, uniforms: Array[RDUniform], push_constant: PackedByteArray, groups: Vector3i) -> void:
-	var compute_list := rd.compute_list_begin()
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
-	if not uniforms.is_empty():
-		var uniform_set := UniformSetCacheRD.get_cache(shader, 0, uniforms)
-		rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
-	if not push_constant.is_empty():
-		rd.compute_list_set_push_constant(compute_list, push_constant, push_constant.size())
-	rd.compute_list_dispatch(compute_list, groups.x, groups.y, groups.z)
-	rd.compute_list_end()
+			for i: int in range(_task.kernels.size()):
+				var kernel := compute_shader.kernels[i]
+				var local_size := kernel.thread_group_size
+				var groups := Vector3i(
+					(size.x - 1) / local_size.x + 1,
+					(size.y - 1) / local_size.y + 1,
+					local_size.z,
+				)
+				for view in range(view_count):
+					_task.set_shader_parameter(
+						"scene_color",
+						_create_image(kernel.parameters.scene_color.binding_index, render_scene_buffers.get_color_layer(view)),
+					)
+					_task.dispatch_at(i, groups)
 
 #region utility functions
 
