@@ -125,10 +125,11 @@ func _render_view(render_data: RenderData, view: int, groups: Vector3i) -> void:
 	_render_shader(_pipeline, _shader, uniforms, PackedByteArray(), groups)
 
 func _render_shader(pipeline: RID, shader: RID, uniforms: Array[RDUniform], push_constant: PackedByteArray, groups: Vector3i) -> void:
-	var uniform_set := UniformSetCacheRD.get_cache(shader, 0, uniforms)
 	var compute_list := rd.compute_list_begin()
 	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
-	rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
+	if not uniforms.is_empty():
+		var uniform_set := UniformSetCacheRD.get_cache(shader, 0, uniforms)
+		rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
 	if not push_constant.is_empty():
 		rd.compute_list_set_push_constant(compute_list, push_constant, push_constant.size())
 	rd.compute_list_dispatch(compute_list, groups.x, groups.y, groups.z)
@@ -168,10 +169,10 @@ func _get_uniforms(_render_data: RenderData, _view: int) -> Array[RDUniform]:
 	## TEMP
 	if true:
 		var render_scene_buffers: RenderSceneBuffersRD = _render_data.get_render_scene_buffers()
-		var binding: int = compute_shader.kernels[0].parameters.scene_color.binding_index
-		return [
-			_create_image(binding, render_scene_buffers.get_color_layer(_view)),
-		]
+		var uniforms: Array[RDUniform] = []
+		if compute_shader.kernels[0].parameters.has("scene_color"):
+			uniforms.push_back(_create_image(compute_shader.kernels[0].parameters.scene_color.binding_index, render_scene_buffers.get_color_layer(_view)))
+		return uniforms
 	## ####
 	return []
 

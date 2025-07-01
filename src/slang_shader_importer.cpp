@@ -242,14 +242,30 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 				for (size_t field_index = 0; field_index < global_params_layout->getFieldCount(); ++field_index) {
 					Dictionary field_info{};
 					slang::VariableLayoutReflection* field = global_params_layout->getFieldByIndex(field_index);
+					slang::ParameterCategory category = field->getTypeLayout()->getParameterCategory();
 					bool used{};
-					if (metadata->isParameterLocationUsed(SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT, field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
+					if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
 						field_info.set("name", field->getName());
-						field_info.set("type", _to_godot_type(field->getType()));
 						field_info.set("binding_index", field->getBindingIndex());
-						field_info.set("descriptor_set", field->getBindingSpace());
-						field_info.set("binding_range_offset", global_params_layout->getFieldBindingRangeOffset(field_index));
+						field_info.set("binding_space", field->getBindingSpace());
 						parameters.set(field->getName(), field_info);
+					}
+				}
+			}
+			{
+				slang::VariableLayoutReflection* var_layout = entry_point_layout->getVarLayout();
+				if (slang::TypeLayoutReflection* type_layout = var_layout->getTypeLayout()) {
+					for (size_t field_index = 0; field_index < type_layout->getFieldCount(); ++field_index) {
+						Dictionary param_info{};
+						slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(field_index);
+						slang::ParameterCategory category = field->getTypeLayout()->getParameterCategory();
+						bool used{};
+						if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
+							param_info.set("name", field->getName());
+							param_info.set("binding_index", entry_point_layout->getVarLayout()->getBindingIndex() + field->getBindingIndex());
+							param_info.set("binding_space", field->getBindingSpace());
+							parameters.set(field->getName(), param_info);
+						}
 					}
 				}
 			}
