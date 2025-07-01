@@ -248,6 +248,20 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 						field_info.set("name", field->getName());
 						field_info.set("binding_index", field->getBindingIndex());
 						field_info.set("binding_space", field->getBindingSpace());
+						if (slang::VariableReflection* variable = field->getVariable()) {
+							Dictionary param_attributes{};
+							for (size_t attribute_index = 0; attribute_index < variable->getUserAttributeCount(); ++attribute_index) {
+								if (slang::Attribute* attribute = variable->getUserAttributeByIndex(attribute_index)) {
+									Dictionary arguments{};
+									for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+										String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
+										arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+									}
+									param_attributes.set(attribute->getName(), arguments);
+								}
+							}
+							field_info.set("user_attributes", param_attributes);
+						}
 						parameters.set(field->getName(), field_info);
 					}
 				}
@@ -262,7 +276,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 						bool used{};
 						if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
 							param_info.set("name", field->getName());
-							param_info.set("binding_index", entry_point_layout->getVarLayout()->getBindingIndex() + field->getBindingIndex());
+							param_info.set("binding_index", var_layout->getBindingIndex() + field->getBindingIndex());
 							param_info.set("binding_space", field->getBindingSpace());
 							parameters.set(field->getName(), param_info);
 						}
