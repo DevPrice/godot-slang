@@ -94,11 +94,11 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         const int32_t binding_index = param.get("binding_index", 0);
         TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
         const StringName param_name = param.get("name", StringName{});
+        const int64_t param_type = param.get("type", -1);
         if (!param_name.is_empty()) {
             Ref uniform = memnew(RDUniform);
             uniform->set_binding(binding_index);
-            // TODO: Reflect uniform type
-            uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_IMAGE);
+            uniform->set_uniform_type(static_cast<RenderingDevice::UniformType>(param_type));
             uniform->add_id(_shader_parameters[param["name"]]);
             uniforms.push_back(uniform);
         }

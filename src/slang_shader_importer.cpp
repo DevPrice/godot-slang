@@ -255,6 +255,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 					bool used{};
 					if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
 						field_info.set("name", field->getName());
+						field_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
 						field_info.set("binding_index", field->getBindingIndex());
 						field_info.set("binding_space", field->getBindingSpace());
 						if (slang::VariableReflection* variable = field->getVariable()) {
@@ -285,6 +286,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 						bool used{};
 						if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
 							param_info.set("name", field->getName());
+							param_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
 							param_info.set("binding_index", var_layout->getBindingIndex() + field->getBindingIndex());
 							param_info.set("binding_space", field->getBindingSpace());
 							parameters.set(field->getName(), param_info);
@@ -377,4 +379,29 @@ Variant SlangShaderImporter::_to_godot_value(slang::Attribute* attribute, const 
 		}
 	}
 	return Variant{};
+}
+
+RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::BindingType type) {
+	const int64_t base_type = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_BASE_MASK;
+	const int64_t type_ext = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_EXT_MASK;
+	switch (base_type) {
+		case SLANG_BINDING_TYPE_SAMPLER:
+			return RenderingDevice::UNIFORM_TYPE_SAMPLER;
+		case SLANG_BINDING_TYPE_TEXTURE:
+			if (type_ext & SLANG_BINDING_TYPE_MUTABLE_FLAG) {
+				return RenderingDevice::UNIFORM_TYPE_IMAGE;
+			}
+			return RenderingDevice::UNIFORM_TYPE_TEXTURE;
+		case SLANG_BINDING_TYPE_COMBINED_TEXTURE_SAMPLER:
+			return RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+		case SLANG_BINDING_TYPE_CONSTANT_BUFFER:
+		case SLANG_BINDING_TYPE_PARAMETER_BLOCK:
+		case SLANG_BINDING_TYPE_TYPED_BUFFER:
+		case SLANG_BINDING_TYPE_RAW_BUFFER:
+		case SLANG_BINDING_TYPE_INPUT_RENDER_TARGET:
+		case SLANG_BINDING_TYPE_INLINE_UNIFORM_DATA:
+		case SLANG_BINDING_TYPE_RAY_TRACING_ACCELERATION_STRUCTURE:
+		default:
+			return static_cast<RenderingDevice::UniformType>(-1);
+	}
 }
