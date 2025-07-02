@@ -61,7 +61,7 @@ void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i t
     }
 }
 
-void ComputeShaderTask::dispatch_at(int64_t kernel_index, Vector3i thread_groups) {
+void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups) {
     _dispatch(kernel_index, thread_groups);
 }
 
@@ -75,7 +75,7 @@ RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevi
 
 RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, RenderingDevice *rd) {
     if (!_kernel_pipelines.has(kernel_index)) {
-        RID shader_rid = _get_shader_rid(kernel_index, rd);
+        const RID shader_rid = _get_shader_rid(kernel_index, rd);
         _kernel_pipelines.set(kernel_index, rd->compute_pipeline_create(shader_rid));
     }
     return _kernel_pipelines.get(kernel_index, RID{});

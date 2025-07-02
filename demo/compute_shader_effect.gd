@@ -93,6 +93,8 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 				)
 				for view in range(view_count):
 					_task.set_shader_parameter("scene_color", render_scene_buffers.get_color_layer(view))
+					_task.set_shader_parameter("scene_texture", render_scene_buffers.get_color_layer(view))
+					_task.set_shader_parameter("sampler_state", _get_linear_sampler())
 					_task.dispatch_at(i, groups)
 
 #region utility functions
