@@ -227,7 +227,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		{
 			SlangUInt sizes[3];
 			entry_point_layout->getComputeThreadGroupSize(3, sizes);
-			kernel->set_thread_group_size(Vector3(sizes[0], sizes[1], sizes[2]));
+			kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 		}
 
 		{

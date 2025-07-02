@@ -10,6 +10,6 @@ void ComputeShaderKernel::_bind_methods() {
 
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, StringName, kernel_name)
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Ref<RDShaderSPIRV>, spirv)
-GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Vector3, thread_group_size)
+GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Vector3i, thread_group_size)
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Dictionary, user_attributes)
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Dictionary, parameters)
