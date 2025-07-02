@@ -107,7 +107,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
 		slang_module = session->loadModuleFromSourceString(
 				"main_module",
-				p_source_file.utf8().get_data(),
+				p_source_file.get_file().utf8().get_data(),
 				shader_source.utf8().get_data(),
 				diagnostics_blob.writeRef());
 		if (!slang_module) {
@@ -160,7 +160,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		if (linked_program) {
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = linked_program->getEntryPointCode(
-				entry_point_index, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
+				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 			}
@@ -196,7 +196,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		{
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = linked_program->getEntryPointMetadata(
-				entry_point_index, 0, &metadata, diagnostics_blob.writeRef());
+				0, 0, &metadata, diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 			}
@@ -223,7 +223,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			continue;
 		}
 
-		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(entry_point_index);
+		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
 		{
 			SlangUInt sizes[3];
 			entry_point_layout->getComputeThreadGroupSize(3, sizes);

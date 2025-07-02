@@ -126,18 +126,3 @@ static func _create_ssbo(binding: int, id: RID) -> RDUniform:
 	return _create_uniform(binding, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, [id])
 
 #endregion
-
-#region virtual functions
-
-func _get_uniforms(_render_data: RenderData, _view: int) -> Array[RDUniform]:
-	## TEMP
-	if true:
-		var render_scene_buffers: RenderSceneBuffersRD = _render_data.get_render_scene_buffers()
-		var uniforms: Array[RDUniform] = []
-		if compute_shader.kernels[0].parameters.has("scene_color"):
-			uniforms.push_back(_create_image(compute_shader.kernels[0].parameters.scene_color.binding_index, render_scene_buffers.get_color_layer(_view)))
-		return uniforms
-	## ####
-	return []
-
-#endregion
