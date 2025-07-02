@@ -87,19 +87,27 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
     const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
     Dictionary parameters = kernel->get_parameters();
     Array parameter_keys = parameters.keys();
-    for (uint32_t i = 0; i < parameter_keys.size(); i++) {
-        const StringName& key = parameter_keys[i];
+    for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
+        const StringName& key = parameter_keys[param_index];
         const Dictionary param = parameters[key];
         const int32_t binding_space = param.get("binding_space", 0);
         const int32_t binding_index = param.get("binding_index", 0);
         TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
         const StringName param_name = param.get("name", StringName{});
         const int64_t param_type = param.get("type", -1);
+        Variant value = _shader_parameters[param_name];
         if (!param_name.is_empty()) {
             Ref uniform = memnew(RDUniform);
             uniform->set_binding(binding_index);
             uniform->set_uniform_type(static_cast<RenderingDevice::UniformType>(param_type));
-            uniform->add_id(_shader_parameters[param["name"]]);
+            if (value.get_type() == Variant::ARRAY) {
+                Array array = value;
+                for (size_t i = 0; i < array.size(); ++i) {
+                    uniform->add_id(array[i]);
+                }
+            } else {
+                uniform->add_id(value);
+            }
             uniforms.push_back(uniform);
         }
     }
