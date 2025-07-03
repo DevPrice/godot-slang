@@ -339,7 +339,7 @@ Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
 				case SLANG_SCALAR_TYPE_INT16:
 				case SLANG_SCALAR_TYPE_UINT16:
 					return Variant::INT;
-				default: return Variant::NIL;
+				default: break;
 			}
 		case SLANG_TYPE_KIND_STRUCT:
 			if (String(type->getName()) == "String") {
@@ -347,9 +347,10 @@ Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
 				return Variant::STRING;
 			}
 			break;
-		// TODO: Support the other types
-		default: return Variant::NIL;
+		default: break;
 	}
+	// TODO: Support the other types
+	UtilityFunctions::push_warning("Slang: Unknown Godot type: ", type->getName(), String(" (%s)") % static_cast<int64_t>(type->getKind()));
 	return Variant::NIL;
 }
 
@@ -384,8 +385,17 @@ Variant SlangShaderImporter::_to_godot_value(slang::Attribute* attribute, const 
 				}
 				break;
 			}
-			default: return Variant{};
+			default: break;
 		}
+		// TODO: Support the other types
+		UtilityFunctions::push_warning("Slang: Failed to make Godot value for attribute: ", type->getName(), String(" (%s)") % static_cast<int64_t>(type->getKind()));
+	} else {
+		int value{};
+		if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
+			// TODO: This happens for enum types? Look into this
+			return value;
+		}
+		UtilityFunctions::push_error("Slang: Got null type pointer for attribute ", attribute->getName());
 	}
 	return Variant{};
 }

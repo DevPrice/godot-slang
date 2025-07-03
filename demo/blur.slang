@@ -1,12 +1,14 @@
 import godot;
 
+using gd;
+
 [gd::compositor::ScreenTexture]
 RWTexture2D<float4> scene_color;
 
 [gd::compositor::ScreenTexture]
 Texture2D<float4> scene_texture;
 
-[gd::LinearSampler]
+[gd::LinearSampler(SamplerRepeatMode.REPEAT)]
 SamplerState sampler_state;
 
 static const int KERNEL_RADIUS = 2;

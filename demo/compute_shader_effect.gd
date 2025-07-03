@@ -52,6 +52,15 @@ func reload_shader() -> void:
 			Object.CONNECT_ONE_SHOT,
 		)
 
+	for kernel: ComputeShaderKernel in _task.kernels:
+		for param: String in kernel.parameters:
+			if kernel.parameters[param].user_attributes.has("gd_LinearSampler"):
+				var repeat_mode: RenderingDevice.SamplerRepeatMode = kernel.parameters[param].user_attributes.gd_LinearSampler.repeat_mode
+				_task.set_shader_parameter(param, _create_sampler(RenderingDevice.SAMPLER_FILTER_LINEAR, repeat_mode))
+			if kernel.parameters[param].user_attributes.has("gd_NearestSampler"):
+				var repeat_mode: RenderingDevice.SamplerRepeatMode = kernel.parameters[param].user_attributes.gd_NearestSampler.repeat_mode
+				_task.set_shader_parameter(param, _create_sampler(RenderingDevice.SAMPLER_FILTER_NEAREST, repeat_mode))
+
 func _create_sampler(filter: RenderingDevice.SamplerFilter, repeat_mode: RenderingDevice.SamplerRepeatMode) -> RID:
 	var sampler_state: RDSamplerState = RDSamplerState.new()
 	sampler_state.min_filter = filter
@@ -93,8 +102,6 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 				)
 				for view in range(view_count):
 					for param: String in kernel.parameters:
-						if kernel.parameters[param].user_attributes.has("gd_LinearSampler"):
-							_task.set_shader_parameter(param, _get_linear_sampler())
 						if kernel.parameters[param].user_attributes.has("gd_compositor_ScreenTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_color_layer(view))
 					_task.dispatch_at(i, groups)
