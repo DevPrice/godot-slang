@@ -286,7 +286,10 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 						bool used{};
 						if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
 							param_info.set("name", field->getName());
-							param_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
+							if (field->getTypeLayout()->getBindingRangeCount() > 0) {
+								// TODO: index?
+								param_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
+							}
 							param_info.set("binding_index", var_layout->getBindingIndex() + field->getBindingIndex());
 							param_info.set("binding_space", field->getBindingSpace());
 							parameters.set(field->getName(), param_info);
