@@ -38,7 +38,7 @@ func _initialize_compute() -> void:
 func reload_shader() -> void:
 	if not rd: return
 	if not compute_shader:
-		printerr("No shader file specified!")
+		_task = null
 		return
 
 	_task = ComputeShaderTask.new()
