@@ -92,9 +92,11 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 					local_size.z,
 				)
 				for view in range(view_count):
-					_task.set_shader_parameter("scene_color", render_scene_buffers.get_color_layer(view))
-					_task.set_shader_parameter("scene_texture", render_scene_buffers.get_color_layer(view))
-					_task.set_shader_parameter("sampler_state", _get_linear_sampler())
+					for param: String in kernel.parameters:
+						if kernel.parameters[param].user_attributes.has("gd_LinearSampler"):
+							_task.set_shader_parameter(param, _get_linear_sampler())
+						if kernel.parameters[param].user_attributes.has("gd_compositor_ScreenTexture"):
+							_task.set_shader_parameter(param, render_scene_buffers.get_color_layer(view))
 					_task.dispatch_at(i, groups)
 
 #region utility functions

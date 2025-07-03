@@ -92,6 +92,12 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 	session_desc.targets = &target_desc;
 	session_desc.targetCount = 1;
 
+	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
+	const String modules_path = extension_path.get_base_dir().path_join("modules");
+	char const* search_paths = { modules_path.utf8().get_data() };
+	session_desc.searchPaths = &search_paths;
+	session_desc.searchPathCount = 1;
+
 	Slang::ComPtr<slang::ISession> session;
 	global_session->createSession(session_desc, session.writeRef());
 
@@ -106,7 +112,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
 		slang_module = session->loadModuleFromSourceString(
-				"main_module",
+				"__main_module",
 				p_source_file.get_file().utf8().get_data(),
 				shader_source.utf8().get_data(),
 				diagnostics_blob.writeRef());
@@ -130,7 +136,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		if (entry_point) {
 			const std::array<slang::IComponentType *, 2> componentTypes = {
 				slang_module,
-				entry_point
+				entry_point,
 			};
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = session->createCompositeComponentType(
