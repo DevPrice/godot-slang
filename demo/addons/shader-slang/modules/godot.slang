@@ -21,4 +21,13 @@ public struct gd_NearestSamplerAttribute {
 };
 
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_compositor_ScreenTextureAttribute { };
+public struct gd_compositor_ScreenTextureAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_DepthTextureAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_SceneBufferAttribute {
+	string context = "render_buffers";
+	string name;
+};
