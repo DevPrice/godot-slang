@@ -146,6 +146,8 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 					diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+			} else if (diagnostics_blob) {
+				UtilityFunctions::push_warning("Slang (program): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 			}
 		}
 
@@ -169,6 +171,11 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+			} else if (diagnostics_blob) {
+				// TODO: ignore these until we figure out:
+				// (0): error 100: failed to load downstream compiler 'spirv-opt'
+				// (0): note 99999: failed to load dynamic library 'slang-glslang'
+				// UtilityFunctions::push_warning("Slang (link): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 			}
 		}
 
@@ -205,6 +212,8 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 				0, 0, &metadata, diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+			} else if (diagnostics_blob) {
+				UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 			}
 		}
 
@@ -226,6 +235,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		out_kernels.push_back(kernel);
 
 		if (!compile_error.is_empty()) {
+			UtilityFunctions::push_error("Slang compilation failed for entry point: ", entry_point_name);
 			continue;
 		}
 

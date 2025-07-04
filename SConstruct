@@ -50,6 +50,7 @@ if env["target"] == "editor":
         "slang/build/RelWithDebInfo/lib/core.lib",
         "slang/build/external/miniz/RelWithDebInfo/miniz.lib",
         "slang/build/external/lz4/build/cmake/RelWithDebInfo/lz4.lib",
+        "slang/build/external/glslang/glslang/RelWithDebInfo/glslang.lib",
     ])
 
 sources = Glob("src/*.cpp")
