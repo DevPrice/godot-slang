@@ -24,6 +24,17 @@ public func normal_roughness_compatibility(float4 normal_roughness) -> float4 {
 using gd;
 
 [__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_TimeAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_FrameIdAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_GlobalParamAttribute {
+	let name: string;
+};
+
+[__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_LinearSamplerAttribute {
 	let repeat_mode = SamplerRepeatMode.REPEAT;
 };
