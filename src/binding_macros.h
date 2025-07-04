@@ -3,7 +3,7 @@
 
 #define GET_SET_PROPERTY(Type, Name) \
 private: \
-    Type Name; \
+    Type Name{}; \
 public: \
     Type get_##Name() const; \
     void set_##Name(Type p_##Name); \

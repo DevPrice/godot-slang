@@ -27,9 +27,9 @@ protected:
     void dispatch_at(int64_t kernel_index, Vector3i thread_groups);
 
 private:
-    Dictionary _shader_parameters;
-    Dictionary _kernel_shaders;
-    Dictionary _kernel_pipelines;
+    Dictionary _shader_parameters{};
+    Dictionary _kernel_shaders{};
+    Dictionary _kernel_pipelines{};
 
     RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
     RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
