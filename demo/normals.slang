@@ -1,6 +1,6 @@
 import godot;
 
-[gd::compositor::ScreenTexture]
+[gd::compositor::ColorTexture]
 let out_color : RWTexture2D<float4>;
 
 [gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]

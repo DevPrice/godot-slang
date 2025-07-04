@@ -1,6 +1,6 @@
 import godot;
 
-[gd::compositor::ScreenTexture]
+[gd::compositor::ColorTexture]
 RWTexture2D<float4> scene_color;
 
 [shader("compute")]

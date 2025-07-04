@@ -2,10 +2,10 @@ import godot;
 
 using gd;
 
-[gd::compositor::ScreenTexture]
+[gd::compositor::ColorTexture]
 RWTexture2D<float4> scene_color;
 
-[gd::compositor::ScreenTexture]
+[gd::compositor::ColorTexture]
 Texture2D<float4> scene_texture;
 
 [gd::LinearSampler(SamplerRepeatMode.REPEAT)]
