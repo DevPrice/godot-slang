@@ -106,6 +106,8 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 							_task.set_shader_parameter(param, render_scene_buffers.get_color_layer(view))
 						if kernel.parameters[param].user_attributes.has("gd_compositor_DepthTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_depth_layer(view))
+						if kernel.parameters[param].user_attributes.has("gd_compositor_VelocityTexture"):
+							_task.set_shader_parameter(param, render_scene_buffers.get_velocity_layer(view))
 						if kernel.parameters[param].user_attributes.has("gd_compositor_SceneBuffer"):
 							var context: String = kernel.parameters[param].user_attributes.gd_compositor_SceneBuffer.context
 							var name: String = kernel.parameters[param].user_attributes.gd_compositor_SceneBuffer.name

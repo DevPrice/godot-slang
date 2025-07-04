@@ -1,3 +1,5 @@
+module godot;
+
 namespace gd {
 
 public enum SamplerRepeatMode {
@@ -36,6 +38,9 @@ public struct gd_compositor_ScreenTextureAttribute {};
 
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_DepthTextureAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_VelocityTextureAttribute {};
 
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_SceneBufferAttribute {
