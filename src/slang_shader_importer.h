@@ -29,6 +29,7 @@ public:
 
 private:
 	static Error _slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels);
+	static Dictionary _get_reflection_data(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
 	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
 	static Variant::Type _to_godot_type(slang::TypeReflection *type);
 	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);

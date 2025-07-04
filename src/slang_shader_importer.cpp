@@ -261,63 +261,38 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			kernel->set_user_attributes(entry_point_attributes);
 		}
 
-		{
-			Dictionary parameters{};
-			if (slang::TypeLayoutReflection* global_params_layout = linked_program->getLayout()->getGlobalParamsTypeLayout()) {
-				for (size_t field_index = 0; field_index < global_params_layout->getFieldCount(); ++field_index) {
-					Dictionary field_info{};
-					slang::VariableLayoutReflection* field = global_params_layout->getFieldByIndex(field_index);
-					slang::ParameterCategory category = field->getTypeLayout()->getParameterCategory();
-					bool used{};
-					if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
-						field_info.set("name", field->getName());
-						field_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
-						field_info.set("binding_index", field->getBindingIndex());
-						field_info.set("binding_space", field->getBindingSpace());
-						if (slang::VariableReflection* variable = field->getVariable()) {
-							Dictionary param_attributes{};
-							for (size_t attribute_index = 0; attribute_index < variable->getUserAttributeCount(); ++attribute_index) {
-								if (slang::Attribute* attribute = variable->getUserAttributeByIndex(attribute_index)) {
-									Dictionary arguments{};
-									for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-										String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
-										arguments.set(argument_name, _to_godot_value(attribute, argument_index));
-									}
-									param_attributes.set(attribute->getName(), arguments);
-								}
-							}
-							field_info.set("user_attributes", param_attributes);
-						}
-						parameters.set(field->getName(), field_info);
-					}
-				}
-			}
-			{
-				slang::VariableLayoutReflection* var_layout = entry_point_layout->getVarLayout();
-				if (slang::TypeLayoutReflection* type_layout = var_layout->getTypeLayout()) {
-					for (size_t field_index = 0; field_index < type_layout->getFieldCount(); ++field_index) {
-						Dictionary param_info{};
-						slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(field_index);
-						slang::ParameterCategory category = field->getTypeLayout()->getParameterCategory();
-						bool used{};
-						if (category && metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), field->getBindingSpace(), field->getBindingIndex(), used) == SLANG_OK && used) {
-							param_info.set("name", field->getName());
-							if (field->getTypeLayout()->getBindingRangeCount() > 0) {
-								// TODO: index?
-								param_info.set("type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
-							}
-							param_info.set("binding_index", var_layout->getBindingIndex() + field->getBindingIndex());
-							param_info.set("binding_space", field->getBindingSpace());
-							parameters.set(field->getName(), param_info);
-						}
-					}
-				}
-			}
-			kernel->set_parameters(parameters);
-		}
+		Dictionary reflection_data = _get_reflection_data(linked_program->getLayout(), metadata);
+		kernel->set_parameters(reflection_data);
 	}
 
 	return OK;
+}
+
+Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* program_layout, slang::IMetadata *metadata) {
+	Dictionary parameters{};
+	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
+		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
+		Dictionary param_info{};
+		param_info.set("name", param->getName());
+		param_info.set("binding_index", param->getBindingIndex());
+		param_info.set("binding_space", param->getBindingSpace());
+		if (slang::VariableReflection* variable = param->getVariable()) {
+			Dictionary param_attributes{};
+			for (size_t attribute_index = 0; attribute_index < variable->getUserAttributeCount(); ++attribute_index) {
+				if (slang::Attribute* attribute = variable->getUserAttributeByIndex(attribute_index)) {
+					Dictionary arguments{};
+					for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+						String argument_name = _get_attribute_argument_name(attribute, argument_index, program_layout);
+						arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+					}
+					param_attributes.set(attribute->getName(), arguments);
+				}
+			}
+			param_info.set("user_attributes", param_attributes);
+		}
+		parameters.set(param->getName(), param_info);
+	}
+	return parameters;
 }
 
 String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index, slang::ProgramLayout* layout) {
@@ -431,6 +406,7 @@ RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::
 		case SLANG_BINDING_TYPE_INLINE_UNIFORM_DATA:
 		case SLANG_BINDING_TYPE_RAY_TRACING_ACCELERATION_STRUCTURE:
 		default:
+			UtilityFunctions::push_warning("Unknown binding type: ", base_type);
 			return static_cast<RenderingDevice::UniformType>(-1);
 	}
 }
