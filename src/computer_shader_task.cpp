@@ -14,6 +14,96 @@ void ComputeShaderTask::_bind_methods() {
     BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
 }
 
+void RDUniformBuffer::_bind_methods() {
+}
+
+RDUniformBuffer::~RDUniformBuffer() {
+    if (rid.is_valid()) {
+        RenderingServer::get_singleton()->free_rid(rid);
+    }
+}
+
+void RDUniformBuffer::write(const size_t offset, const size_t size, const Variant data) {
+    if (buffer.size() < offset + size) {
+        buffer.resize((offset + size + 15) & ~15);
+    }
+    switch (data.get_type()) {
+        case Variant::BOOL:
+            buffer.encode_s32(offset, data ? 1 : 0);
+            break;
+        case Variant::INT:
+            buffer.encode_s32(offset, data);
+            break;
+        case Variant::FLOAT:
+            buffer.encode_float(offset, data);
+            break;
+        case Variant::VECTOR2: {
+            const Vector2 vector = data;
+            buffer.encode_float(offset, vector.x);
+            buffer.encode_float(offset + 4, vector.y);
+            break;
+        }
+        case Variant::VECTOR3: {
+            const Vector3 vector = data;
+            buffer.encode_float(offset, vector.x);
+            buffer.encode_float(offset + 4, vector.y);
+            buffer.encode_float(offset + 8, vector.z);
+            break;
+        }
+        case Variant::VECTOR4: {
+            const Vector4 vector = data;
+            buffer.encode_float(offset, vector.x);
+            buffer.encode_float(offset + 4, vector.y);
+            buffer.encode_float(offset + 8, vector.z);
+            buffer.encode_float(offset + 12, vector.w);
+            break;
+        }
+        case Variant::COLOR: {
+            const Color color = data;
+            buffer.encode_float(offset, color.r);
+            buffer.encode_float(offset + 4, color.g);
+            buffer.encode_float(offset + 8, color.b);
+            if (size >= 16) {
+                buffer.encode_float(offset + 12, color.a);
+            }
+            break;
+        }
+        case Variant::VECTOR2I: {
+            const Vector2i vector = data;
+            buffer.encode_s32(offset, vector.x);
+            buffer.encode_s32(offset + 4, vector.y);
+            break;
+        }
+        case Variant::VECTOR3I: {
+            const Vector3i vector = data;
+            buffer.encode_s32(offset, vector.x);
+            buffer.encode_s32(offset + 4, vector.y);
+            buffer.encode_s32(offset + 8, vector.z);
+            break;
+        }
+        case Variant::VECTOR4I: {
+            const Vector4i vector = data;
+            buffer.encode_s32(offset, vector.x);
+            buffer.encode_s32(offset + 4, vector.y);
+            buffer.encode_s32(offset + 8, vector.z);
+            buffer.encode_s32(offset + 12, vector.w);
+            break;
+        }
+        default: break;
+    }
+    if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
+        if (!rid.is_valid()) {
+            rid = rd->uniform_buffer_create(buffer.size(), buffer);
+        } else {
+            // TODO: Avoid updating the full buffer every frame
+            rd->buffer_update(rid, 0, buffer.size(), buffer);
+        }
+    }
+}
+
+GET_SET_PROPERTY_IMPL(RDUniformBuffer, RID, rid)
+GET_SET_PROPERTY_IMPL(RDUniformBuffer, PackedByteArray, buffer)
+
 ComputeShaderTask::ComputeShaderTask() {
     _linear_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
     _nearest_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
@@ -115,6 +205,27 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
     return RID();
 }
 
+void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
+    const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+    Dictionary parameters = kernel->get_parameters();
+    Array parameter_keys = parameters.keys();
+    for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
+        const StringName& key = parameter_keys[param_index];
+        const Dictionary param = parameters[key];
+        const int64_t param_type = param.get("type", -1);
+        const StringName param_name = param.get("name", StringName{});
+        const int64_t binding_space = param.get("binding_space", 0);
+        const int64_t binding_index = param.get("binding_index", 0);
+        if (!param_name.is_empty() && param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) {
+            const Variant value = _shader_parameters[param_name];
+            const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
+            const int64_t offset = param.get("offset", 0);
+            const int64_t size = param.get("size", 0);
+            buffer->write(offset, size, value);
+        }
+    }
+}
+
 void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
     Dictionary uniform_sets{};
 
@@ -125,12 +236,15 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         const StringName& key = parameter_keys[param_index];
         const Dictionary param = parameters[key];
         const int64_t param_type = param.get("type", -1);
+        if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) continue;
+
         const StringName param_name = param.get("name", StringName{});
-        const int32_t binding_space = param.get("binding_space", 0);
-        const int32_t binding_index = param.get("binding_index", 0);
+        const int64_t binding_space = param.get("binding_space", 0);
+        const int64_t binding_index = param.get("binding_index", 0);
         if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
             const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
-            if (Variant value = _shader_parameters[param_name]; value.get_type() != Variant::NIL) {
+            Variant value = _shader_parameters[param_name];
+            if (value.get_type() != Variant::NIL) {
                 Ref uniform = memnew(RDUniform);
                 uniform->set_binding(binding_index);
                 uniform->set_uniform_type(uniform_type);
@@ -148,7 +262,6 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
                 Ref<RDUniform> uniform = _get_default_uniform(uniform_type, param["user_attributes"]);
                 if (uniform.is_valid()) {
                     uniform->set_binding(binding_index);
-                    uniform->set_uniform_type(uniform_type);
                     TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
                     uniforms.push_back(uniform);
                 }
@@ -156,11 +269,25 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         }
     }
 
-    Array uniform_set_keys = uniform_sets.keys();
+    const Array uniform_buffer_keys = _uniform_buffers.keys();
+    for (uint32_t i = 0; i < uniform_buffer_keys.size(); i++) {
+        Vector2i key = uniform_buffer_keys[i];
+        const Ref<RDUniformBuffer> buffer = _uniform_buffers[key];
+        if (buffer.is_valid()) {
+            const Ref uniform = memnew(RDUniform);
+            uniform->set_binding(key.x);
+            uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
+            uniform->add_id(buffer->get_rid());
+            TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(key.y, TypedArray<RDUniform>{});
+            uniforms.push_back(uniform);
+        }
+    }
+
+    const RID shader_rid = _get_shader_rid(kernel_index, rd);
+    const Array uniform_set_keys = uniform_sets.keys();
     for (uint32_t i = 0; i < uniform_set_keys.size(); i++) {
         const uint32_t key = uniform_set_keys[i];
         const TypedArray<RDUniform> value = uniform_sets.get(key, TypedArray<RDUniform>{});
-        RID shader_rid = _get_shader_rid(kernel_index, rd);
         RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, key, value);
         rd->compute_list_bind_uniform_set(compute_list, uniform_set, key);
     }
@@ -202,6 +329,15 @@ Ref<RDUniform> ComputeShaderTask::_get_default_uniform(const RenderingDevice::Un
     return nullptr;
 }
 
+Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t binding, const int64_t set) {
+    const Vector2i key(binding, set);
+    if (!_uniform_buffers.has(key)) {
+        const Ref buffer = memnew(RDUniformBuffer);
+        _uniform_buffers[key] = buffer;
+    }
+    return _uniform_buffers[key];
+}
+
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
     if (kernel_index < 0 || kernel_index >= kernels.size()) {
         UtilityFunctions::push_error(String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({String::num_int64(kernel_index), String::num_int64(kernels.size() - 1)}));
@@ -216,6 +352,7 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
         UtilityFunctions::push_error("ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
         return;
     }
+    _update_buffers(kernel_index);
     const int64_t compute_list = rendering_device->compute_list_begin();
     const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
     rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);

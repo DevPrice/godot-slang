@@ -274,9 +274,21 @@ Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* progr
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
-		param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
+		const slang::ParameterCategory category = param->getCategory();
 		param_info.set("binding_index", param->getBindingIndex());
 		param_info.set("binding_space", param->getBindingSpace());
+		switch (category) {
+			case slang::ParameterCategory::DescriptorTableSlot:
+				// TODO: index?
+				param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
+				break;
+			case slang::ParameterCategory::Uniform:
+				param_info.set("type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
+				param_info.set("offset", param->getOffset());
+				param_info.set("size", param->getTypeLayout()->getSize());
+				break;
+			default: break;
+		}
 		if (slang::VariableReflection* variable = param->getVariable()) {
 			Dictionary param_attributes{};
 			for (size_t attribute_index = 0; attribute_index < variable->getUserAttributeCount(); ++attribute_index) {
