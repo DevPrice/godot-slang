@@ -18,3 +18,10 @@ config/icon="res://icon.svg"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/shader-slang/plugin/plugin.cfg")
+
+[shader_globals]
+
+global_texture={
+"type": "sampler2D",
+"value": "res://global_texture.tres"
+}

@@ -146,8 +146,9 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
                 uniforms.push_back(uniform);
             } else {
                 Ref<RDUniform> uniform = _get_default_uniform(uniform_type, param["user_attributes"]);
-                uniform->set_binding(binding_index);
                 if (uniform.is_valid()) {
+                    uniform->set_binding(binding_index);
+                    uniform->set_uniform_type(uniform_type);
                     TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
                     uniforms.push_back(uniform);
                 }
@@ -168,19 +169,35 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 Ref<RDUniform> ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
     Ref uniform = memnew(RDUniform);
     uniform->set_uniform_type(type);
-    if (type == RenderingDevice::UNIFORM_TYPE_SAMPLER) {
-        if (user_attributes.has("gd_LinearSampler")) {
-            const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
-            int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", -1);
-            uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
+    if (user_attributes.has("gd_GlobalParam")) {
+        const Dictionary attribute = user_attributes["gd_GlobalParam"];
+        const String param_name = attribute["name"];
+        // TODO: This doesn't work
+        const RID resource_rid = RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
+        if (resource_rid.is_valid()) {
+            uniform->add_id(resource_rid);
             return uniform;
         }
-        if (user_attributes.has("gd_NearestSampler")) {
-            const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
-            int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", 0);
-            uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
-            return uniform;
-        }
+    }
+    switch (type) {
+        case RenderingDevice::UNIFORM_TYPE_SAMPLER:
+            if (user_attributes.has("gd_LinearSampler")) {
+                const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
+                int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", -1);
+                uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
+                return uniform;
+            }
+            if (user_attributes.has("gd_NearestSampler")) {
+                const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
+                int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", 0);
+                uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
+                return uniform;
+            }
+            break;
+        case RenderingDevice::UNIFORM_TYPE_TEXTURE:
+
+            break;
+        default: return nullptr;
     }
     return nullptr;
 }
