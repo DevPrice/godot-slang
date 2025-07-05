@@ -7,9 +7,6 @@ import godot;
 [gd::compositor::ColorTexture]
 RWTexture2D<float4> scene_color;
 
-[gd::FrameId]
-int frame;
-
 [gd::Time]
 float t;
 
