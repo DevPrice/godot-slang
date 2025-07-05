@@ -1,5 +1,6 @@
 #include "computer_shader_task.h"
 
+#include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
@@ -11,6 +12,11 @@ void ComputeShaderTask::_bind_methods() {
     BIND_METHOD(ComputeShaderTask, dispatch, "kernel_name", "thread_groups")
     BIND_METHOD(ComputeShaderTask, dispatch_at, "kernel_index", "thread_groups")
     BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
+}
+
+ComputeShaderTask::ComputeShaderTask() {
+    _linear_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
+    _nearest_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
 }
 
 ComputeShaderTask::~ComputeShaderTask() {
@@ -25,6 +31,14 @@ ComputeShaderTask::~ComputeShaderTask() {
         for (size_t i = 0; i < shader_keys.size(); ++i) {
             if (RID key = shader_keys[i]; key.is_valid()) {
                 rd->free_rid(_kernel_shaders[key]);
+            }
+        }
+        for (size_t i = 0; i < RenderingDevice::SAMPLER_REPEAT_MODE_MAX; ++i) {
+            if (RID rid = _nearest_sampler_cache[i]; rid.is_valid()) {
+                rd->free_rid(rid);
+            }
+            if (RID rid = _linear_sampler_cache[i]; rid.is_valid()) {
+                rd->free_rid(rid);
             }
         }
     }
@@ -81,6 +95,26 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
     return _kernel_pipelines.get(kernel_index, RID{});
 }
 
+RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter, const RenderingDevice::SamplerRepeatMode repeat_mode) const {
+    TypedArray<RID> sampler_cache = filter == RenderingDevice::SamplerFilter::SAMPLER_FILTER_NEAREST ? _nearest_sampler_cache : _linear_sampler_cache;
+    if (RID cached_value = sampler_cache[repeat_mode]; cached_value.is_valid()) {
+        return cached_value;
+    }
+    if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
+        const Ref sampler_state = memnew(RDSamplerState);
+        sampler_state->set_min_filter(filter);
+        sampler_state->set_mag_filter(filter);
+        sampler_state->set_mip_filter(filter);
+        sampler_state->set_repeat_u(repeat_mode);
+        sampler_state->set_repeat_v(repeat_mode);
+        sampler_state->set_repeat_w(repeat_mode);
+        const RID sampler_rid = rd->sampler_create(sampler_state);
+        sampler_cache[repeat_mode] = sampler_rid;
+        return sampler_rid;
+    }
+    return RID();
+}
+
 void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
     Dictionary uniform_sets{};
 
@@ -90,25 +124,34 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
     for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
         const StringName& key = parameter_keys[param_index];
         const Dictionary param = parameters[key];
+        const int64_t param_type = param.get("type", -1);
+        const StringName param_name = param.get("name", StringName{});
         const int32_t binding_space = param.get("binding_space", 0);
         const int32_t binding_index = param.get("binding_index", 0);
-        const StringName param_name = param.get("name", StringName{});
-        const int64_t param_type = param.get("type", -1);
-        Variant value = _shader_parameters[param_name];
         if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
-            Ref uniform = memnew(RDUniform);
-            uniform->set_binding(binding_index);
-            uniform->set_uniform_type(static_cast<RenderingDevice::UniformType>(param_type));
-            if (value.get_type() == Variant::ARRAY) {
-                Array array = value;
-                for (size_t i = 0; i < array.size(); ++i) {
-                    uniform->add_id(array[i]);
+            const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
+            if (Variant value = _shader_parameters[param_name]; value.get_type() != Variant::NIL) {
+                Ref uniform = memnew(RDUniform);
+                uniform->set_binding(binding_index);
+                uniform->set_uniform_type(uniform_type);
+                if (value.get_type() == Variant::ARRAY) {
+                    Array array = value;
+                    for (size_t i = 0; i < array.size(); ++i) {
+                        uniform->add_id(array[i]);
+                    }
+                } else {
+                    uniform->add_id(value);
                 }
+                TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
+                uniforms.push_back(uniform);
             } else {
-                uniform->add_id(value);
+                Ref<RDUniform> uniform = _get_default_uniform(uniform_type, param["user_attributes"]);
+                uniform->set_binding(binding_index);
+                if (uniform.is_valid()) {
+                    TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
+                    uniforms.push_back(uniform);
+                }
             }
-            TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
-            uniforms.push_back(uniform);
         }
     }
 
@@ -120,6 +163,26 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, key, value);
         rd->compute_list_bind_uniform_set(compute_list, uniform_set, key);
     }
+}
+
+Ref<RDUniform> ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
+    Ref uniform = memnew(RDUniform);
+    uniform->set_uniform_type(type);
+    if (type == RenderingDevice::UNIFORM_TYPE_SAMPLER) {
+        if (user_attributes.has("gd_LinearSampler")) {
+            const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
+            int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", -1);
+            uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
+            return uniform;
+        }
+        if (user_attributes.has("gd_NearestSampler")) {
+            const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
+            int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", 0);
+            uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
+            return uniform;
+        }
+    }
+    return nullptr;
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {

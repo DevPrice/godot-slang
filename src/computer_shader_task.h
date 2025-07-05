@@ -16,7 +16,7 @@ class ComputeShaderTask : public RefCounted {
 protected:
     static void _bind_methods();
 
-    ComputeShaderTask() = default;
+    ComputeShaderTask();
     ~ComputeShaderTask() override;
 
     Variant get_shader_parameter(const StringName& param) const;
@@ -30,10 +30,14 @@ private:
     Dictionary _shader_parameters{};
     Dictionary _kernel_shaders{};
     Dictionary _kernel_pipelines{};
+    TypedArray<RID> _linear_sampler_cache{};
+    TypedArray<RID> _nearest_sampler_cache{};
 
     RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
     RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
+    RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
+    Ref<RDUniform> _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
     void _bind_uniform_sets(int64_t kernel_index, int64_t compute_list, RenderingDevice* rd);
     void _dispatch(int64_t kernel_index, Vector3i thread_groups);
 };

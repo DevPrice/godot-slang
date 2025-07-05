@@ -6,37 +6,12 @@ class_name ComputeShaderEffect extends CompositorEffect
 		compute_shader = value
 		RenderingServer.call_on_render_thread.call_deferred(reload_shader)
 
-var _context: StringName = &"compositor_effect"
-
-var rd: RenderingDevice
-
-var _linear_sampler: RID
-var _nearest_sampler: RID
-
 var _task: ComputeShaderTask
 
 func _init() -> void:
-	RenderingServer.call_on_render_thread.call_deferred(_initialize_compute)
-
-func _notification(what) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		# When this is called it should be safe to clean up our shader.
-		# If not we'll crash anyway because we can no longer call our _render_callback.
-		if _linear_sampler.is_valid():
-			rd.free_rid(_linear_sampler)
-		if _nearest_sampler.is_valid():
-			rd.free_rid(_nearest_sampler)
-
-func _initialize_compute() -> void:
-	rd = RenderingServer.get_rendering_device()
-	if not rd:
-		printerr("Failed to obtain rendering device!")
-		return
-
-	reload_shader()
+	RenderingServer.call_on_render_thread.call_deferred(reload_shader)
 
 func reload_shader() -> void:
-	if not rd: return
 	if not compute_shader:
 		_task = null
 		return
@@ -52,35 +27,8 @@ func reload_shader() -> void:
 			Object.CONNECT_ONE_SHOT,
 		)
 
-	for kernel: ComputeShaderKernel in _task.kernels:
-		for param: String in kernel.parameters:
-			if kernel.parameters[param].user_attributes.has("gd_LinearSampler"):
-				var repeat_mode: RenderingDevice.SamplerRepeatMode = kernel.parameters[param].user_attributes.gd_LinearSampler.repeat_mode
-				_task.set_shader_parameter(param, _create_sampler(RenderingDevice.SAMPLER_FILTER_LINEAR, repeat_mode))
-			if kernel.parameters[param].user_attributes.has("gd_NearestSampler"):
-				var repeat_mode: RenderingDevice.SamplerRepeatMode = kernel.parameters[param].user_attributes.gd_NearestSampler.repeat_mode
-				_task.set_shader_parameter(param, _create_sampler(RenderingDevice.SAMPLER_FILTER_NEAREST, repeat_mode))
-
-func _create_sampler(filter: RenderingDevice.SamplerFilter, repeat_mode: RenderingDevice.SamplerRepeatMode) -> RID:
-	var sampler_state: RDSamplerState = RDSamplerState.new()
-	sampler_state.min_filter = filter
-	sampler_state.mag_filter = filter
-	sampler_state.repeat_u = repeat_mode
-	sampler_state.repeat_v = repeat_mode
-	return rd.sampler_create(sampler_state)
-
-func _get_linear_sampler() -> RID:
-	if not _linear_sampler.is_valid():
-		_linear_sampler = _create_sampler(RenderingDevice.SAMPLER_FILTER_LINEAR, RenderingDevice.SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE)
-	return _linear_sampler
-
-func _get_nearest_sampler() -> RID:
-	if not _nearest_sampler.is_valid():
-		_nearest_sampler = _create_sampler(RenderingDevice.SAMPLER_FILTER_NEAREST, RenderingDevice.SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE)
-	return _nearest_sampler
-
 func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) -> void:
-	if rd and _task and p_effect_callback_type == effect_callback_type:
+	if _task and p_effect_callback_type == effect_callback_type:
 		# Get our render scene buffers object, this gives us access to our render buffers.
 		# Note that implementation differs per renderer hence the need for the cast.
 		var render_scene_buffers: RenderSceneBuffersRD = p_render_data.get_render_scene_buffers()
@@ -132,10 +80,6 @@ static func _create_uniform_buffer(binding: int, render_data: RenderData) -> RDU
 
 static func _create_image(binding: int, id: RID) -> RDUniform:
 	return _create_uniform(binding, RenderingDevice.UniformType.UNIFORM_TYPE_IMAGE, [id])
-
-func _create_texture_sampler(binding: int, id: RID, use_linear: bool = true) -> RDUniform:
-	var sampler := _get_linear_sampler() if use_linear else _get_nearest_sampler()
-	return _create_uniform(binding, RenderingDevice.UniformType.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, [sampler, id])
 
 static func _create_ssbo(binding: int, id: RID) -> RDUniform:
 	return _create_uniform(binding, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, [id])
