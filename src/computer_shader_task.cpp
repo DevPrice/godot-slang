@@ -92,11 +92,10 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         const Dictionary param = parameters[key];
         const int32_t binding_space = param.get("binding_space", 0);
         const int32_t binding_index = param.get("binding_index", 0);
-        TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
         const StringName param_name = param.get("name", StringName{});
         const int64_t param_type = param.get("type", -1);
         Variant value = _shader_parameters[param_name];
-        if (!param_name.is_empty()) {
+        if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
             Ref uniform = memnew(RDUniform);
             uniform->set_binding(binding_index);
             uniform->set_uniform_type(static_cast<RenderingDevice::UniformType>(param_type));
@@ -108,6 +107,7 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
             } else {
                 uniform->add_id(value);
             }
+            TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
             uniforms.push_back(uniform);
         }
     }
@@ -115,8 +115,9 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
     Array uniform_set_keys = uniform_sets.keys();
     for (uint32_t i = 0; i < uniform_set_keys.size(); i++) {
         const uint32_t key = uniform_set_keys[i];
-        TypedArray<RDUniform> value = uniform_sets.get(key, TypedArray<RDUniform>{});
-        RID uniform_set = UniformSetCacheRD::get_cache(_get_shader_rid(kernel_index, rd), key, value);
+        const TypedArray<RDUniform> value = uniform_sets.get(key, TypedArray<RDUniform>{});
+        RID shader_rid = _get_shader_rid(kernel_index, rd);
+        RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, key, value);
         rd->compute_list_bind_uniform_set(compute_list, uniform_set, key);
     }
 }

@@ -274,6 +274,7 @@ Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* progr
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
+		param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0))); // TODO: index?
 		param_info.set("binding_index", param->getBindingIndex());
 		param_info.set("binding_space", param->getBindingSpace());
 		if (slang::VariableReflection* variable = param->getVariable()) {
