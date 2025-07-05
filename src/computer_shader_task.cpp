@@ -98,39 +98,39 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
             BUFFER_COPY(PackedByteArray)
             break;
         }
-        case Variant::PACKED_INT32_ARRAY:{
+        case Variant::PACKED_INT32_ARRAY: {
             BUFFER_COPY(PackedInt32Array)
             break;
         }
-        case Variant::PACKED_INT64_ARRAY:{
+        case Variant::PACKED_INT64_ARRAY: {
             BUFFER_COPY(PackedInt64Array)
             break;
         }
-        case Variant::PACKED_FLOAT32_ARRAY:{
+        case Variant::PACKED_FLOAT32_ARRAY: {
             BUFFER_COPY(PackedFloat32Array)
             break;
         }
-        case Variant::PACKED_FLOAT64_ARRAY:{
+        case Variant::PACKED_FLOAT64_ARRAY: {
             BUFFER_COPY(PackedFloat64Array)
             break;
         }
-        case Variant::PACKED_VECTOR2_ARRAY:{
+        case Variant::PACKED_VECTOR2_ARRAY: {
             BUFFER_COPY(PackedVector2Array)
             break;
         }
-        case Variant::PACKED_VECTOR3_ARRAY:{
+        case Variant::PACKED_VECTOR3_ARRAY: {
             BUFFER_COPY(PackedVector3Array)
             break;
         }
-        case Variant::PACKED_VECTOR4_ARRAY:{
+        case Variant::PACKED_VECTOR4_ARRAY: {
             BUFFER_COPY(PackedVector4Array)
             break;
         }
-        case Variant::PACKED_COLOR_ARRAY:{
+        case Variant::PACKED_COLOR_ARRAY: {
             BUFFER_COPY(PackedColorArray)
             break;
         }
-        case Variant::PACKED_STRING_ARRAY:{
+        case Variant::PACKED_STRING_ARRAY: {
             BUFFER_COPY(PackedStringArray)
             break;
         }
@@ -266,7 +266,9 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
             if (value == Variant(nullptr)) {
                 value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
             }
-            const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
+
+            // TODO: Fix this
+            const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(0, 0);
             const int64_t offset = param.get("offset", 0);
             const int64_t size = param.get("size", 0);
             buffer->write(offset, size, value);
