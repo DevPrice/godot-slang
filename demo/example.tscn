@@ -1,11 +1,11 @@
 [gd_scene load_steps=18 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://bgq87xxylxm55" path="res://example.gd" id="1_jdh55"]
-[ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://grayscale.slang" id="2_8lvy3"]
-[ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://blur.slang" id="4_ei00m"]
+[ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_8lvy3"]
+[ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="4_ei00m"]
 [ext_resource type="Script" uid="uid://whkm038scwsb" path="res://compute_shader_effect.gd" id="4_wcwec"]
-[ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://normals.slang" id="5_ei00m"]
-[ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://ring.slang" id="6_ugfer"]
+[ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="5_ei00m"]
+[ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="6_ugfer"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)

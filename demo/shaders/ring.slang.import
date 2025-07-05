@@ -1,0 +1,15 @@
+[remap]
+
+importer="slang.shader.importer"
+type="ComputeShaderFile"
+uid="uid://cf7opoytwnryw"
+path="res://.godot/imported/ring.slang-68f2ebc72e5ea8e4d102a660ee210036.res"
+
+[deps]
+
+source_file="res://shaders/ring.slang"
+dest_files=["res://.godot/imported/ring.slang-68f2ebc72e5ea8e4d102a660ee210036.res"]
+
+[params]
+
+shader_type=0

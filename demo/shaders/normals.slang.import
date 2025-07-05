@@ -1,0 +1,15 @@
+[remap]
+
+importer="slang.shader.importer"
+type="ComputeShaderFile"
+uid="uid://b1h1shyxl3loe"
+path="res://.godot/imported/normals.slang-07a6dbcb252e12f0780a9ba3b09877bf.res"
+
+[deps]
+
+source_file="res://shaders/normals.slang"
+dest_files=["res://.godot/imported/normals.slang-07a6dbcb252e12f0780a9ba3b09877bf.res"]
+
+[params]
+
+shader_type=0
