@@ -1,8 +1,10 @@
 #include "computer_shader_task.h"
 
+#include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
+#include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 
 void ComputeShaderTask::_bind_methods() {
@@ -217,7 +219,10 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
         const int64_t binding_space = param.get("binding_space", 0);
         const int64_t binding_index = param.get("binding_index", 0);
         if (!param_name.is_empty() && param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) {
-            const Variant value = _shader_parameters[param_name];
+            Variant value = _shader_parameters[param_name];
+            if (value == Variant(nullptr)) {
+                value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
+            }
             const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
             const int64_t offset = param.get("offset", 0);
             const int64_t size = param.get("size", 0);
@@ -244,6 +249,9 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
         if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
             const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
             Variant value = _shader_parameters[param_name];
+            if (value == Variant(nullptr)) {
+                value = _get_default_uniform(uniform_type, param["user_attributes"]);
+            }
             if (value.get_type() != Variant::NIL) {
                 Ref uniform = memnew(RDUniform);
                 uniform->set_binding(binding_index);
@@ -258,13 +266,6 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
                 }
                 TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
                 uniforms.push_back(uniform);
-            } else {
-                Ref<RDUniform> uniform = _get_default_uniform(uniform_type, param["user_attributes"]);
-                if (uniform.is_valid()) {
-                    uniform->set_binding(binding_index);
-                    TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
-                    uniforms.push_back(uniform);
-                }
             }
         }
     }
@@ -293,32 +294,32 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
     }
 }
 
-Ref<RDUniform> ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
-    Ref uniform = memnew(RDUniform);
-    uniform->set_uniform_type(type);
+Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
     if (user_attributes.has("gd_GlobalParam")) {
         const Dictionary attribute = user_attributes["gd_GlobalParam"];
         const String param_name = attribute["name"];
-        // TODO: This doesn't work
-        const RID resource_rid = RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
-        if (resource_rid.is_valid()) {
-            uniform->add_id(resource_rid);
-            return uniform;
-        }
+        // TODO: This doesn't work for textures?
+        return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
     }
     switch (type) {
+        case RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER:
+            if (user_attributes.has("gd_Time")) {
+                return Time::get_singleton()->get_ticks_msec() / 1000.f;
+            }
+            if (user_attributes.has("gd_FrameId")) {
+                return Engine::get_singleton()->get_frames_drawn();
+            }
+            break;
         case RenderingDevice::UNIFORM_TYPE_SAMPLER:
             if (user_attributes.has("gd_LinearSampler")) {
                 const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
                 int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", -1);
-                uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
-                return uniform;
+                return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
             }
             if (user_attributes.has("gd_NearestSampler")) {
                 const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
                 int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", 0);
-                uniform->add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int)));
-                return uniform;
+                return _get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
             }
             break;
         case RenderingDevice::UNIFORM_TYPE_TEXTURE:

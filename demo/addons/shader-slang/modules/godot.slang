@@ -45,6 +45,9 @@ public struct gd_NearestSamplerAttribute {
 };
 
 [__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_SizeAttribute {};
+
+[__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_ColorTextureAttribute {};
 
 [__AttributeUsage(_AttributeTargets.Var)]

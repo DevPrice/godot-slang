@@ -55,7 +55,7 @@ private:
     RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
     RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
-    Ref<RDUniform> _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
+    Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
     Ref<RDUniformBuffer> _get_uniform_buffer(int64_t binding, int64_t set);
     void _update_buffers(int64_t kernel_index);
     void _bind_uniform_sets(int64_t kernel_index, int64_t compute_list, RenderingDevice* rd);

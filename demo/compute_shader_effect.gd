@@ -50,6 +50,8 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 				)
 				for view in range(view_count):
 					for param: String in kernel.parameters:
+						if kernel.parameters[param].user_attributes.has("gd_compositor_Size"):
+							_task.set_shader_parameter(param, render_scene_buffers.get_internal_size())
 						if kernel.parameters[param].user_attributes.has("gd_compositor_ColorTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_color_layer(view))
 						if kernel.parameters[param].user_attributes.has("gd_compositor_DepthTexture"):
