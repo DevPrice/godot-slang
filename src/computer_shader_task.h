@@ -21,7 +21,7 @@ public:
     RDUniformBuffer() = default;
     ~RDUniformBuffer() override;
 
-    void write(size_t offset, size_t size, Variant data);
+    void write(int64_t offset, int64_t size, Variant data);
 };
 
 class ComputeShaderTask : public RefCounted {

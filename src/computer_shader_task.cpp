@@ -7,6 +7,9 @@
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 
+#define BUFFER_COPY(T) const T source_data = data; \
+memcpy(buffer.ptrw() + offset, source_data.ptr(), Math::min(size, source_data.size()));
+
 void ComputeShaderTask::_bind_methods() {
     BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderTask, kernels, ComputeShaderKernel)
     BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
@@ -25,7 +28,7 @@ RDUniformBuffer::~RDUniformBuffer() {
     }
 }
 
-void RDUniformBuffer::write(const size_t offset, const size_t size, const Variant data) {
+void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant data) {
     if (buffer.size() < offset + size) {
         buffer.resize((offset + size + 15) & ~15);
     }
@@ -89,6 +92,46 @@ void RDUniformBuffer::write(const size_t offset, const size_t size, const Varian
             buffer.encode_s32(offset + 4, vector.y);
             buffer.encode_s32(offset + 8, vector.z);
             buffer.encode_s32(offset + 12, vector.w);
+            break;
+        }
+        case Variant::PACKED_BYTE_ARRAY: {
+            BUFFER_COPY(PackedByteArray)
+            break;
+        }
+        case Variant::PACKED_INT32_ARRAY:{
+            BUFFER_COPY(PackedInt32Array)
+            break;
+        }
+        case Variant::PACKED_INT64_ARRAY:{
+            BUFFER_COPY(PackedInt64Array)
+            break;
+        }
+        case Variant::PACKED_FLOAT32_ARRAY:{
+            BUFFER_COPY(PackedFloat32Array)
+            break;
+        }
+        case Variant::PACKED_FLOAT64_ARRAY:{
+            BUFFER_COPY(PackedFloat64Array)
+            break;
+        }
+        case Variant::PACKED_VECTOR2_ARRAY:{
+            BUFFER_COPY(PackedVector2Array)
+            break;
+        }
+        case Variant::PACKED_VECTOR3_ARRAY:{
+            BUFFER_COPY(PackedVector3Array)
+            break;
+        }
+        case Variant::PACKED_VECTOR4_ARRAY:{
+            BUFFER_COPY(PackedVector4Array)
+            break;
+        }
+        case Variant::PACKED_COLOR_ARRAY:{
+            BUFFER_COPY(PackedColorArray)
+            break;
+        }
+        case Variant::PACKED_STRING_ARRAY:{
+            BUFFER_COPY(PackedStringArray)
             break;
         }
         default: break;
