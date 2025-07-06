@@ -272,20 +272,22 @@ Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* progr
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
-		const slang::ParameterCategory category = param->getCategory();
 		param_info.set("binding_index", param->getBindingIndex());
 		param_info.set("binding_space", param->getBindingSpace());
-		switch (category) {
+		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
 				// TODO: index?
 				param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
 				break;
 			case slang::ParameterCategory::Uniform:
+				// TODO: This doesn't seem right, but getBindingIndex() returns the offset for uniforms
+				param_info.set("binding_index", 0);
 				param_info.set("type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
 				param_info.set("offset", param->getOffset());
 				param_info.set("size", param->getTypeLayout()->getSize());
 				break;
 			default:
+				param_info.set("unhandled_category", param->getCategory());
 				break;
 		}
 		if (slang::VariableReflection* variable = param->getVariable()) {

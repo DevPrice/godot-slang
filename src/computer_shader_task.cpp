@@ -29,7 +29,7 @@ RDUniformBuffer::~RDUniformBuffer() {
 	}
 }
 
-void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant data) {
+void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
 	if (buffer.size() < offset + size) {
 		buffer.resize((offset + size + 15) & ~15);
 	}
@@ -269,11 +269,12 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
 			}
 
-			// TODO: Fix this
-			const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(0, 0);
+			const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
 			const int64_t offset = param.get("offset", 0);
 			const int64_t size = param.get("size", 0);
-			buffer->write(offset, size, value);
+			if (size > 0) {
+				buffer->write(offset, size, value);
+			}
 		}
 	}
 }
