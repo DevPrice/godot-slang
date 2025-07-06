@@ -15,7 +15,7 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
-void SlangShaderImporter::_bind_methods() { }
+void SlangShaderImporter::_bind_methods() {}
 
 String SlangShaderImporter::_get_importer_name() const {
 	return "slang.shader.importer";
@@ -37,7 +37,7 @@ PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
 	return PackedStringArray({ "slang" });
 }
 
-TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String &p_path, int32_t p_preset_index) const {
+TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_path, int32_t p_preset_index) const {
 	TypedArray<Dictionary> options{};
 	Dictionary default_options{};
 	default_options.set("name", "shader_type");
@@ -62,11 +62,11 @@ int32_t SlangShaderImporter::_get_import_order() const {
 	return 0;
 }
 
-bool SlangShaderImporter::_get_option_visibility(const String &p_path, const StringName &p_option_name, const Dictionary &p_options) const {
+bool SlangShaderImporter::_get_option_visibility(const String& p_path, const StringName& p_option_name, const Dictionary& p_options) const {
 	return true;
 }
 
-Error SlangShaderImporter::_import(const String &p_source_file, const String &p_save_path, const Dictionary &p_options, const TypedArray<String> &p_platform_variants, const TypedArray<String> &p_gen_files) const {
+Error SlangShaderImporter::_import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const {
 	TypedArray<ComputeShaderKernel> kernels;
 	if (const Error compile_error = _slang_compile_kernels(ProjectSettings::get_singleton()->globalize_path(p_source_file), kernels)) {
 		UtilityFunctions::push_error("Failed to compile Slang shader kernels!");
@@ -80,7 +80,7 @@ Error SlangShaderImporter::_import(const String &p_source_file, const String &p_
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
 
-Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, TypedArray<ComputeShaderKernel> &out_kernels) {
+Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels) {
 	Slang::ComPtr<slang::IGlobalSession> global_session;
 	createGlobalSession(global_session.writeRef());
 
@@ -134,7 +134,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 
 		Slang::ComPtr<slang::IComponentType> composed_program;
 		if (entry_point) {
-			const std::array<slang::IComponentType *, 2> componentTypes = {
+			const std::array<slang::IComponentType*, 2> componentTypes = {
 				slang_module,
 				entry_point,
 			};
@@ -168,7 +168,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		if (linked_program) {
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = linked_program->getEntryPointCode(
-				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
+					0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 			} else if (diagnostics_blob) {
@@ -187,13 +187,13 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 		const String entry_point_name = entry_point_function->getName();
 
 		{
-			slang::Attribute *shader_attribute = entry_point_function->findAttributeByName(global_session, "shader");
+			slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(global_session, "shader");
 			if (!shader_attribute) {
 				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
 				continue;
 			}
 			size_t value_size{};
-			const char *shader_value = shader_attribute->getArgumentValueString(0, &value_size);
+			const char* shader_value = shader_attribute->getArgumentValueString(0, &value_size);
 			if (!shader_value) {
 				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (invalid shader attribute)") % entry_point_name);
 				continue;
@@ -205,11 +205,11 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			}
 		}
 
-		slang::IMetadata *metadata;
+		slang::IMetadata* metadata;
 		{
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
 			const SlangResult result = linked_program->getEntryPointMetadata(
-				0, 0, &metadata, diagnostics_blob.writeRef());
+					0, 0, &metadata, diagnostics_blob.writeRef());
 			if (result != OK) {
 				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 			} else if (diagnostics_blob) {
@@ -227,7 +227,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 			memcpy(spirv_bytes.ptrw(), compiled_blob->getBufferPointer(), compiled_blob->getBufferSize());
 			spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, spirv_bytes);
 		} else {
-			UtilityFunctions::push_error(String("[%s] Slang compile error: %s") % PackedStringArray({String(p_source_file), compile_error }));
+			UtilityFunctions::push_error(String("[%s] Slang compile error: %s") % PackedStringArray({ String(p_source_file), compile_error }));
 			spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, compile_error);
 		}
 
@@ -268,7 +268,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String &p_source_file, T
 	return OK;
 }
 
-Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* program_layout, slang::IMetadata *metadata) {
+Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
 	Dictionary parameters{};
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
@@ -287,7 +287,8 @@ Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* progr
 				param_info.set("offset", param->getOffset());
 				param_info.set("size", param->getTypeLayout()->getSize());
 				break;
-			default: break;
+			default:
+				break;
 		}
 		if (slang::VariableReflection* variable = param->getVariable()) {
 			Dictionary param_attributes{};
@@ -337,7 +338,8 @@ Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
 				case SLANG_SCALAR_TYPE_INT16:
 				case SLANG_SCALAR_TYPE_UINT16:
 					return Variant::INT;
-				default: break;
+				default:
+					break;
 			}
 		case SLANG_TYPE_KIND_STRUCT:
 			if (String(type->getName()) == "String") {
@@ -345,7 +347,8 @@ Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
 				return Variant::STRING;
 			}
 			break;
-		default: break;
+		default:
+			break;
 	}
 	// TODO: Support the other types
 	UtilityFunctions::push_warning("Slang: Unknown Godot type: ", type->getName(), String(" (%s)") % static_cast<int64_t>(type->getKind()));
@@ -383,7 +386,8 @@ Variant SlangShaderImporter::_to_godot_value(slang::Attribute* attribute, const 
 				}
 				break;
 			}
-			default: break;
+			default:
+				break;
 		}
 		// TODO: Support the other types
 		UtilityFunctions::push_warning("Slang: Failed to make Godot value for attribute: ", type->getName(), String(" (%s)") % static_cast<int64_t>(type->getKind()));
