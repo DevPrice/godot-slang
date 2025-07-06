@@ -94,7 +94,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: godot-cpp-template-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
+          name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
             ${{ github.workspace }}/addons/shader-slang/bin/**
 
@@ -105,7 +105,7 @@ jobs:
         target:
           [
             { platform: windows, arch: x86_64, os: windows-latest },
-            # TODO: Add support for other platforms
+            # TODO: Add support for other platforms in the Slang build action
             # { platform: linux, arch: x86_64, os: ubuntu-22.04 },
             # { platform: macos, arch: universal, os: macos-latest },
           ]
@@ -183,19 +183,19 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: godot-cpp-template-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
+          name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
             ${{ github.workspace }}/addons/shader-slang/bin/**
 
-  # Merges all the build artifacts together into a single godot-cpp-template artifact.
-  # If you comment out this step, all the builds will be uploaded individually.
+  # Merges all the build artifacts into a single godot-slang artifact.
+  # If you comment remove this step, all the builds will be uploaded individually.
   merge:
     runs-on: ubuntu-22.04
-    needs: build
+    needs: [build, build-editor]
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: godot-cpp-template
-          pattern: godot-cpp-template-*
+          name: godot-slang
+          pattern: godot-slang-*
           delete-merged: true
