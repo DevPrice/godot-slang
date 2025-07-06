@@ -2,21 +2,15 @@
 *.gen.*
 .godot/
 
+# Build output
+/addons
+
+# Ignore binaries by default
+*.dll
+*.ilk
+
 # Ignore library files but not the gdextension file
 demo/addons/shader-slang/bin/*
-!demo/addons/shader-slang/bin/android
-demo/addons/shader-slang/bin/android/*
-!demo/addons/shader-slang/bin/android/.gitkeep
-!demo/addons/shader-slang/bin/linux
-demo/addons/shader-slang/bin/linux/*
-!demo/addons/shader-slang/bin/linux/.gitkeep
-!demo/addons/shader-slang/bin/macos
-demo/addons/shader-slang/bin/macos/*
-!demo/addons/shader-slang/bin/macos/.gitkeep
-!demo/addons/shader-slang/bin/windows
-demo/addons/shader-slang/bin/windows/*
-!demo/addons/shader-slang/bin/windows/.gitkeep
-!demo/addons/shader-slang/bin/*.gdextension
 .sconsign*.dblite
 
 /addons/shader-slang/bin/

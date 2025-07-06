@@ -6,7 +6,8 @@ from methods import print_error
 
 
 libname = "shader-slang"
-plugindir = "addons/{}".format(libname)
+addondir = "addons"
+plugindir = "{}/{}".format(addondir, libname)
 libdir = "{}/bin".format(plugindir)
 projectdir = "demo"
 
@@ -75,7 +76,7 @@ library = env.SharedLibrary(
     source=sources,
 )
 
-copy = env.Install(plugindir, "{}/{}".format(projectdir, plugindir))
+copy = env.Install(addondir, "{}/{}".format(projectdir, plugindir))
 
 default_args = [library, copy]
 Default(*default_args)
