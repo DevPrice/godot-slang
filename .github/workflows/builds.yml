@@ -96,7 +96,7 @@ jobs:
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
-            ${{ github.workspace }}/addons/shader-slang/**
+            ${{ github.workspace }}/addons
 
   build-editor:
     strategy:
@@ -185,7 +185,7 @@ jobs:
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
-            ${{ github.workspace }}/addons/shader-slang/**
+            ${{ github.workspace }}/addons
 
   # Merges all the build artifacts into a single godot-slang artifact.
   # If you comment remove this step, all the builds will be uploaded individually.
