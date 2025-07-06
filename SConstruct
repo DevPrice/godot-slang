@@ -75,7 +75,7 @@ library = env.SharedLibrary(
     source=sources,
 )
 
-copy = env.Install("{}/{}/".format(libdir, env["platform"]), "{}/{}".format(projectdir, plugindir))
+copy = env.Install(plugindir, "{}/{}".format(projectdir, plugindir))
 
 default_args = [library, copy]
 Default(*default_args)
