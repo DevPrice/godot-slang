@@ -24,6 +24,7 @@ runs:
   using: composite
   steps:
     - name: Cache Slang build
+      id: cache-slang
       uses: actions/cache@v4
       with:
         path: ${{ inputs.slang-location }}/build
@@ -31,12 +32,12 @@ runs:
         restore-keys: |
           slang-build-${{ runner.os }}-${{ inputs.build-preset }}-
     - name: Configure Windows CMake
-      if: ${{ inputs.platform == 'windows' }}
+      if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: cmake --preset ${{ inputs.cmake-preset }} -DSLANG_LIB_TYPE=${{ inputs.lib-type }}
       working-directory: ${{ inputs.slang-location }}
     - name: Build Windows CMake
-      if: ${{ inputs.platform == 'windows' }}
+      if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: cmake --build --preset ${{ inputs.build-preset }}
       working-directory: ${{ inputs.slang-location }}
