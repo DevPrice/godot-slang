@@ -1,4 +1,7 @@
 # Godot Slang
+
+[![Build GDExtension](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml/badge.svg)](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml)
+
 This project is a work-in-progress to support [Slang](https://shader-slang.org/)-based compute shaders in Godot.
 
 ## Features
