@@ -118,8 +118,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: true
-          fetch-depth: 0
+          submodules: recursive
 
       # Lint
       #- name: Setup clang-format
