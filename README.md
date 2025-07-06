@@ -15,6 +15,7 @@ After installing this plugin in Godot, you'll see a few new types available in t
   * A resource imported from a `.slang` file in the project. Includes a list of `ComputeShaderKernel`s. A Slang resource may have multiple entrypoints, each mapped to a single kernel.
 * `ComputeShaderKernel`
   * A resource containing the compiled SPIR-V and reflection information about the shader parameters for a single entry-point.
+  * Unlike `.glsl` compute shaders, a Slang compute shader can have more than one entry-point.
 * `ComputeShaderTask`
   * Similar to a "material" in the fragment shader world. You can create this from a list of kernels. It stores shader parameters and exposes methods for dispatching the shader.
 * `ComputeShaderEffect`
@@ -23,11 +24,12 @@ After installing this plugin in Godot, you'll see a few new types available in t
 
 ## Installation
 
-> TODO: Automate editor builds.
+Files for exported game builds can be downloaded from GitHub Actions builds on each commit to `main`.
 
-Right now, the files for exported game builds can be downloaded from the GitHub Actions builds.
-
-For editor and import support, you'll currently need to build from source. Only the editor build includes dependencies for importing and reflecting Slang source files.
+After downloading a release, you can install this addon in Godot by:
+* Opening the `AssetsLib` tab
+* Clicking "Import..." at the top right
+* Selecting the `.zip` file that you downloaded above
 
 ## Building
 
