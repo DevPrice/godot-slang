@@ -24,7 +24,7 @@ After installing this plugin in Godot, you'll see a few new types available in t
 
 ## Installation
 
-Files for exported game builds can be downloaded from GitHub Actions builds on each commit to `main`.
+Files for the addon can be downloaded from GitHub Actions builds on each commit to `main`.
 
 After downloading a release, you can install this addon in Godot by:
 * Opening the `AssetsLib` tab
