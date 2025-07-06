@@ -1,6 +1,5 @@
 #include "slang_shader_importer.h"
 
-#include "slang-com-helper.h"
 #include "slang-com-ptr.h"
 #include "slang.h"
 
@@ -81,8 +80,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 }
 
 Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels) {
-	Slang::ComPtr<slang::IGlobalSession> global_session;
-	createGlobalSession(global_session.writeRef());
+	slang::IGlobalSession* global_session = _get_global_session();
 
 	slang::SessionDesc session_desc = {};
 	slang::TargetDesc target_desc = {};
@@ -426,4 +424,13 @@ RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::
 			UtilityFunctions::push_warning("Unknown binding type: ", base_type);
 			return static_cast<RenderingDevice::UniformType>(-1);
 	}
+}
+
+slang::IGlobalSession* SlangShaderImporter::_get_global_session() {
+	static slang::IGlobalSession* global_session = [] {
+		slang::IGlobalSession* ptr = nullptr;
+		slang::createGlobalSession(&ptr);
+		return ptr;
+	}();
+	return global_session;
 }

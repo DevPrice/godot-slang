@@ -34,4 +34,5 @@ private:
 	static Variant::Type _to_godot_type(slang::TypeReflection* type);
 	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
+	static slang::IGlobalSession* _get_global_session();
 };
