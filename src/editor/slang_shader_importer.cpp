@@ -259,8 +259,8 @@ Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, T
 			kernel->set_user_attributes(entry_point_attributes);
 		}
 
-		Dictionary reflection_data = _get_param_reflection(linked_program->getLayout(), metadata);
-		kernel->set_parameters(reflection_data);
+		kernel->set_parameters(_get_param_reflection(linked_program->getLayout(), metadata));
+		kernel->set_buffers(_get_buffers_reflection(linked_program->getLayout()));
 	}
 
 	return OK;
@@ -306,6 +306,31 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		parameters.set(param->getName(), param_info);
 	}
 	return parameters;
+}
+
+TypedArray<Dictionary> SlangShaderImporter::_get_buffers_reflection(slang::ProgramLayout* program_layout) {
+	TypedArray<Dictionary> buffers{};
+	const size_t global_buffer_size = program_layout->getGlobalConstantBufferSize();
+	if (global_buffer_size > 0) {
+		Dictionary buffer_info{};
+		buffer_info.set("binding_index", program_layout->getGlobalParamsVarLayout()->getBindingIndex());
+		buffer_info.set("binding_space", program_layout->getGlobalParamsVarLayout()->getBindingSpace());
+		buffer_info.set("size", global_buffer_size);
+		buffers.push_back(buffer_info);
+	}
+	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
+		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
+		if (slang::TypeLayoutReflection* type_layout = param->getTypeLayout()) {
+			if (param->getCategory() == slang::DescriptorTableSlot && type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer) {
+				Dictionary buffer_info{};
+				buffer_info.set("binding_index", param->getBindingIndex());
+				buffer_info.set("binding_space", param->getBindingSpace());
+				buffer_info.set("size", type_layout->getElementTypeLayout()->getSize());
+				buffers.push_back(buffer_info);
+			}
+		}
+	}
+	return buffers;
 }
 
 String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index, slang::ProgramLayout* layout) {
