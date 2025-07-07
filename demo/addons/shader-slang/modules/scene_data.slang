@@ -25,7 +25,7 @@ public struct SceneData {
     public highp float4 directional_penumbra_shadow_kernel[32];
     public highp float4 directional_soft_shadow_kernel[32];
     public highp float4 penumbra_shadow_kernel[32];
-	highp float4 soft_shadow_kernel[32];
+	public highp float4 soft_shadow_kernel[32];
 
 	public mediump float3x3 radiance_inverse_xform;
 
