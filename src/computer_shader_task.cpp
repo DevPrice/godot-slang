@@ -30,8 +30,9 @@ RDUniformBuffer::~RDUniformBuffer() {
 }
 
 void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
-	if (buffer.size() < offset + size) {
-		buffer.resize((offset + size + 15) & ~15);
+	if (buffer.size() == 0) {
+		UtilityFunctions::push_error("Writing uniform buffer before initialize!");
+		return;
 	}
 	switch (data.get_type()) {
 		case Variant::BOOL:
@@ -147,6 +148,11 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
 		}
 	}
 }
+
+void RDUniformBuffer::set_size(const int64_t size) {
+	buffer.resize(size);
+}
+
 Ref<RDUniformBuffer> RDUniformBuffer::ref(const RID& buffer_rid) {
 	Ref result = memnew(RDUniformBuffer);
 	result->set_rid(buffer_rid);
@@ -394,6 +400,23 @@ Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t bindin
 	if (!_uniform_buffers.has(key)) {
 		const Ref buffer = memnew(RDUniformBuffer);
 		_uniform_buffers[key] = buffer;
+		if (kernels.size() > 0) {
+			const Ref<ComputeShaderKernel> kernel = kernels[0];
+			if (kernel.is_valid()) {
+				const TypedArray<Dictionary> buffers = kernel->get_buffers();
+				const int64_t buffer_count = buffers.size();
+				for (int64_t i = 0; i < buffer_count; i++) {
+					Dictionary buffer_info = buffers[i];
+					const int64_t info_index = buffer_info["binding_index"];
+					const int64_t info_set = buffer_info["binding_space"];
+					if (info_index == binding && info_set == set) {
+						// TODO: This whole method should be refactored to make sense, but this works for now
+						const int64_t buffer_size = buffer_info["size"];
+						buffer->set_size(buffer_size);
+					}
+				}
+			}
+		}
 	}
 	return _uniform_buffers[key];
 }

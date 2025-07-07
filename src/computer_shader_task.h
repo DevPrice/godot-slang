@@ -22,6 +22,7 @@ public:
 	~RDUniformBuffer() override;
 
 	void write(int64_t offset, int64_t size, const Variant& data);
+	void set_size(int64_t size);
 	static Ref<RDUniformBuffer> ref(const RID& buffer_rid);
 };
 
