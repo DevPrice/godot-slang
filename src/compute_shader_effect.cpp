@@ -8,9 +8,10 @@
 #include "godot_cpp/classes/render_scene_data.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 
-void ComputeShaderEffect::_bind_methods(){
-	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile)
-			BIND_METHOD(ComputeShaderEffect, reload_shader)
+void ComputeShaderEffect::_bind_methods() {
+	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
+	BIND_METHOD(ComputeShaderEffect, reload_shader);
+	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
 }
 
 Ref<ComputeShaderFile> ComputeShaderEffect::get_compute_shader() const {
