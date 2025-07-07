@@ -382,10 +382,9 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 			}
 			break;
 		case RenderingDevice::UNIFORM_TYPE_TEXTURE:
-
 			break;
 		default:
-			return nullptr;
+			break;
 	}
 	return nullptr;
 }

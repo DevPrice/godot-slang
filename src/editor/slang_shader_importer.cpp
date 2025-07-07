@@ -259,29 +259,28 @@ Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, T
 			kernel->set_user_attributes(entry_point_attributes);
 		}
 
-		Dictionary reflection_data = _get_reflection_data(linked_program->getLayout(), metadata);
+		Dictionary reflection_data = _get_param_reflection(linked_program->getLayout(), metadata);
 		kernel->set_parameters(reflection_data);
 	}
 
 	return OK;
 }
 
-Dictionary SlangShaderImporter::_get_reflection_data(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
+Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
 	Dictionary parameters{};
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
-		param_info.set("binding_index", param->getBindingIndex());
-		param_info.set("binding_space", param->getBindingSpace());
 		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
-				// TODO: index?
+				param_info.set("binding_index", param->getBindingIndex());
+				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
 				break;
 			case slang::ParameterCategory::Uniform:
-				// TODO: This doesn't seem right, but getBindingIndex() returns the offset for uniforms
-				param_info.set("binding_index", 0);
+				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
+				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
 				param_info.set("offset", param->getOffset());
 				param_info.set("size", param->getTypeLayout()->getSize());
