@@ -6,24 +6,28 @@ This project is a work-in-progress to support [Slang](https://shader-slang.org/)
 
 ## Features
 * Simple and straightforward handling of `.slang` files. You can `load("res://something.slang")` and it works exactly how you would expect.
-* Support all major Slang features, including modules.
+* Supports most major Slang features, including modules.
 * Uses a high-level API for binding shader parameters, similar to GDShader (`set_shader_parameter(...)`).
-* Minimizes boilerplate by supporting automatically bound shader parameters for things like the render texture, engine time, and more.
+* Minimizes boilerplate by automatically binding shader parameters for common textures (color, depth, normal/roughness, etc.), current time, shader globals, and more.
 * First-class support for compositor effects written in Slang.
 
 ## Usage
 
 After installing this plugin in Godot, you'll see a few new types available in the editor:
 * `ComputeShaderFile`
-  * A resource imported from a `.slang` file in the project. Includes a list of `ComputeShaderKernel`s. A Slang resource may have multiple entrypoints, each mapped to a single kernel.
+  * A resource imported from a `.slang` file in the project. Includes a list of `ComputeShaderKernel`s.
+  * Unlike `.glsl` compute shaders, a Slang compute shader can have more than one entry-point.
 * `ComputeShaderKernel`
   * A resource containing the compiled SPIR-V and reflection information about the shader parameters for a single entry-point.
-  * Unlike `.glsl` compute shaders, a Slang compute shader can have more than one entry-point.
 * `ComputeShaderTask`
-  * Similar to a "material" in the fragment shader world. You can create this from a list of kernels. It stores shader parameters and exposes methods for dispatching the shader.
+  * Similar to a "material" in the fragment shader world. You can create this from a list of kernels.
+  * Stores shader parameters and exposes methods for dispatching the shader.
 * `ComputeShaderEffect`
   * This offers a convenient way to use Slang compute shaders in `CompositorEffect`s. For many shaders, you can drag a Slang file onto an instance of this to have it running with no additional application code required.
   * Automatically reloads if the attached compute shader is modified.
+
+After installing, Slang files in your project will be automatically imported as compute shaders.
+Each function in the Slang source annotated with `[shader("compute")]` will be imported as a `ComputeShaderKernel`.
 
 ## Installation
 
@@ -75,6 +79,18 @@ This plugin also includes a [utility Slang module](demo/addons/shader-slang/modu
 
 For example, the `gd::compositor::ColorTexture` attribute used above, which automatically binds the screen color texture to the parameter when the shader is used in a `ComputeShaderEffect`.
 This library includes many other attributes, Godot-specific utility functions such as `normal_roughness_compatibility`, and declares the `SceneDataBlock` struct, as exposed by the Godot engine to compositor effects.
+
+## Work-in-progress
+
+Not all features are supported. You should find that basic stuff works, and you can bind most basic parameters.
+You may run into issues if you try to bind more complex structures into buffers, as I haven't yet started testing that.
+Feel free to file an issue or contribute a fix if you run into any problems.
+
+Known issues:
+* Global shader parameters of the `sampler*` type can't be bound.
+* Storage buffers and push constants are not yet supported.
+* `ParameterBlock` is not yet fully supported (but may work in some cases). `ConstantBuffer` should mostly work.
+* Nested struct parameters are untested and probably don't work yet.
 
 ## License
 
