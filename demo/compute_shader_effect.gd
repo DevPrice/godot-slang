@@ -50,40 +50,19 @@ func _render_callback(p_effect_callback_type: int, p_render_data: RenderData) ->
 				)
 				for view in range(view_count):
 					for param: String in kernel.parameters:
-						if kernel.parameters[param].user_attributes.has("gd_compositor_Size"):
+						var param_dict: Dictionary = kernel.parameters[param]
+						if param_dict.user_attributes.has("gd_compositor_Size"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_internal_size())
-						if kernel.parameters[param].user_attributes.has("gd_compositor_ColorTexture"):
+						if param_dict.user_attributes.has("gd_compositor_ColorTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_color_layer(view))
-						if kernel.parameters[param].user_attributes.has("gd_compositor_DepthTexture"):
+						if param_dict.user_attributes.has("gd_compositor_DepthTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_depth_layer(view))
-						if kernel.parameters[param].user_attributes.has("gd_compositor_VelocityTexture"):
+						if param_dict.user_attributes.has("gd_compositor_VelocityTexture"):
 							_task.set_shader_parameter(param, render_scene_buffers.get_velocity_layer(view))
-						if kernel.parameters[param].user_attributes.has("gd_compositor_SceneBuffer"):
+						if param_dict.user_attributes.has("gd_compositor_SceneBuffer"):
 							var context: String = kernel.parameters[param].user_attributes.gd_compositor_SceneBuffer.context
 							var name: String = kernel.parameters[param].user_attributes.gd_compositor_SceneBuffer.name
 							_task.set_shader_parameter(param, render_scene_buffers.get_texture(context, name))
+						if param_dict.user_attributes.has("gd_compositor_SceneData"):
+							_task.set_shader_parameter(param, p_render_data.get_render_scene_data().get_uniform_buffer())
 					_task.dispatch_at(i, groups)
-
-#region utility functions
-
-static func _get_normal_roughness_texture(render_scene_buffers: RenderSceneBuffersRD) -> RID:
-	return render_scene_buffers.get_texture("forward_clustered", "normal_roughness")
-
-static func _create_uniform(binding: int, uniform_type: RenderingDevice.UniformType, ids: Array[RID]) -> RDUniform:
-	var uniform := RDUniform.new()
-	uniform.binding = binding
-	uniform.uniform_type = uniform_type
-	for id in ids:
-		uniform.add_id(id)
-	return uniform
-
-static func _create_uniform_buffer(binding: int, render_data: RenderData) -> RDUniform:
-	return _create_uniform(binding, RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER, [render_data.get_render_scene_data().get_uniform_buffer()])
-
-static func _create_image(binding: int, id: RID) -> RDUniform:
-	return _create_uniform(binding, RenderingDevice.UniformType.UNIFORM_TYPE_IMAGE, [id])
-
-static func _create_ssbo(binding: int, id: RID) -> RDUniform:
-	return _create_uniform(binding, RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER, [id])
-
-#endregion

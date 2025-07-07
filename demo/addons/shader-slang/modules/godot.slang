@@ -1,5 +1,7 @@
 module godot;
 
+__include "scene_data";
+
 namespace gd {
 
 public enum SamplerRepeatMode {
@@ -65,8 +67,16 @@ public struct gd_LinearSamplerAttribute {
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_NearestSamplerAttribute {
-	let repeat_mode = SamplerRepeatMode.REPEAT;
+    let repeat_mode = SamplerRepeatMode.REPEAT;
 };
+
+/**
+ Binds a parameter to the scene data block uniform buffer.
+ Must be applied to a ConstantBuffer of type `gd::compositor::SceneDataBlock`.
+ Only available for compositor effects.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_SceneDataAttribute {};
 
 /**
  Binds a parameter to the internal size of the render buffer (size before upscaling) with which textures are created by default.

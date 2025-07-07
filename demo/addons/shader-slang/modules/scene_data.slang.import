@@ -1,0 +1,14 @@
+[remap]
+
+importer="slang.shader.importer"
+type="ComputeShaderFile"
+uid="uid://dkmtatj5g2ttr"
+valid=false
+
+[deps]
+
+source_file="res://addons/shader-slang/modules/scene_data.slang"
+
+[params]
+
+shader_type=0

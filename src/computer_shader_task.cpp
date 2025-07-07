@@ -147,6 +147,11 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
 		}
 	}
 }
+Ref<RDUniformBuffer> RDUniformBuffer::ref(const RID& buffer_rid) {
+	Ref result = memnew(RDUniformBuffer);
+	result->set_rid(buffer_rid);
+	return result;
+}
 
 GET_SET_PROPERTY_IMPL(RDUniformBuffer, RID, rid)
 GET_SET_PROPERTY_IMPL(RDUniformBuffer, PackedByteArray, buffer)
@@ -265,15 +270,20 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const int64_t binding_index = param.get("binding_index", 0);
 		if (!param_name.is_empty() && param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) {
 			Variant value = _shader_parameters[param_name];
-			if (value == Variant(nullptr)) {
-				value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
-			}
+			RID value_rid = value;
+			if (value_rid.is_valid()) {
+				_set_uniform_buffer(binding_index, binding_space, value_rid);
+			} else {
+				if (value == Variant(nullptr)) {
+					value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
+				}
 
-			const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
-			const int64_t offset = param.get("offset", 0);
-			const int64_t size = param.get("size", 0);
-			if (size > 0) {
-				buffer->write(offset, size, value);
+				const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
+				const int64_t offset = param.get("offset", 0);
+				const int64_t size = param.get("size", 0);
+				if (size > 0) {
+					buffer->write(offset, size, value);
+				}
 			}
 		}
 	}
@@ -288,13 +298,13 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 	for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
 		const StringName& key = parameter_keys[param_index];
 		const Dictionary param = parameters[key];
+		const int64_t binding_space = param.get("binding_space", 0);
+		const int64_t binding_index = param.get("binding_index", 0);
 		const int64_t param_type = param.get("type", -1);
 		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER)
 			continue;
 
 		const StringName param_name = param.get("name", StringName{});
-		const int64_t binding_space = param.get("binding_space", 0);
-		const int64_t binding_index = param.get("binding_index", 0);
 		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
 			Variant value = _shader_parameters[param_name];
@@ -387,6 +397,10 @@ Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t bindin
 		_uniform_buffers[key] = buffer;
 	}
 	return _uniform_buffers[key];
+}
+void ComputeShaderTask::_set_uniform_buffer(const int64_t binding, const int64_t set, const RID& buffer_rid) {
+	const Vector2i key(binding, set);
+	_uniform_buffers[key] = RDUniformBuffer::ref(buffer_rid);
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {

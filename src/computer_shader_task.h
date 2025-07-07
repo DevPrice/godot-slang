@@ -22,6 +22,7 @@ public:
 	~RDUniformBuffer() override;
 
 	void write(int64_t offset, int64_t size, const Variant& data);
+	static Ref<RDUniformBuffer> ref(const RID& buffer_rid);
 };
 
 class ComputeShaderTask : public RefCounted {
@@ -57,6 +58,7 @@ private:
 	RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
 	Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
 	Ref<RDUniformBuffer> _get_uniform_buffer(int64_t binding, int64_t set);
+	void _set_uniform_buffer(int64_t binding, int64_t set, const RID& buffer_rid);
 	void _update_buffers(int64_t kernel_index);
 	void _bind_uniform_sets(int64_t kernel_index, int64_t compute_list, RenderingDevice* rd);
 	void _dispatch(int64_t kernel_index, Vector3i thread_groups);
