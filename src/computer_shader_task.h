@@ -30,12 +30,12 @@ class ComputeShaderTask : public RefCounted {
 
 	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
 
+protected:
+	static void _bind_methods();
+
 public:
 	ComputeShaderTask();
 	~ComputeShaderTask() override;
-
-protected:
-	static void _bind_methods();
 
 	Variant get_shader_parameter(const StringName& param) const;
 	void set_shader_parameter(const StringName& param, const Variant& value);

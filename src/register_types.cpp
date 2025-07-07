@@ -5,12 +5,13 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include <compute_shader_file.h>
-#include <compute_shader_kernel.h>
-#include <computer_shader_task.h>
+#include "compute_shader_file.h"
+#include "compute_shader_kernel.h"
+#include "computer_shader_task.h"
+#include "compute_shader_effect.h"
 
 #ifdef TOOLS_ENABLED
-#include <slang_shader_importer.h>
+#include "slang_shader_importer.h"
 #endif
 
 using namespace godot;
@@ -21,6 +22,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(ComputeShaderKernel);
 		GDREGISTER_CLASS(ComputeShaderTask);
 		GDREGISTER_CLASS(ComputeShaderFile);
+		GDREGISTER_CLASS(ComputeShaderEffect);
 	}
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 #ifdef TOOLS_ENABLED

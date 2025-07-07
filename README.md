@@ -8,7 +8,7 @@ This project is a work-in-progress to support [Slang](https://shader-slang.org/)
 * Simple and straightforward handling of `.slang` files. You can `load("res://something.slang")` and it works exactly how you would expect.
 * Support all major Slang features, including modules.
 * Uses a high-level API for binding shader parameters, similar to GDShader (`set_shader_parameter(...)`).
-* Minimizes boilerplate by supporting automatically bound shader parameters for things like the render texture, engine time, and more. Everything works out of the box.
+* Minimizes boilerplate by supporting automatically bound shader parameters for things like the render texture, engine time, and more.
 * First-class support for compositor effects written in Slang.
 
 ## Usage
@@ -23,7 +23,7 @@ After installing this plugin in Godot, you'll see a few new types available in t
   * Similar to a "material" in the fragment shader world. You can create this from a list of kernels. It stores shader parameters and exposes methods for dispatching the shader.
 * `ComputeShaderEffect`
   * This offers a convenient way to use Slang compute shaders in `CompositorEffect`s. For many shaders, you can drag a Slang file onto an instance of this to have it running with no additional application code required.
-  * *Not yet exposed. See [ComputeShaderEffect](demo/compute_shader_effect.gd) for how this will eventually work.*
+  * Automatically reloads if the attached compute shader is modified.
 
 ## Installation
 
@@ -33,6 +33,7 @@ After downloading a release, you can install this addon in Godot by:
 * Opening the `AssetsLib` tab
 * Clicking "Import..." at the top right
 * Selecting the `.zip` file that you downloaded above
+* Enable the "Slang Shaders" plugin in your project settings.
 
 ## Building
 
@@ -67,6 +68,13 @@ void computeMain(uint3 threadId: SV_DispatchThreadID) {
     scene_color[threadId.xy] = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
 }
 ```
+
+## Library
+
+This plugin also includes a [utility Slang module](demo/addons/shader-slang/modules/godot.slang) for common compute/CompositorEffect use-cases in Godot.
+
+For example, the `gd::compositor::ColorTexture` attribute used above, which automatically binds the screen color texture to the parameter when the shader is used in a `ComputeShaderEffect`.
+This library includes many other attributes, Godot-specific utility functions such as `normal_roughness_compatibility`, and declares the `SceneDataBlock` struct, as exposed by the Godot engine to compositor effects.
 
 ## License
 
