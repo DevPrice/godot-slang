@@ -37,7 +37,6 @@ After downloading a release, you can install this addon in Godot by:
 * Opening the `AssetsLib` tab
 * Clicking "Import..." at the top right
 * Selecting the `.zip` file that you downloaded above
-* Enable the "Slang Shaders" plugin in your project settings.
 
 ## Building
 
