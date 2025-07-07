@@ -1,6 +1,5 @@
-[gd_scene load_steps=17 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=16 format=3 uid="uid://dh0oj81pufivs"]
 
-[ext_resource type="Script" uid="uid://bgq87xxylxm55" path="res://example.gd" id="1_jdh55"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
 [ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="3_8lvy3"]
 [ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="3_ei00m"]
@@ -63,7 +62,6 @@ albedo_color = Color(0.748747, 1, 0.518099, 1)
 albedo_color = Color(1, 0.486275, 1, 1)
 
 [node name="Node" type="Node3D"]
-script = ExtResource("1_jdh55")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_8lvy3")
