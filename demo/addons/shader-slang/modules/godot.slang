@@ -45,7 +45,6 @@ public struct gd_FrameIdAttribute {};
 
 /**
  Binds a parameter to a Godot [global shader parameter](https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms).
- Must be applied to a variable of type `float`.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_GlobalParamAttribute {
