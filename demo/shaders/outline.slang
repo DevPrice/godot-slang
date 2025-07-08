@@ -21,7 +21,7 @@ let viewport_size : int2;
 [gd::compositor::SceneData]
 let scene_data : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
-let outline_size : float = 1;
+static let outline_size : float = 1;
 static let depth_sensitivity : float = 0.25;
 static let normal_sensitivity : float = 0.1;
 
