@@ -28,6 +28,7 @@ public:
 	[[nodiscard]] Error _import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const override;
 
 private:
+	static SlangResult _create_session(slang::ISession** out_session);
 	static Error _slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);

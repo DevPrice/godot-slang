@@ -79,7 +79,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }
 
-Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels) {
+SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) {
 	slang::IGlobalSession* global_session = _get_global_session();
 
 	slang::SessionDesc session_desc = {};
@@ -96,8 +96,12 @@ Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, T
 	session_desc.searchPaths = &search_paths;
 	session_desc.searchPathCount = 1;
 
+	return global_session->createSession(session_desc, out_session);
+}
+
+Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels) {
 	Slang::ComPtr<slang::ISession> session;
-	global_session->createSession(session_desc, session.writeRef());
+	_create_session(session.writeRef());
 
 	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
 	if (shader_file.is_null()) {
@@ -185,7 +189,7 @@ Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, T
 		const String entry_point_name = entry_point_function->getName();
 
 		{
-			slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(global_session, "shader");
+			slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(session->getGlobalSession(), "shader");
 			if (!shader_attribute) {
 				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
 				continue;
