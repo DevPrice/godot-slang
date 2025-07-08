@@ -131,14 +131,14 @@ Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, 
 	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		if (slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK) {
-			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % PackedStringArray({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
+			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
 			return ERR_BUG;
 		}
 		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
 		if (kernel.is_valid()) {
 			const String compile_error = kernel->get_compile_error();
 			if (!compile_error.is_empty()) {
-				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % PackedStringArray({ slang_module->getFilePath(), compile_error }));
+				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ slang_module->getFilePath(), compile_error }));
 			}
 			out_kernels.push_back(kernel);
 		}

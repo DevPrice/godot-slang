@@ -10,7 +10,7 @@ let scene_texture : Texture2D<float4>;
 let sampler_state : SamplerState;
 
 [gd::compositor::Size]
-let viewport_size : int;
+let viewport_size : int2;
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
