@@ -12,6 +12,7 @@ class ComputeShaderFile : public Resource {
 	GDCLASS(ComputeShaderFile, Resource)
 
 	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
+	GET_SET_PROPERTY(String, base_error)
 
 protected:
 	static void _bind_methods();

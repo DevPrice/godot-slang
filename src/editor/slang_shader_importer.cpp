@@ -66,14 +66,42 @@ bool SlangShaderImporter::_get_option_visibility(const String& p_path, const Str
 }
 
 Error SlangShaderImporter::_import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const {
-	TypedArray<ComputeShaderKernel> kernels;
-	if (const Error compile_error = _slang_compile_kernels(ProjectSettings::get_singleton()->globalize_path(p_source_file), kernels)) {
-		UtilityFunctions::push_error("Failed to compile Slang shader kernels!");
-		return compile_error;
+	Slang::ComPtr<slang::ISession> session;
+	_create_session(session.writeRef());
+
+	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
+	if (shader_file.is_null()) {
+		return ERR_FILE_CANT_OPEN;
+	}
+
+	const String shader_source = shader_file->get_as_text(true);
+	String slang_error{};
+
+	Slang::ComPtr<slang::IModule> slang_module;
+	{
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		slang_module = session->loadModuleFromSourceString(
+				"__main_module",
+				p_source_file.get_file().utf8().get_data(),
+				shader_source.utf8().get_data(),
+				diagnostics_blob.writeRef());
+		if (!slang_module) {
+			slang_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+		}
 	}
 
 	const Ref slang_shader = memnew(ComputeShaderFile);
-	slang_shader->set_kernels(kernels);
+	if (slang_module && slang_error.is_empty()) {
+		TypedArray<ComputeShaderKernel> kernels;
+		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels)) {
+			UtilityFunctions::push_error("Failed to compile Slang shader!");
+			return compile_error;
+		}
+		slang_shader->set_kernels(kernels);
+	} else {
+		UtilityFunctions::push_error(String("[%s] ") % p_source_file, String("Failed to compile Slang shader:\n%s") % slang_error);
+		slang_shader->set_base_error(slang_error);
+	}
 
 	const String out_filename = p_save_path + String(".") + _get_save_extension();
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
@@ -99,43 +127,21 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) 
 	return global_session->createSession(session_desc, out_session);
 }
 
-Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels) {
-	Slang::ComPtr<slang::ISession> session;
-	_create_session(session.writeRef());
-
-	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
-	if (shader_file.is_null()) {
-		return ERR_FILE_CANT_OPEN;
-	}
-
-	const String shader_source = shader_file->get_as_text(true);
-
-	Slang::ComPtr<slang::IModule> slang_module;
-	{
-		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		slang_module = session->loadModuleFromSourceString(
-				"__main_module",
-				p_source_file.get_file().utf8().get_data(),
-				shader_source.utf8().get_data(),
-				diagnostics_blob.writeRef());
-		if (!slang_module) {
-			UtilityFunctions::push_error(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
-			return FAILED;
-		}
-	}
-
+Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels) {
 	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		if (slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK) {
-			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % PackedStringArray({ String(p_source_file), String::num_int64(entry_point_index) }));
-			return FAILED;
+			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % PackedStringArray({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
+			return ERR_BUG;
 		}
-		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(session, slang_module, entry_point);
-		const String compile_error = kernel->get_compile_error();
-		if (!compile_error.is_empty()) {
-			UtilityFunctions::push_error(String("[%s] Slang compile error: %s") % PackedStringArray({ String(p_source_file), compile_error }));
+		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
+		if (kernel.is_valid()) {
+			const String compile_error = kernel->get_compile_error();
+			if (!compile_error.is_empty()) {
+				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % PackedStringArray({ slang_module->getFilePath(), compile_error }));
+			}
+			out_kernels.push_back(kernel);
 		}
-		out_kernels.push_back(kernel);
 	}
 
 	return OK;
@@ -154,7 +160,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	kernel->set_spirv(spirv);
 
 	Slang::ComPtr<slang::IComponentType> composed_program;
-	if (entry_point) {
+	{
 		const std::array<slang::IComponentType*, 2> componentTypes = {
 			slang_module,
 			entry_point,
@@ -200,22 +206,10 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		}
 	}
 
-
+	slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
 	{
-		slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(session->getGlobalSession(), "shader");
-		if (!shader_attribute) {
-			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
-			return nullptr;
-		}
-		size_t value_size{};
-		const char* shader_value = shader_attribute->getArgumentValueString(0, &value_size);
-		if (!shader_value) {
-			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (invalid shader attribute)") % entry_point_name);
-			return nullptr;
-		}
-		const String shader_name = String::utf8(shader_value, value_size);
-		if (shader_name != String("compute")) {
-			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % shader_name);
+		if (entry_point_layout->getStage() != SLANG_STAGE_COMPUTE) {
+			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % entry_point_name);
 			return nullptr;
 		}
 	}
@@ -243,7 +237,6 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	}
 
 	{
-		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
 		SlangUInt sizes[3];
 		entry_point_layout->getComputeThreadGroupSize(3, sizes);
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));

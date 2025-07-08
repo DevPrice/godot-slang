@@ -29,7 +29,7 @@ public:
 
 private:
 	static SlangResult _create_session(slang::ISession** out_session);
-	static Error _slang_compile_kernels(const String& p_source_file, TypedArray<ComputeShaderKernel>& out_kernels);
+	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);
