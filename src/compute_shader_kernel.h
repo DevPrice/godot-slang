@@ -23,4 +23,6 @@ protected:
 public:
 	ComputeShaderKernel() = default;
 	~ComputeShaderKernel() override = default;
+
+	String get_compile_error() const;
 };

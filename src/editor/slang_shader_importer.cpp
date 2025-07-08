@@ -125,149 +125,148 @@ Error SlangShaderImporter::_slang_compile_kernels(const String& p_source_file, T
 	}
 
 	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
-		String compile_error{};
-
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		if (slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK) {
-			compile_error = String("Slang: Error getting entry point '%s'") % String::num_int64(entry_point_index);
-			UtilityFunctions::push_error(compile_error);
+			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % PackedStringArray({ String(p_source_file), String::num_int64(entry_point_index) }));
 			return FAILED;
 		}
-
-		Slang::ComPtr<slang::IComponentType> composed_program;
-		if (entry_point) {
-			const std::array<slang::IComponentType*, 2> componentTypes = {
-				slang_module,
-				entry_point,
-			};
-			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = session->createCompositeComponentType(
-					componentTypes.data(),
-					componentTypes.size(),
-					composed_program.writeRef(),
-					diagnostics_blob.writeRef());
-			if (result != OK) {
-				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
-			} else if (diagnostics_blob) {
-				UtilityFunctions::push_warning("Slang (program): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
-			}
-		}
-
-		Slang::ComPtr<slang::IComponentType> linked_program;
-		if (composed_program) {
-			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = composed_program->link(
-					linked_program.writeRef(),
-					diagnostics_blob.writeRef());
-			if (result != OK) {
-				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
-				UtilityFunctions::push_error(compile_error);
-				return FAILED;
-			}
-		}
-
-		Slang::ComPtr<slang::IBlob> compiled_blob;
-		if (linked_program) {
-			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = linked_program->getEntryPointCode(
-					0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
-			if (result != OK) {
-				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
-			} else if (diagnostics_blob) {
-				// TODO: ignore these until we figure out:
-				// (0): error 100: failed to load downstream compiler 'spirv-opt'
-				// (0): note 99999: failed to load dynamic library 'slang-glslang'
-				// UtilityFunctions::push_warning("Slang (link): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
-			}
-		}
-
-		const auto entry_point_function = entry_point->getFunctionReflection();
-		if (!entry_point_function) {
-			UtilityFunctions::push_error("Slang: Failed to reflect entry point function.");
-			return FAILED;
-		}
-		const String entry_point_name = entry_point_function->getName();
-
-		{
-			slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(session->getGlobalSession(), "shader");
-			if (!shader_attribute) {
-				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
-				continue;
-			}
-			size_t value_size{};
-			const char* shader_value = shader_attribute->getArgumentValueString(0, &value_size);
-			if (!shader_value) {
-				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (invalid shader attribute)") % entry_point_name);
-				continue;
-			}
-			const String shader_name = String::utf8(shader_value, value_size);
-			if (shader_name != String("compute")) {
-				UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % shader_name);
-				continue;
-			}
-		}
-
-		slang::IMetadata* metadata;
-		{
-			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			const SlangResult result = linked_program->getEntryPointMetadata(
-					0, 0, &metadata, diagnostics_blob.writeRef());
-			if (result != OK) {
-				compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
-			} else if (diagnostics_blob) {
-				UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
-			}
-		}
-
-		const Ref kernel = memnew(ComputeShaderKernel);
-		kernel->set_kernel_name(entry_point_name);
-
-		const Ref spirv = memnew(RDShaderSPIRV);
-		if (compile_error.is_empty()) {
-			PackedByteArray spirv_bytes{};
-			spirv_bytes.resize(compiled_blob->getBufferSize());
-			memcpy(spirv_bytes.ptrw(), compiled_blob->getBufferPointer(), compiled_blob->getBufferSize());
-			spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, spirv_bytes);
-		} else {
-			UtilityFunctions::push_error(String("[%s] Slang compile error: %s") % PackedStringArray({ String(p_source_file), compile_error }));
-			spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, compile_error);
-		}
-
-		kernel->set_spirv(spirv);
-		out_kernels.push_back(kernel);
-
+		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(session, slang_module, entry_point);
+		const String compile_error = kernel->get_compile_error();
 		if (!compile_error.is_empty()) {
-			UtilityFunctions::push_error("Slang compilation failed for entry point: ", entry_point_name);
-			continue;
+			UtilityFunctions::push_error(String("[%s] Slang compile error: %s") % PackedStringArray({ String(p_source_file), compile_error }));
 		}
-
-		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
-		{
-			SlangUInt sizes[3];
-			entry_point_layout->getComputeThreadGroupSize(3, sizes);
-			kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
-		}
-
-		{
-			Dictionary entry_point_attributes{};
-			for (size_t attribute_index = 0; attribute_index < entry_point_function->getUserAttributeCount(); ++attribute_index) {
-				if (slang::Attribute* attribute = entry_point_function->getUserAttributeByIndex(attribute_index)) {
-					Dictionary arguments{};
-					for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-						String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
-						arguments.set(argument_name, _to_godot_value(attribute, argument_index));
-					}
-					entry_point_attributes.set(attribute->getName(), arguments);
-				}
-			}
-			kernel->set_user_attributes(entry_point_attributes);
-		}
-
-		kernel->set_parameters(_get_param_reflection(linked_program->getLayout(), metadata));
-		kernel->set_buffers(_get_buffers_reflection(linked_program->getLayout()));
+		out_kernels.push_back(kernel);
 	}
 
 	return OK;
+}
+
+Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point) {
+	String compile_error{};
+
+	const Ref kernel = memnew(ComputeShaderKernel);
+
+	const auto entry_point_function = entry_point->getFunctionReflection();
+	const String entry_point_name = entry_point_function->getName();
+	kernel->set_kernel_name(entry_point_name);
+
+	const Ref spirv = memnew(RDShaderSPIRV);
+	kernel->set_spirv(spirv);
+
+	Slang::ComPtr<slang::IComponentType> composed_program;
+	if (entry_point) {
+		const std::array<slang::IComponentType*, 2> componentTypes = {
+			slang_module,
+			entry_point,
+		};
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		const SlangResult result = session->createCompositeComponentType(
+				componentTypes.data(),
+				componentTypes.size(),
+				composed_program.writeRef(),
+				diagnostics_blob.writeRef());
+		if (result != OK) {
+			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+		} else if (diagnostics_blob) {
+			UtilityFunctions::push_warning("Slang (program): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		}
+	}
+
+	Slang::ComPtr<slang::IComponentType> linked_program;
+	if (composed_program) {
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		const SlangResult result = composed_program->link(
+				linked_program.writeRef(),
+				diagnostics_blob.writeRef());
+		if (result != OK) {
+			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+			spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, compile_error);
+			return kernel;
+		}
+	}
+
+	Slang::ComPtr<slang::IBlob> compiled_blob;
+	if (linked_program) {
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		const SlangResult result = linked_program->getEntryPointCode(
+				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
+		if (result != OK) {
+			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+		} else if (diagnostics_blob) {
+			// TODO: ignore these until we figure out:
+			// (0): error 100: failed to load downstream compiler 'spirv-opt'
+			// (0): note 99999: failed to load dynamic library 'slang-glslang'
+			// UtilityFunctions::push_warning("Slang (link): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		}
+	}
+
+
+	{
+		slang::Attribute* shader_attribute = entry_point_function->findAttributeByName(session->getGlobalSession(), "shader");
+		if (!shader_attribute) {
+			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (no shader attribute)") % entry_point_name);
+			return nullptr;
+		}
+		size_t value_size{};
+		const char* shader_value = shader_attribute->getArgumentValueString(0, &value_size);
+		if (!shader_value) {
+			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (invalid shader attribute)") % entry_point_name);
+			return nullptr;
+		}
+		const String shader_name = String::utf8(shader_value, value_size);
+		if (shader_name != String("compute")) {
+			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % shader_name);
+			return nullptr;
+		}
+	}
+
+	slang::IMetadata* metadata;
+	{
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		const SlangResult result = linked_program->getEntryPointMetadata(
+				0, 0, &metadata, diagnostics_blob.writeRef());
+		if (result != OK) {
+			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+		} else if (diagnostics_blob) {
+			UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		}
+	}
+
+	if (compile_error.is_empty()) {
+		PackedByteArray spirv_bytes{};
+		spirv_bytes.resize(compiled_blob->getBufferSize());
+		memcpy(spirv_bytes.ptrw(), compiled_blob->getBufferPointer(), compiled_blob->getBufferSize());
+		spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, spirv_bytes);
+	} else {
+		spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, compile_error);
+		return kernel;
+	}
+
+	{
+		slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
+		SlangUInt sizes[3];
+		entry_point_layout->getComputeThreadGroupSize(3, sizes);
+		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
+	}
+
+	{
+		Dictionary entry_point_attributes{};
+		for (size_t attribute_index = 0; attribute_index < entry_point_function->getUserAttributeCount(); ++attribute_index) {
+			if (slang::Attribute* attribute = entry_point_function->getUserAttributeByIndex(attribute_index)) {
+				Dictionary arguments{};
+				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+					String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
+					arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+				}
+				entry_point_attributes.set(attribute->getName(), arguments);
+			}
+		}
+		kernel->set_user_attributes(entry_point_attributes);
+	}
+
+	kernel->set_parameters(_get_param_reflection(linked_program->getLayout(), metadata));
+	kernel->set_buffers(_get_buffers_reflection(linked_program->getLayout()));
+	return kernel;
 }
 
 Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
