@@ -1,9 +1,10 @@
-[gd_scene load_steps=16 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=18 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
 [ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="3_8lvy3"]
 [ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="3_ei00m"]
 [ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="4_wcwec"]
+[ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="5_ei00m"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -34,6 +35,14 @@ effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = false
 
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
+compute_shader = ExtResource("5_ei00m")
+resource_name = "Outline effect"
+effect_callback_type = 1
+access_resolved_color = false
+access_resolved_depth = false
+needs_normal_roughness = true
+
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_8lvy3"]
 compute_shader = ExtResource("3_8lvy3")
 resource_name = "Blur effect"
@@ -50,7 +59,7 @@ access_resolved_color = false
 access_resolved_depth = false
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_n51mc"), SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_8lvy3"), SubResource("ComputeShaderEffect_wcwec")])
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_n51mc"), SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_8lvy3"), SubResource("ComputeShaderEffect_wcwec")])
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)

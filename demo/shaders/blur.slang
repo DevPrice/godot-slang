@@ -17,7 +17,7 @@ static const float kernel[5] = { 0.06136, 0.24477, 0.38774, 0.24477, 0.06136 };
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void blurHorizontal(uint3 threadId: SV_DispatchThreadID) {
+void blur_horizontal(uint3 threadId: SV_DispatchThreadID) {
 	let coord = int2(threadId.xy);
 	if (coord.x >= viewport_size.x || coord.y >= viewport_size.y) return;
 
@@ -34,7 +34,7 @@ void blurHorizontal(uint3 threadId: SV_DispatchThreadID) {
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void blurVertical(uint3 threadId: SV_DispatchThreadID) {
+void blur_vertical(uint3 threadId: SV_DispatchThreadID) {
 	let coord = int2(threadId.xy);
 	if (coord.x >= viewport_size.x || coord.y >= viewport_size.y) return;
 
