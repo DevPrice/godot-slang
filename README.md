@@ -31,7 +31,9 @@ Each function in the Slang source annotated with `[shader("compute")]` will be i
 
 ## Installation
 
-Files for the addon can be downloaded from GitHub Actions builds on each commit to `main`.
+Files for the addon can be downloaded from the [Releases page](https://github.com/DevPrice/godot-slang/releases),
+[GitHub Actions builds](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml) on each commit to `main`,
+or you can build from source as described below.
 
 After downloading a release, you can install this addon in Godot by:
 * Opening the `AssetsLib` tab
