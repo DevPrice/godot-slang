@@ -29,6 +29,13 @@ After installing this plugin in Godot, you'll see a few new types available in t
 After installing, Slang files in your project will be automatically imported as compute shaders.
 Each function in the Slang source annotated with `[shader("compute")]` will be imported as a `ComputeShaderKernel`.
 
+If you'd like, you can ignore the `ComputeShaderTask` and `ComputeShaderEffect` classes, and instead directly bind your shader parameters from code just like you would with `.glsl`.
+If you choose to do this, it can be helpful to explicitly declare Vulkan bindings in your shader:
+```slang
+[[vk::binding(1,2)]]
+Texture2D explicit_binding_texture;
+```
+
 ## Installation
 
 Files for the addon can be downloaded from the [Releases page](https://github.com/DevPrice/godot-slang/releases),
