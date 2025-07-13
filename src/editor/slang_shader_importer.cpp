@@ -74,37 +74,42 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		return ERR_FILE_CANT_OPEN;
 	}
 
-	const String shader_source = shader_file->get_as_text(true);
-	String slang_error{};
+	try {
+		const String shader_source = shader_file->get_as_text(true);
+		String slang_error{};
 
-	Slang::ComPtr<slang::IModule> slang_module;
-	{
-		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		slang_module = session->loadModuleFromSourceString(
-				"__main_module",
-				p_source_file.get_file().utf8().get_data(),
-				shader_source.utf8().get_data(),
-				diagnostics_blob.writeRef());
-		if (!slang_module) {
-			slang_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+		Slang::ComPtr<slang::IModule> slang_module;
+		{
+			Slang::ComPtr<slang::IBlob> diagnostics_blob;
+			slang_module = session->loadModuleFromSourceString(
+					"__main_module",
+					p_source_file.get_file().utf8().get_data(),
+					shader_source.utf8().get_data(),
+					diagnostics_blob.writeRef());
+			if (!slang_module) {
+				slang_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
+			}
 		}
-	}
 
-	const Ref slang_shader = memnew(ComputeShaderFile);
-	if (slang_module && slang_error.is_empty()) {
-		TypedArray<ComputeShaderKernel> kernels;
-		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels)) {
-			UtilityFunctions::push_error("Failed to compile Slang shader!");
-			return compile_error;
+		const Ref slang_shader = memnew(ComputeShaderFile);
+		if (slang_module && slang_error.is_empty()) {
+			TypedArray<ComputeShaderKernel> kernels;
+			if (const Error compile_error = _slang_compile_kernels(slang_module, kernels)) {
+				UtilityFunctions::push_error("Failed to compile Slang shader!");
+				return compile_error;
+			}
+			slang_shader->set_kernels(kernels);
+		} else {
+			UtilityFunctions::push_error(String("[%s] ") % p_source_file, String("Failed to compile Slang shader:\n%s") % slang_error);
+			slang_shader->set_base_error(slang_error);
 		}
-		slang_shader->set_kernels(kernels);
-	} else {
-		UtilityFunctions::push_error(String("[%s] ") % p_source_file, String("Failed to compile Slang shader:\n%s") % slang_error);
-		slang_shader->set_base_error(slang_error);
-	}
 
-	const String out_filename = p_save_path + String(".") + _get_save_extension();
-	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
+		const String out_filename = p_save_path + String(".") + _get_save_extension();
+		return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
+	} catch (...) {
+		UtilityFunctions::push_error(String("[%s] Caught exception compiling shader!") % p_source_file);
+		return FAILED;
+	}
 }
 
 SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) {
