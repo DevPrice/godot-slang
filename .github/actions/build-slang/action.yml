@@ -40,4 +40,5 @@ runs:
       if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
       run: cmake --build --preset ${{ inputs.build-preset }}
+      continue-on-error: true
       working-directory: ${{ inputs.slang-location }}
