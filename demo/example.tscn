@@ -40,7 +40,7 @@ compute_shader = ExtResource("5_ei00m")
 resource_name = "Outline effect"
 effect_callback_type = 1
 access_resolved_color = false
-access_resolved_depth = false
+access_resolved_depth = true
 needs_normal_roughness = true
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_8lvy3"]
