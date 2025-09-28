@@ -267,8 +267,8 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 	Dictionary parameters = kernel->get_parameters();
 	Array parameter_keys = parameters.keys();
-	for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
-		const StringName& key = parameter_keys[param_index];
+	for (const Variant& parameter_key : parameter_keys) {
+		const StringName& key = parameter_key;
 		const Dictionary param = parameters[key];
 		const int64_t param_type = param.get("type", -1);
 		const StringName param_name = param.get("name", StringName{});
@@ -369,7 +369,7 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 	switch (type) {
 		case RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER:
 			if (user_attributes.has("gd_Time")) {
-				return Time::get_singleton()->get_ticks_msec() / 1000.f;
+				return Time::get_singleton()->get_ticks_msec() * .001f;
 			}
 			if (user_attributes.has("gd_FrameId")) {
 				return Engine::get_singleton()->get_frames_drawn();
