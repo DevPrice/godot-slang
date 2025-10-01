@@ -30,6 +30,7 @@ public:
 
 private:
 	Ref<ComputeShaderTask> task;
+	Dictionary dispatched_kernels;
 
 	static void _bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, int32_t view);
 	void _resources_reimported(const PackedStringArray& resources);

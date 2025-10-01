@@ -9,7 +9,7 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 
 void ComputeShaderEffect::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("uniforms_bound"));
+	ADD_SIGNAL(MethodInfo("uniforms_bound",  PropertyInfo(Variant::INT, "view")));
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
 	BIND_METHOD(ComputeShaderEffect, get_task);
 	BIND_METHOD(ComputeShaderEffect, reload_shader);
@@ -43,10 +43,21 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		return;
 	}
 	const uint32_t view_count = rsb->get_view_count();
-	const uint64_t kernel_count = task->get_kernels().size();
+	const TypedArray<ComputeShaderKernel> kernels = task->get_kernels();
+	const uint64_t kernel_count = kernels.size();
 	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
-		Ref<ComputeShaderKernel> kernel = task->get_kernels()[kernel_index];
+		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+		const Dictionary kernel_attributes = kernel->get_user_attributes();
 		if (kernel.is_valid()) {
+			if (kernel_attributes.has("gd_compositor_Skip")) {
+				continue;
+			}
+			if (kernel_attributes.has("gd_compositor_Once")) {
+				if (dispatched_kernels.has(kernel->get_kernel_name())) {
+					continue;
+				}
+				dispatched_kernels.set(kernel->get_kernel_name(), true);
+			}
 			const Vector3i local_size = kernel->get_thread_group_size();
 			const Vector3i groups(
 					(size.x - 1) / local_size.x + 1,
@@ -55,7 +66,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 			for (int32_t view = 0; view < view_count; ++view) {
 				_bind_parameters(task, kernel, p_render_data->get_render_scene_data(), rsb, view);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
-				emit_signal("uniforms_bound");
+				emit_signal("uniforms_bound", view);
 				task->dispatch_at(kernel_index, groups);
 			}
 		}
@@ -106,6 +117,7 @@ void ComputeShaderEffect::_resources_reimported(const PackedStringArray& resourc
 }
 
 void ComputeShaderEffect::reload_shader() {
+	dispatched_kernels.clear();
 	if (compute_shader.is_null()) {
 		task.unref();
 		return;

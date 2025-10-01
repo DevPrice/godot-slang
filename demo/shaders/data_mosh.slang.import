@@ -1,0 +1,15 @@
+[remap]
+
+importer="slang.shader.importer"
+type="ComputeShaderFile"
+uid="uid://drcr6fv2t323a"
+path="res://.godot/imported/data_mosh.slang-31c6ad3f5c9febc77523081859d2ade0.res"
+
+[deps]
+
+source_file="res://shaders/data_mosh.slang"
+dest_files=["res://.godot/imported/data_mosh.slang-31c6ad3f5c9febc77523081859d2ade0.res"]
+
+[params]
+
+shader_type=0

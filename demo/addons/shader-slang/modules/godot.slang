@@ -117,5 +117,19 @@ public struct gd_compositor_VelocityTextureAttribute {};
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_SceneBufferAttribute {
 	let context: string = "render_buffers";
-	let name: string;
+    let name : string;
 };
+
+/**
+ Only run the associated kernel on the first dispatch of a compositor effect.
+ Must be applied to a compute kernel function.
+*/
+[__AttributeUsage(_AttributeTargets.Function)]
+public struct gd_compositor_OnceAttribute {};
+
+/**
+ Skips the associated kernel when running as part of a compositor effect. May still be called manually.
+ Must be applied to a compute kernel function.
+*/
+[__AttributeUsage(_AttributeTargets.Function)]
+public struct gd_compositor_SkipAttribute {};
