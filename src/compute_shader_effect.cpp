@@ -9,7 +9,9 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 
 void ComputeShaderEffect::_bind_methods() {
+	ADD_SIGNAL(MethodInfo("uniforms_bound"));
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
+	BIND_METHOD(ComputeShaderEffect, get_task);
 	BIND_METHOD(ComputeShaderEffect, reload_shader);
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
 }
@@ -32,14 +34,17 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	if (render_scene_buffers.is_null()) {
 		return;
 	}
-	RenderSceneBuffersRD* rsb = cast_to<RenderSceneBuffersRD>(render_scene_buffers.ptr());
+	auto* rsb = cast_to<RenderSceneBuffersRD>(render_scene_buffers.ptr());
+	if (!rsb) {
+		return;
+	}
 	const Vector2i size = rsb->get_internal_size();
 	if (size.x <= 0 || size.y <= 0) {
 		return;
 	}
 	const uint32_t view_count = rsb->get_view_count();
-	const uint32_t kernel_count = task->get_kernels().size();
-	for (uint32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
+	const uint64_t kernel_count = task->get_kernels().size();
+	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
 		Ref<ComputeShaderKernel> kernel = task->get_kernels()[kernel_index];
 		if (kernel.is_valid()) {
 			const Vector3i local_size = kernel->get_thread_group_size();
@@ -47,13 +52,18 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					(size.x - 1) / local_size.x + 1,
 					(size.y - 1) / local_size.y + 1,
 					1);
-			for (uint32_t view = 0; view < view_count; ++view) {
+			for (int32_t view = 0; view < view_count; ++view) {
 				_bind_parameters(task, kernel, p_render_data->get_render_scene_data(), rsb, view);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
+				emit_signal("uniforms_bound");
 				task->dispatch_at(kernel_index, groups);
 			}
 		}
 	}
+}
+
+Ref<ComputeShaderTask> ComputeShaderEffect::get_task() const {
+	return task;
 }
 
 void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {

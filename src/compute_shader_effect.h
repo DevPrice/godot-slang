@@ -22,6 +22,8 @@ protected:
 public:
 	void _render_callback(int32_t p_effect_callback_type, RenderData* p_render_data) override;
 
+	[[nodiscard]] Ref<ComputeShaderTask> get_task() const;
+
 	void reload_shader();
 
 	GDVIRTUAL4(_bind_view, Ref<ComputeShaderTask>, Ref<ComputeShaderKernel>, RenderData*, int32_t)
