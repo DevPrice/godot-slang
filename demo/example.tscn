@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=21 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
 [ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="3_8lvy3"]
@@ -6,6 +6,7 @@
 [ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="4_wcwec"]
 [ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="5_ei00m"]
 [ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="6_ugfer"]
+[ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -98,3 +99,4 @@ material_override = SubResource("StandardMaterial3D_ugfer")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.946812, 0.321787, 0, -0.321787, 0.946812, 0, 2, 4)
+script = ExtResource("7_rujmf")

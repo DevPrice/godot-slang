@@ -10,6 +10,7 @@ let scene : ConstantBuffer<gd::compositor::SceneDataBlock>;
 let capture : Texture2D<float4>;
 
 [gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
+[format("rgba16f")]
 [gd::compositor::TextureName("scene_color")]
 let out_capture : RWTexture2D<float4>;
 
@@ -67,4 +68,5 @@ func data_mosh(uint3 thread_id: SV_DispatchThreadID) -> void {
     float3 out_color = capture.Sample(sampler_state, screen_uv + velocity).rgb;
 
     out_image[xy] = float4(out_color, 1.f);
+    out_capture[xy] = out_image[xy];
 }
