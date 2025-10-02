@@ -16,13 +16,10 @@ let out_capture : RWTexture2D<float4>;
 [gd::compositor::VelocityTexture]
 let velocity_texture : Sampler2D<float4>;
 
-[gd::compositor::DepthTexture]
-let scene_depth : Sampler2D<float4>;
-
 [gd::compositor::ColorTexture]
 let out_image : RWTexture2D<float4>;
 
-func motion_vector(float2 uv, float depth) -> float2 {
+func motion_vector(float2 uv) -> float2 {
     let velocity = velocity_texture.Sample(uv).xy;
 	if (velocity.x == -1.f && velocity.y == -1.f) {
 		return float2(0.f);
@@ -49,11 +46,8 @@ func data_mosh(uint3 thread_id: SV_DispatchThreadID) -> void {
 		return;
 	}
 
-    let screen_uv = float2(xy + .5f) / viewport_size;
-
-    let depth = scene_depth.Sample(screen_uv).r;
-    let velocity = motion_vector(screen_uv, depth);
-
+    let screen_uv = (xy + .5f) / viewport_size;
+    let velocity = motion_vector(screen_uv);
     let out_color = capture.Sample(screen_uv + velocity).rgb;
 
     out_image[xy] = float4(out_color, 1.f);
