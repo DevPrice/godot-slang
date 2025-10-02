@@ -95,8 +95,7 @@ You may run into issues if you try to bind more complex structures into buffers,
 Feel free to file an issue or contribute a fix if you run into any problems.
 
 Known issues:
-* Global shader parameters of the `sampler*` type can't be bound.
-* Storage buffers and push constants are not yet supported.
+* Storage buffers and push constants are not well-supported.
 * `ParameterBlock` is not yet fully supported (but may work in some cases). `ConstantBuffer` should mostly work.
 * Nested struct parameters are untested and probably don't work yet.
 
