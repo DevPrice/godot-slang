@@ -7,10 +7,10 @@ using gd::compositor;
 let scene : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
 [gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
+[gd::compositor::TextureName("capture")]
 let capture : Texture2D<float4>;
 
-[gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
-[gd::compositor::TextureName("scene_color")]
+[gd::compositor::TextureName("capture")]
 let out_capture : RWTexture2D<float4>;
 
 [gd::compositor::VelocityTexture]

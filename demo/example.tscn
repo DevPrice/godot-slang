@@ -1,11 +1,12 @@
-[gd_scene load_steps=21 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=22 format=3 uid="uid://dh0oj81pufivs"]
 
+[ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
 [ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="3_8lvy3"]
 [ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="3_ei00m"]
 [ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="4_wcwec"]
 [ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="5_ei00m"]
-[ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="6_ugfer"]
+[ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="7_kkclv"]
 [ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
@@ -37,6 +38,13 @@ effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = false
 
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_8lvy3"]
+compute_shader = ExtResource("3_8lvy3")
+resource_name = "Blur effect"
+effect_callback_type = 1
+access_resolved_color = false
+access_resolved_depth = false
+
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
 compute_shader = ExtResource("5_ei00m")
 resource_name = "Outline effect"
@@ -44,13 +52,6 @@ effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = true
 needs_normal_roughness = true
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_8lvy3"]
-compute_shader = ExtResource("3_8lvy3")
-resource_name = "Blur effect"
-effect_callback_type = 1
-access_resolved_color = false
-access_resolved_depth = false
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_wcwec"]
 compute_shader = ExtResource("4_wcwec")
@@ -60,12 +61,14 @@ effect_callback_type = 3
 access_resolved_color = false
 access_resolved_depth = false
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_rujmf"]
-compute_shader = ExtResource("6_ugfer")
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
+compute_shader = ExtResource("7_kkclv")
+resource_name = "Data mosh effect"
+enabled = false
 needs_motion_vectors = true
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_n51mc"), SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_8lvy3"), SubResource("ComputeShaderEffect_wcwec"), SubResource("ComputeShaderEffect_rujmf")])
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_n51mc"), SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_8lvy3"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_wcwec"), SubResource("ComputeShaderEffect_mt10o")])
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)
@@ -76,7 +79,9 @@ albedo_color = Color(0.748747, 1, 0.518099, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugfer"]
 albedo_color = Color(1, 0.486275, 1, 1)
 
-[node name="Node" type="Node3D"]
+[node name="Node" type="Node3D" node_paths=PackedStringArray("world_env")]
+script = ExtResource("1_kkclv")
+world_env = NodePath("WorldEnvironment")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_8lvy3")

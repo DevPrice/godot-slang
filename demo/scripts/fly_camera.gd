@@ -18,4 +18,3 @@ func _unhandled_input(event: InputEvent) -> void:
 			var look_amount: Vector2 = event.relative * mouse_look_sensitivity
 			rotation.y -= look_amount.x
 			rotation.x = clamp(rotation.x - look_amount.y, -TAU / 4, TAU / 4)
-		

@@ -36,6 +36,7 @@ void ComputeShaderEffect::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
 	BIND_METHOD(ComputeShaderEffect, get_task);
 	BIND_METHOD(ComputeShaderEffect, reload_shader);
+	BIND_METHOD(ComputeShaderEffect, queue_dispatch, "kernel_name");
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
 }
 
@@ -132,7 +133,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 				const String texture_name = texture_name_attribute.get(key_name, param_name);
 				// TODO: Make more of this configurable
 				const RID texture = render_scene_buffers->create_texture(
-					kernel->get_kernel_name(),
+					"__global_context",
 					texture_name,
 					static_cast<RenderingDevice::DataFormat>(format),
 					RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
@@ -146,7 +147,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			} else if (user_attributes.has(Attributes::texture_name())) {
 				Dictionary args = user_attributes[Attributes::texture_name()];
 				const String texture_name = args[key_name];
-				const RID texture = render_scene_buffers->get_texture(kernel->get_kernel_name(), texture_name);
+				const RID texture = render_scene_buffers->get_texture("__global_context", texture_name);
 				task->set_shader_parameter(param_name, texture);
 			}
 		}
