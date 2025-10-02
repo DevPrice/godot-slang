@@ -1,6 +1,7 @@
 module godot;
 
 __include "scene_data";
+__include "data_format";
 
 namespace gd {
 
@@ -116,7 +117,27 @@ public struct gd_compositor_VelocityTextureAttribute {};
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_SceneBufferAttribute {
-	let context: string = "render_buffers";
+    let context : string = "render_buffers";
+    let name : string;
+};
+
+/**
+ Binds a parameter to a new texture.
+ Must be applied to a variable of type `Texture2D`.
+ Only available for compositor effects.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_TextureAttribute {
+    let format : compositor::DataFormat = compositor::DataFormat.DATA_FORMAT_R16G16B16A16_SNORM;
+};
+
+/**
+ Binds a parameter to the texture with this name.
+ Must be applied to a variable of type `Texture2D`.
+ Only available for compositor effects.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_TextureNameAttribute {
     let name : string;
 };
 

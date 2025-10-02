@@ -1,9 +1,17 @@
 import godot;
 
+using gd;
+using gd::compositor;
+
 [gd::compositor::SceneData]
 let scene : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
-let scene_color : Texture2D<float4>;
+[gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
+let capture : Texture2D<float4>;
+
+[gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
+[gd::compositor::TextureName("scene_color")]
+let out_capture : RWTexture2D<float4>;
 
 [gd::compositor::VelocityTexture]
 let velocity_texture : Texture2D<float4>;
@@ -29,7 +37,18 @@ func motion_vector(float2 uv, float depth, float4x4 reprojection_matrix) -> floa
 		// return derive_motion_vector(uv, depth, reprojection_matrix);
 		return float2(0.f);
 	}
-	return velocity;
+    return velocity;
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+[gd::compositor::Once]
+func capture_screen(uint3 thread_id: SV_DispatchThreadID) -> void {
+    int2 xy = int2(thread_id.xy);
+    if (xy.x > scene.data.viewport_size.x || xy.y > scene.data.viewport_size.y) {
+        return;
+    }
+    out_capture[xy] = out_image[xy];
 }
 
 [shader("compute")]
@@ -45,8 +64,7 @@ func data_mosh(uint3 thread_id: SV_DispatchThreadID) -> void {
 	float depth = scene_depth.Sample(sampler_state, screen_uv).r;
 	float2 velocity = motion_vector(screen_uv, depth, scene.data.inv_projection_matrix);
 
-    float3 out_color = scene_color.Sample(sampler_state, screen_uv + velocity).rgb;
+    float3 out_color = capture.Sample(sampler_state, screen_uv + velocity).rgb;
 
     out_image[xy] = float4(out_color, 1.f);
-    out_image[xy] = scene_color.Sample(sampler_state, screen_uv);
 }

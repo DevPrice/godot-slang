@@ -17,6 +17,18 @@ struct Attributes {
 		static StringName attribute_once("gd_compositor_Skip");
 		return attribute_once;
 	}
+	static StringName& texture() {
+		static StringName attribute_once("gd_compositor_Texture");
+		return attribute_once;
+	}
+	static StringName& texture_name() {
+		static StringName attribute_once("gd_compositor_TextureName");
+		return attribute_once;
+	}
+	static StringName& scene_buffer() {
+		static StringName attribute_once("gd_compositor_SceneBuffer");
+		return attribute_once;
+	}
 };
 
 void ComputeShaderEffect::_bind_methods() {
@@ -88,6 +100,8 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 	for (uint32_t param_index = 0; param_index < param_names.size(); ++param_index) {
 		String param_name = param_names[param_index];
 		if (!param_name.is_empty()) {
+			static StringName key_context("context");
+			static StringName key_name("name");
 			Dictionary param_dict = params[param_name];
 			Dictionary user_attributes = param_dict["user_attributes"];
 			if (user_attributes.has("gd_compositor_Size")) {
@@ -105,11 +119,35 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			if (user_attributes.has("gd_compositor_VelocityTexture")) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_velocity_layer(view));
 			}
-			if (user_attributes.has("gd_compositor_SceneBuffer")) {
-				Dictionary args = user_attributes["gd_compositor_SceneBuffer"];
-				const String context = args["context"];
-				const String name = args["name"];
+			if (user_attributes.has(Attributes::scene_buffer())) {
+				Dictionary args = user_attributes[Attributes::scene_buffer()];
+				const String context = args[key_context];
+				const String name = args[key_name];
 				task->set_shader_parameter(param_name, render_scene_buffers->get_texture(context, name));
+			}
+			if (user_attributes.has(Attributes::texture())) {
+				Dictionary args = user_attributes[Attributes::texture()];
+				Dictionary texture_name_attribute = user_attributes.get(Attributes::texture_name(), Dictionary());
+				const int32_t format = args["format"];
+				const String texture_name = texture_name_attribute.get(key_name, param_name);
+				// TODO: Make more of this configurable
+				const RID texture = render_scene_buffers->create_texture(
+					kernel->get_kernel_name(),
+					texture_name,
+					static_cast<RenderingDevice::DataFormat>(format),
+					RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
+					RenderingDevice::TEXTURE_SAMPLES_1,
+					render_scene_buffers->get_internal_size(),
+					1,
+					1,
+					false,
+					false);
+				task->set_shader_parameter(param_name, texture);
+			} else if (user_attributes.has(Attributes::texture_name())) {
+				Dictionary args = user_attributes[Attributes::texture_name()];
+				const String texture_name = args[key_name];
+				const RID texture = render_scene_buffers->get_texture(kernel->get_kernel_name(), texture_name);
+				task->set_shader_parameter(param_name, texture);
 			}
 		}
 	}
