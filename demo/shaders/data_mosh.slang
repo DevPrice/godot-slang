@@ -3,8 +3,8 @@ import godot;
 using gd;
 using gd::compositor;
 
-[gd::compositor::SceneData]
-let scene : ConstantBuffer<gd::compositor::SceneDataBlock>;
+[gd::compositor::Size]
+let viewport_size : int2;
 
 [gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]
 [gd::LinearSampler(SamplerRepeatMode.CLAMP_TO_EDGE)]
@@ -22,7 +22,7 @@ let scene_depth : Sampler2D<float4>;
 [gd::compositor::ColorTexture]
 let out_image : RWTexture2D<float4>;
 
-func motion_vector(float2 uv, float depth, float4x4 reprojection_matrix)->float2 {
+func motion_vector(float2 uv, float depth) -> float2 {
     let velocity = velocity_texture.Sample(uv).xy;
 	if (velocity.x == -1.f && velocity.y == -1.f) {
 		return float2(0.f);
@@ -33,9 +33,9 @@ func motion_vector(float2 uv, float depth, float4x4 reprojection_matrix)->float2
 [shader("compute")]
 [numthreads(8, 8, 1)]
 [gd::compositor::Once]
-func capture_screen(uint3 thread_id: SV_DispatchThreadID)->void {
+func capture_screen(uint3 thread_id: SV_DispatchThreadID) -> void {
     let xy = int2(thread_id.xy);
-    if (xy.x > scene.data.viewport_size.x || xy.y > scene.data.viewport_size.y) {
+    if (xy.x > viewport_size.x || xy.y > viewport_size.y) {
         return;
     }
     out_capture[xy] = out_image[xy];
@@ -45,14 +45,14 @@ func capture_screen(uint3 thread_id: SV_DispatchThreadID)->void {
 [numthreads(8, 8, 1)]
 func data_mosh(uint3 thread_id: SV_DispatchThreadID) -> void {
     let xy = int2(thread_id.xy);
-	if (xy.x > scene.data.viewport_size.x || xy.y > scene.data.viewport_size.y) {
+    if (xy.x > viewport_size.x || xy.y > viewport_size.y) {
 		return;
 	}
 
-    let screen_uv = float2(xy + .5f) / scene.data.viewport_size;
+    let screen_uv = float2(xy + .5f) / viewport_size;
 
     let depth = scene_depth.Sample(screen_uv).r;
-    let velocity = motion_vector(screen_uv, depth, scene.data.inv_projection_matrix);
+    let velocity = motion_vector(screen_uv, depth);
 
     let out_color = capture.Sample(screen_uv + velocity).rgb;
 
