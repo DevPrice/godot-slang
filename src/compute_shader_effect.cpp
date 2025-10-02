@@ -176,6 +176,9 @@ void ComputeShaderEffect::reload_shader() {
 		}
 	}
 
+	// Work around render callback not being called?
+	set_effect_callback_type(get_effect_callback_type());
+
 	if (Engine::get_singleton()->is_editor_hint()) {
 		if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
 			if (EditorFileSystem* editor_fs = editor_interface->get_resource_filesystem()) {
