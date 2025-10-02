@@ -8,6 +8,17 @@
 #include "godot_cpp/classes/render_scene_data.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 
+struct Attributes {
+	static StringName& once() {
+		static StringName attribute_once("gd_compositor_Once");
+		return attribute_once;
+	}
+	static StringName& skip() {
+		static StringName attribute_once("gd_compositor_Skip");
+		return attribute_once;
+	}
+};
+
 void ComputeShaderEffect::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("uniforms_bound",  PropertyInfo(Variant::INT, "view")));
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
@@ -49,14 +60,8 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
 		if (kernel.is_valid()) {
-			if (kernel_attributes.has("gd_compositor_Skip")) {
+			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(Attributes::skip()) || kernel_attributes.has(Attributes::once()))) {
 				continue;
-			}
-			if (kernel_attributes.has("gd_compositor_Once")) {
-				if (dispatched_kernels.has(kernel->get_kernel_name())) {
-					continue;
-				}
-				dispatched_kernels.set(kernel->get_kernel_name(), true);
 			}
 			const Vector3i local_size = kernel->get_thread_group_size();
 			const Vector3i groups(
@@ -117,13 +122,21 @@ void ComputeShaderEffect::_resources_reimported(const PackedStringArray& resourc
 }
 
 void ComputeShaderEffect::reload_shader() {
-	dispatched_kernels.clear();
 	if (compute_shader.is_null()) {
 		task.unref();
 		return;
 	}
+	const TypedArray<ComputeShaderKernel> kernels = compute_shader->get_kernels();
 	task = Ref(memnew(ComputeShaderTask));
-	task->set_kernels(compute_shader->get_kernels());
+	task->set_kernels(kernels);
+
+	queued_kernels.clear();
+	for (int32_t i = 0; i < kernels.size(); ++i) {
+		const Ref<ComputeShaderKernel> kernel = kernels[i];
+		if (kernel->get_user_attributes().has(Attributes::once())) {
+			queue_dispatch(kernel->get_kernel_name());
+		}
+	}
 
 	if (Engine::get_singleton()->is_editor_hint()) {
 		if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
@@ -135,4 +148,8 @@ void ComputeShaderEffect::reload_shader() {
 			}
 		}
 	}
+}
+
+void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
+	queued_kernels.set(kernel_name, true);
 }

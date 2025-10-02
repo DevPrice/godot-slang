@@ -25,12 +25,13 @@ public:
 	[[nodiscard]] Ref<ComputeShaderTask> get_task() const;
 
 	void reload_shader();
+	void queue_dispatch(const String& kernel_name);
 
 	GDVIRTUAL4(_bind_view, Ref<ComputeShaderTask>, Ref<ComputeShaderKernel>, RenderData*, int32_t)
 
 private:
 	Ref<ComputeShaderTask> task;
-	Dictionary dispatched_kernels;
+	Dictionary queued_kernels;
 
 	static void _bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, int32_t view);
 	void _resources_reimported(const PackedStringArray& resources);
