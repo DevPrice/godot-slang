@@ -9,6 +9,8 @@ let color_texture : Texture2D<float4>;
 [gd::compositor::DepthTexture]
 let depth_texture : Texture2D<float4>;
 
+let x : Sampler2D;
+
 [gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]
 let normal_roughness_texture : Texture2D<float4>;
 

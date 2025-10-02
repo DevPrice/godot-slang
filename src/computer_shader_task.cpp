@@ -314,14 +314,21 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
 			Variant value = _shader_parameters[param_name];
-			if (value == Variant(nullptr)) {
+			if (value.get_type() == Variant::NIL) {
 				value = _get_default_uniform(uniform_type, param["user_attributes"]);
 			}
 			if (value.get_type() != Variant::NIL) {
 				Ref uniform = memnew(RDUniform);
 				uniform->set_binding(binding_index);
 				uniform->set_uniform_type(uniform_type);
-				if (value.get_type() == Variant::ARRAY) {
+				if (uniform_type == RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && value.get_type() != Variant::ARRAY) {
+					Variant sampler = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_SAMPLER, param["user_attributes"]);
+					if (sampler.get_type() == Variant::NIL) {
+						sampler = _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_REPEAT);
+					}
+					uniform->add_id(sampler);
+					uniform->add_id(value);
+				} else if (value.get_type() == Variant::ARRAY) {
 					Array array = value;
 					for (size_t i = 0; i < array.size(); ++i) {
 						uniform->add_id(array[i]);
