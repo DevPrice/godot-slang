@@ -54,7 +54,7 @@ public struct gd_GlobalParamAttribute {
 
 /**
  Binds a parameter a linear sampler with the provided repeat mode.
- Must be applied to a variable of type `SamplerState`.
+ Must be applied to a variable of type `SamplerState` or `Sampler2D`.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_LinearSamplerAttribute {
@@ -63,7 +63,7 @@ public struct gd_LinearSamplerAttribute {
 
 /**
  Binds a parameter a nearest-neighbor sampler with the provided repeat mode.
- Must be applied to a variable of type `SamplerState`.
+ Must be applied to a variable of type `SamplerState` or `Sampler2D`.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_NearestSamplerAttribute {
@@ -142,14 +142,14 @@ public struct gd_compositor_TextureNameAttribute {
 };
 
 /**
- Only run the associated kernel on the first dispatch of a compositor effect.
+ Only run the associated kernel on the first dispatch of a compositor effect. May still be dispatched manually.
  Must be applied to a compute kernel function.
 */
 [__AttributeUsage(_AttributeTargets.Function)]
 public struct gd_compositor_OnceAttribute {};
 
 /**
- Skips the associated kernel when running as part of a compositor effect. May still be called manually.
+ Skips the associated kernel when running as part of a compositor effect. May still be dispatched manually.
  Must be applied to a compute kernel function.
 */
 [__AttributeUsage(_AttributeTargets.Function)]
