@@ -35,8 +35,7 @@ private:
 	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);
 	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
-	static PropertyInfo _get_property_info(slang::ProgramLayout* program_layout, slang::VariableLayoutReflection* param_reflection);
-	static Variant::Type _to_godot_type(slang::TypeReflection* type, const Dictionary& attributes);
+	static bool _get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string);
 	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
 	static slang::IGlobalSession* _get_global_session();
