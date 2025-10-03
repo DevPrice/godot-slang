@@ -220,15 +220,16 @@ void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
 		const Dictionary param_info = params[param_name];
 		const auto variant_type = static_cast<Variant::Type>(static_cast<int32_t>(param_info["variant_type"]));
 		const Dictionary user_attributes = param_info["user_attributes"];
-		// TODO: This is a temp hack to avoid showing the auto-bound params
-		bool is_auto_bound = false;
+		// TODO: This is a temp hack to avoid edits the auto-bound params
+		// Need a more robust way of knowing when a param should be editable
+		PropertyUsageFlags usage = PROPERTY_USAGE_DEFAULT;
 		for (const StringName attribute : user_attributes.keys()) {
 			if (attribute.begins_with("gd_")) {
-				is_auto_bound = true;
+				usage = static_cast<PropertyUsageFlags>(PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY);
 			}
 		}
-		if (!is_auto_bound && variant_type != Variant::OBJECT && variant_type != Variant::RID && variant_type != Variant::NIL) {
-			p_list->push_back(PropertyInfo(variant_type, "shader_parameter/" + param_name, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT));
+		if (variant_type != Variant::OBJECT && variant_type != Variant::RID && variant_type != Variant::NIL) {
+			p_list->push_back(PropertyInfo(variant_type, "shader_parameter/" + param_name, PROPERTY_HINT_NONE, "", usage));
 		}
 	}
 }
