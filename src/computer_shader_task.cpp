@@ -286,7 +286,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	for (const Variant& parameter_key : parameter_keys) {
 		const StringName& key = parameter_key;
 		const Dictionary param = parameters[key];
-		const int64_t param_type = param.get("type", -1);
+		const int64_t param_type = param.get("uniform_type", -1);
 		const StringName param_name = param.get("name", StringName{});
 		const int64_t binding_space = param.get("binding_space", 0);
 		const int64_t binding_index = param.get("binding_index", 0);
@@ -322,7 +322,7 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 		const Dictionary param = parameters[key];
 		const int64_t binding_space = param.get("binding_space", 0);
 		const int64_t binding_index = param.get("binding_index", 0);
-		const int64_t param_type = param.get("type", -1);
+		const int64_t param_type = param.get("uniform_type", -1);
 		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER)
 			continue;
 

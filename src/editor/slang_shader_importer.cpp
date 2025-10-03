@@ -291,12 +291,12 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 			case slang::ParameterCategory::DescriptorTableSlot:
 				param_info.set("binding_index", param->getBindingIndex());
 				param_info.set("binding_space", param->getBindingSpace());
-				param_info.set("type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
+				param_info.set("uniform_type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
 				break;
 			case slang::ParameterCategory::Uniform:
 				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
 				param_info.set("binding_space", param->getBindingSpace());
-				param_info.set("type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
+				param_info.set("uniform_type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
 				param_info.set("offset", param->getOffset());
 				param_info.set("size", param->getTypeLayout()->getSize());
 				break;
