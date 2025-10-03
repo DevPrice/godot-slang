@@ -259,6 +259,7 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 }
 
 RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter, const RenderingDevice::SamplerRepeatMode repeat_mode) const {
+	ERR_FAIL_INDEX_V(repeat_mode, RenderingDevice::SAMPLER_REPEAT_MODE_MAX, RID{});
 	TypedArray<RID> sampler_cache = filter == RenderingDevice::SamplerFilter::SAMPLER_FILTER_NEAREST ? _nearest_sampler_cache : _linear_sampler_cache;
 	if (RID cached_value = sampler_cache[repeat_mode]; cached_value.is_valid()) {
 		return cached_value;
@@ -275,7 +276,7 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
 		sampler_cache[repeat_mode] = sampler_rid;
 		return sampler_rid;
 	}
-	return RID();
+	return {};
 }
 
 void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
@@ -400,12 +401,12 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER:
 			if (user_attributes.has("gd_LinearSampler")) {
 				const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
-				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", -1);
+				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 				return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
 			if (user_attributes.has("gd_NearestSampler")) {
 				const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
-				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", 0);
+				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 				return _get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
 			break;
