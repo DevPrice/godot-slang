@@ -9,8 +9,6 @@ let color_texture : Texture2D<float4>;
 [gd::compositor::DepthTexture]
 let depth_texture : Texture2D<float4>;
 
-let x : Sampler2D;
-
 [gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]
 let normal_roughness_texture : Texture2D<float4>;
 
@@ -23,11 +21,11 @@ let viewport_size : int2;
 [gd::compositor::SceneData]
 let scene_data : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
-static let outline_size : float = 1;
+let outline_size : float = 1;
 static let depth_sensitivity : float = 0.25;
 static let normal_sensitivity : float = 0.1;
 
-static let outline_color : float4 = float4(0, 0, 0, .98);
+let outline_color : float4 = float4(0, 0, 0, .98);
 
 [shader("compute")]
 [numthreads(8, 8, 1)]

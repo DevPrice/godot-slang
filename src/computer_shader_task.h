@@ -38,12 +38,14 @@ public:
 	ComputeShaderTask();
 	~ComputeShaderTask() override;
 
-	Variant get_shader_parameter(const StringName& param) const;
+	[[nodiscard]] Variant get_shader_parameter(const StringName& param) const;
 	void set_shader_parameter(const StringName& param, const Variant& value);
 
 	void dispatch_all(Vector3i thread_groups);
 	void dispatch(const StringName& kernel_name, Vector3i thread_groups);
 	void dispatch_at(int64_t kernel_index, Vector3i thread_groups);
+
+	[[nodiscard]] Dictionary get_shader_parameters() const;
 
 private:
 	Dictionary _shader_parameters{};
@@ -56,8 +58,8 @@ private:
 	RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
-	RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
-	Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
+	[[nodiscard]] RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
+	[[nodiscard]] Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
 	Ref<RDUniformBuffer> _get_uniform_buffer(int64_t binding, int64_t set);
 	void _set_uniform_buffer(int64_t binding, int64_t set, const RID& buffer_rid);
 	void _update_buffers(int64_t kernel_index);

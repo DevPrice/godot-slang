@@ -10,24 +10,24 @@
 
 struct Attributes {
 	static StringName& once() {
-		static StringName attribute_once("gd_compositor_Once");
-		return attribute_once;
+		static StringName attribute("gd_compositor_Once");
+		return attribute;
 	}
 	static StringName& skip() {
-		static StringName attribute_once("gd_compositor_Skip");
-		return attribute_once;
+		static StringName attribute("gd_compositor_Skip");
+		return attribute;
 	}
 	static StringName& texture() {
-		static StringName attribute_once("gd_compositor_Texture");
-		return attribute_once;
+		static StringName attribute("gd_compositor_Texture");
+		return attribute;
 	}
 	static StringName& texture_name() {
-		static StringName attribute_once("gd_compositor_TextureName");
-		return attribute_once;
+		static StringName attribute("gd_compositor_TextureName");
+		return attribute;
 	}
 	static StringName& scene_buffer() {
-		static StringName attribute_once("gd_compositor_SceneBuffer");
-		return attribute_once;
+		static StringName attribute("gd_compositor_SceneBuffer");
+		return attribute;
 	}
 };
 
@@ -98,8 +98,7 @@ Ref<ComputeShaderTask> ComputeShaderEffect::get_task() const {
 void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
 	const Dictionary params = kernel->get_parameters();
 	Array param_names = params.keys();
-	for (uint32_t param_index = 0; param_index < param_names.size(); ++param_index) {
-		String param_name = param_names[param_index];
+	for (const StringName param_name : param_names) {
 		if (!param_name.is_empty()) {
 			static StringName key_context("context");
 			static StringName key_name("name");
@@ -170,8 +169,7 @@ void ComputeShaderEffect::reload_shader() {
 	task->set_kernels(kernels);
 
 	queued_kernels.clear();
-	for (int32_t i = 0; i < kernels.size(); ++i) {
-		const Ref<ComputeShaderKernel> kernel = kernels[i];
+	for (const Ref<ComputeShaderKernel> kernel : kernels) {
 		if (kernel->get_user_attributes().has(Attributes::once())) {
 			queue_dispatch(kernel->get_kernel_name());
 		}
@@ -179,6 +177,7 @@ void ComputeShaderEffect::reload_shader() {
 
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
+	notify_property_list_changed();
 
 	if (Engine::get_singleton()->is_editor_hint()) {
 		if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
@@ -194,4 +193,58 @@ void ComputeShaderEffect::reload_shader() {
 
 void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
 	queued_kernels.set(kernel_name, true);
+}
+
+bool ComputeShaderEffect::_set(const StringName& p_name, const Variant& p_value) {
+	if (p_name.begins_with("shader_parameter/")) {
+		const StringName param_name = p_name.substr(17);
+		task->set_shader_parameter(param_name, p_value);
+		return true;
+	}
+	return false;
+}
+
+bool ComputeShaderEffect::_get(const StringName& p_name, Variant& r_ret) const {
+	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
+		const StringName param_name = p_name.substr(17);
+		r_ret = task->get_shader_parameter(param_name);
+		return true;
+	}
+	return false;
+}
+
+void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
+	if (task.is_null()) return;
+	Dictionary params = task->get_shader_parameters();
+	for (const StringName param_name : params.keys()) {
+		const Dictionary param_info = params[param_name];
+		const auto variant_type = static_cast<Variant::Type>(static_cast<int32_t>(param_info["variant_type"]));
+		const Dictionary user_attributes = param_info["user_attributes"];
+		// TODO: This is a temp hack to avoid showing the auto-bound params
+		bool is_auto_bound = false;
+		for (const StringName attribute : user_attributes.keys()) {
+			if (attribute.begins_with("gd_")) {
+				is_auto_bound = true;
+			}
+		}
+		if (!is_auto_bound && variant_type != Variant::OBJECT && variant_type != Variant::RID && variant_type != Variant::NIL) {
+			p_list->push_back(PropertyInfo(variant_type, "shader_parameter/" + param_name, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT));
+		}
+	}
+}
+
+bool ComputeShaderEffect::_property_can_revert(const StringName& p_name) const {
+	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
+		const StringName param_name = p_name.substr(17);
+		return task->get_shader_parameter(param_name).get_type() != Variant::NIL;
+	}
+	return false;
+}
+
+bool ComputeShaderEffect::_property_get_revert(const StringName& p_name, Variant& r_property) const {
+	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
+		r_property = nullptr;
+		return true;
+	}
+	return false;
 }

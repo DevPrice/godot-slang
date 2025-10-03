@@ -133,7 +133,9 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
 			break;
 		}
 		case Variant::PACKED_STRING_ARRAY: {
-			BUFFER_COPY(PackedStringArray)
+			const PackedStringArray array = data;
+			const PackedByteArray byte_array = array.to_byte_array();
+			memcpy(buffer.ptrw() + offset, byte_array.ptr(), Math::min(size, byte_array.size()));
 			break;
 		}
 		default:
@@ -225,6 +227,19 @@ void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i t
 
 void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups) {
 	_dispatch(kernel_index, thread_groups);
+}
+
+Dictionary ComputeShaderTask::get_shader_parameters() const {
+	Dictionary shader_params;
+	for (const Ref<ComputeShaderKernel> kernel : kernels) {
+		if (kernel.is_valid()) {
+			Dictionary params = kernel->get_parameters();
+			for (const Variant& param_name : params.keys()) {
+				shader_params.set(param_name, params[param_name]);
+			}
+		}
+	}
+	return shader_params;
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {

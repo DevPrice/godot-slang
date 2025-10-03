@@ -273,6 +273,7 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
+		param_info.set("variant_type", _to_godot_type(param->getType()));
 		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
 				param_info.set("binding_index", param->getBindingIndex());
@@ -366,6 +367,17 @@ Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type) {
 				default:
 					break;
 			}
+		case SLANG_TYPE_KIND_VECTOR:
+			switch (type->getColumnCount()) {
+				case 2: return Variant::VECTOR2;
+				case 3: return Variant::VECTOR3;
+				case 4: return Variant::VECTOR4;
+				default: break;
+			}
+			break;
+		case SLANG_TYPE_KIND_RESOURCE:
+			// TODO: This is not useful as-is
+			return Variant::OBJECT;
 		case SLANG_TYPE_KIND_STRUCT:
 			if (String(type->getName()) == "String") {
 				// TODO: Is there a better way to detect the String type?
