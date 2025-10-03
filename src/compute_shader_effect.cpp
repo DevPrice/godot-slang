@@ -224,7 +224,7 @@ void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
 		// Need a more robust way of knowing when a param should be editable
 		PropertyUsageFlags usage = PROPERTY_USAGE_DEFAULT;
 		for (const StringName attribute : user_attributes.keys()) {
-			if (attribute.begins_with("gd_")) {
+			if (attribute.begins_with("gd_") && String(attribute) != "gd_Color") {
 				usage = static_cast<PropertyUsageFlags>(PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY);
 			}
 		}

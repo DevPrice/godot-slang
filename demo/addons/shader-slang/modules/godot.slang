@@ -49,7 +49,7 @@ public struct gd_FrameIdAttribute {};
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_GlobalParamAttribute {
-	let name: string;
+    let name: string;
 };
 
 /**
@@ -58,7 +58,7 @@ public struct gd_GlobalParamAttribute {
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_LinearSamplerAttribute {
-	let repeat_mode = SamplerRepeatMode.REPEAT;
+    let repeat_mode = SamplerRepeatMode.REPEAT;
 };
 
 /**
@@ -69,6 +69,13 @@ public struct gd_LinearSamplerAttribute {
 public struct gd_NearestSamplerAttribute {
     let repeat_mode = SamplerRepeatMode.REPEAT;
 };
+
+/**
+ Indicates that a vector represents a color.
+ Must be applied to a variable of type `float3` or `float4`.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_ColorAttribute {};
 
 /**
  Binds a parameter to the scene data block uniform buffer.

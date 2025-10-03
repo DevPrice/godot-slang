@@ -48,7 +48,7 @@ access_resolved_depth = false
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
 compute_shader = ExtResource("5_ei00m")
 shader_parameter/outline_size = 1.0
-shader_parameter/outline_color = Vector4(0, 0, 0, 0.95)
+shader_parameter/outline_color = Color(0, 0, 0, 0.75000006)
 resource_name = "Outline effect"
 effect_callback_type = 1
 access_resolved_color = false

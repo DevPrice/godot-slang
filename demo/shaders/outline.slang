@@ -25,6 +25,7 @@ let outline_size : float = 1;
 static let depth_sensitivity : float = 0.25;
 static let normal_sensitivity : float = 0.1;
 
+[gd::Color]
 let outline_color : float4 = float4(0, 0, 0, .98);
 
 [shader("compute")]
