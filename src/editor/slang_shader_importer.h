@@ -32,9 +32,11 @@ private:
 	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
+	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);
 	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
-	static Variant::Type _to_godot_type(slang::TypeReflection* type, Dictionary attributes);
+	static PropertyInfo _get_property_info(slang::ProgramLayout* program_layout, slang::VariableLayoutReflection* param_reflection);
+	static Variant::Type _to_godot_type(slang::TypeReflection* type, const Dictionary& attributes);
 	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
 	static slang::IGlobalSession* _get_global_session();

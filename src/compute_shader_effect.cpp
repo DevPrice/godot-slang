@@ -177,6 +177,8 @@ void ComputeShaderEffect::reload_shader() {
 
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
+
+	// TODO: We need to apply the shader params that were set to the new shader task
 	notify_property_list_changed();
 
 	if (Engine::get_singleton()->is_editor_hint()) {
@@ -218,18 +220,20 @@ void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
 	Dictionary params = task->get_shader_parameters();
 	for (const StringName param_name : params.keys()) {
 		const Dictionary param_info = params[param_name];
-		const auto variant_type = static_cast<Variant::Type>(static_cast<int32_t>(param_info["variant_type"]));
+		PropertyInfo property_info = PropertyInfo::from_dict(param_info["property_info"]);
 		const Dictionary user_attributes = param_info["user_attributes"];
+
 		// TODO: This is a temp hack to avoid edits the auto-bound params
 		// Need a more robust way of knowing when a param should be editable
-		PropertyUsageFlags usage = PROPERTY_USAGE_DEFAULT;
 		for (const StringName attribute : user_attributes.keys()) {
 			if (attribute.begins_with("gd_") && String(attribute) != "gd_Color") {
-				usage = static_cast<PropertyUsageFlags>(PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY);
+				property_info.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
 			}
 		}
-		if (variant_type != Variant::OBJECT && variant_type != Variant::RID && variant_type != Variant::NIL) {
-			p_list->push_back(PropertyInfo(variant_type, "shader_parameter/" + param_name, PROPERTY_HINT_NONE, "", usage));
+
+		property_info.name = "shader_parameter/" + property_info.name;
+		if (property_info.type != Variant::NIL && property_info.type != Variant::OBJECT && property_info.type != Variant::RID) {
+			p_list->push_back(property_info);
 		}
 	}
 }

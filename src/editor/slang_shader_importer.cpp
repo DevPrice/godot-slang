@@ -273,21 +273,12 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
-		Dictionary param_attributes{};
-		if (slang::VariableReflection* variable = param->getVariable()) {
-			for (size_t attribute_index = 0; attribute_index < variable->getUserAttributeCount(); ++attribute_index) {
-				if (slang::Attribute* attribute = variable->getUserAttributeByIndex(attribute_index)) {
-					Dictionary arguments{};
-					for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-						String argument_name = _get_attribute_argument_name(attribute, argument_index, program_layout);
-						arguments.set(argument_name, _to_godot_value(attribute, argument_index));
-					}
-					param_attributes.set(attribute->getName(), arguments);
-				}
-			}
-			param_info.set("user_attributes", param_attributes);
+		Dictionary param_attributes = _get_attributes(program_layout, param->getVariable());
+		Dictionary property_info = _get_property_info(program_layout, param);
+		if (!property_info.is_empty()) {
+			param_info.set("property_info", property_info);
 		}
-		param_info.set("variant_type", _to_godot_type(param->getType(), param_attributes));
+		param_info.set("user_attributes", param_attributes);
 		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
 				param_info.set("binding_index", param->getBindingIndex());
@@ -308,6 +299,22 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		parameters.set(param->getName(), param_info);
 	}
 	return parameters;
+}
+
+Dictionary SlangShaderImporter::_get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection) {
+	Dictionary param_attributes{};
+	if (!variable_reflection) return param_attributes;
+	for (size_t attribute_index = 0; attribute_index < variable_reflection->getUserAttributeCount(); ++attribute_index) {
+		if (slang::Attribute* attribute = variable_reflection->getUserAttributeByIndex(attribute_index)) {
+			Dictionary arguments{};
+			for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+				String argument_name = _get_attribute_argument_name(attribute, argument_index, program_layout);
+				arguments.set(argument_name, _to_godot_value(attribute, argument_index));
+			}
+			param_attributes.set(attribute->getName(), arguments);
+		}
+	}
+	return param_attributes;
 }
 
 TypedArray<Dictionary> SlangShaderImporter::_get_buffers_reflection(slang::ProgramLayout* program_layout) {
@@ -345,7 +352,78 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 	return String("argument") + String::num_int64(argument_index);
 }
 
-Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type, Dictionary attributes) {
+PropertyInfo SlangShaderImporter::_get_property_info(slang::ProgramLayout* program_layout, slang::VariableLayoutReflection* param_reflection) {
+	if (!param_reflection) return {};
+	slang::TypeReflection* type_reflection = param_reflection->getType();
+	Variant::Type type = Variant::NIL;
+	PropertyHint hint = PROPERTY_HINT_NONE;
+	uint32_t usage = PROPERTY_USAGE_DEFAULT;
+	const Dictionary attributes = _get_attributes(program_layout, param_reflection->getVariable());
+	switch (type_reflection->getKind()) {
+		case SLANG_TYPE_KIND_SCALAR:
+			switch (type_reflection->getScalarType()) {
+			case SLANG_SCALAR_TYPE_BOOL:
+					type = Variant::BOOL;
+					break;
+			case SLANG_SCALAR_TYPE_FLOAT16:
+			case SLANG_SCALAR_TYPE_FLOAT32:
+			case SLANG_SCALAR_TYPE_FLOAT64:
+					type = Variant::FLOAT;
+					break;
+			case SLANG_SCALAR_TYPE_INT32:
+			case SLANG_SCALAR_TYPE_UINT32:
+			case SLANG_SCALAR_TYPE_INT64:
+			case SLANG_SCALAR_TYPE_UINT64:
+			case SLANG_SCALAR_TYPE_INT8:
+			case SLANG_SCALAR_TYPE_UINT8:
+			case SLANG_SCALAR_TYPE_INT16:
+			case SLANG_SCALAR_TYPE_UINT16:
+					type = Variant::INT;
+					break;
+			default:
+					break;
+			}
+		case SLANG_TYPE_KIND_VECTOR: {
+			const bool is_color = attributes.has("gd_Color");
+			switch (type_reflection->getColumnCount()) {
+				case 2:
+					type = Variant::VECTOR2;
+					break;
+				case 3:
+					if (is_color) {
+						type = Variant::COLOR;
+						hint = PROPERTY_HINT_COLOR_NO_ALPHA;
+					} else {
+						type = Variant::VECTOR3;
+					}
+					break;
+				case 4:
+					type = is_color ? Variant::COLOR : Variant::VECTOR4;
+					break;
+				default: break;
+			}
+			break;
+		}
+		case SLANG_TYPE_KIND_RESOURCE: {
+			// TODO: This is not useful as-is
+			type = Variant::OBJECT;
+			break;
+		}
+		case SLANG_TYPE_KIND_STRUCT: {
+			if (String(type_reflection->getName()) == "String") {
+				// TODO: Is there a better way to detect the String type?
+				type = Variant::STRING;
+				break;
+			}
+			break;
+		}
+		default:
+			break;
+	}
+	return {type, param_reflection->getName(), hint, "", usage};
+}
+
+Variant::Type SlangShaderImporter::_to_godot_type(slang::TypeReflection* type, const Dictionary& attributes) {
 	switch (type->getKind()) {
 		case SLANG_TYPE_KIND_SCALAR:
 			switch (type->getScalarType()) {
