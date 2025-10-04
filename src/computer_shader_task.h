@@ -55,6 +55,8 @@ private:
 	TypedArray<RID> _linear_sampler_cache{};
 	TypedArray<RID> _nearest_sampler_cache{};
 
+	void _reset();
+
 	RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 

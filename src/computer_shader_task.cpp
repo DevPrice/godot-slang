@@ -171,19 +171,8 @@ ComputeShaderTask::ComputeShaderTask() {
 
 ComputeShaderTask::~ComputeShaderTask() {
 	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
-		const Array pipeline_keys = _kernel_pipelines.keys();
-		for (size_t i = 0; i < pipeline_keys.size(); ++i) {
-			if (RID key = pipeline_keys[i]; key.is_valid()) {
-				rd->free_rid(_kernel_pipelines[key]);
-			}
-		}
-		const Array shader_keys = _kernel_shaders.keys();
-		for (size_t i = 0; i < shader_keys.size(); ++i) {
-			if (RID key = shader_keys[i]; key.is_valid()) {
-				rd->free_rid(_kernel_shaders[key]);
-			}
-		}
-		for (size_t i = 0; i < RenderingDevice::SAMPLER_REPEAT_MODE_MAX; ++i) {
+		_reset();
+		for (int64_t i = 0; i < RenderingDevice::SAMPLER_REPEAT_MODE_MAX; ++i) {
 			if (RID rid = _nearest_sampler_cache[i]; rid.is_valid()) {
 				rd->free_rid(rid);
 			}
@@ -199,6 +188,7 @@ TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 }
 
 void ComputeShaderTask::set_kernels(TypedArray<ComputeShaderKernel> p_kernels) {
+	_reset();
 	kernels = p_kernels;
 }
 
@@ -240,6 +230,21 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 		}
 	}
 	return shader_params;
+}
+
+void ComputeShaderTask::_reset() {
+	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
+		for (const auto& pipeline_key : _kernel_pipelines.keys()) {
+			if (RID key = pipeline_key; key.is_valid()) {
+				rd->free_rid(_kernel_pipelines[key]);
+			}
+		}
+		for (const auto& shader_key : _kernel_shaders.keys()) {
+			if (RID key = shader_key; key.is_valid()) {
+				rd->free_rid(_kernel_shaders[key]);
+			}
+		}
+	}
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {
