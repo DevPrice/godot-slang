@@ -53,6 +53,10 @@ toggle_data_mosh={
 ]
 }
 
+[rendering]
+
+anti_aliasing/quality/screen_space_aa=2
+
 [shader_globals]
 
 global_texture={
