@@ -223,16 +223,6 @@ void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
 	for (const StringName param_name : params.keys()) {
 		const Dictionary param_info = params[param_name];
 		PropertyInfo property_info = PropertyInfo::from_dict(param_info["property_info"]);
-		const Dictionary user_attributes = param_info["user_attributes"];
-
-		// TODO: This is a temp hack to avoid edits the auto-bound params
-		// Need a more robust way of knowing when a param should be editable
-		for (const StringName attribute : user_attributes.keys()) {
-			if (attribute.begins_with("gd_") && String(attribute) != "gd_Color") {
-				property_info.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
-			}
-		}
-
 		property_info.name = "shader_parameter/" + property_info.name;
 		if (property_info.type != Variant::NIL && property_info.type != Variant::OBJECT && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);

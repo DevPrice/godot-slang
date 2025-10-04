@@ -32,8 +32,10 @@ private:
 	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
+	static bool _is_autobind(slang::ProgramLayout* program_layout, slang::VariableReflection* var);
 	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);
+	static slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute, slang::ProgramLayout* layout);
 	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
 	static bool _get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string);
 	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);

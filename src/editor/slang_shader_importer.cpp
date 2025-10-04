@@ -279,9 +279,11 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		Variant::Type type;
 		PropertyHint hint;
 		String hint_string;
-		const Dictionary attributes = _get_attributes(program_layout, param->getVariable());
-		if (_get_godot_type(param->getType(), attributes, type, hint, hint_string)) {
-			PropertyInfo property_info{type, param->getName(), hint, hint_string, PROPERTY_USAGE_DEFAULT};
+		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
+			const uint32_t usage = _is_autobind(program_layout, param->getVariable())
+				? PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY
+				: PROPERTY_USAGE_DEFAULT;
+			PropertyInfo property_info{type, param->getName(), hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
 		}
 
@@ -307,6 +309,19 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		parameters.set(param->getName(), param_info);
 	}
 	return parameters;
+}
+
+bool SlangShaderImporter::_is_autobind(slang::ProgramLayout* program_layout, slang::VariableReflection* var) {
+	for (size_t attribute_index = 0; attribute_index < var->getUserAttributeCount(); ++attribute_index) {
+		if (slang::Attribute* attribute = var->getUserAttributeByIndex(attribute_index)) {
+			if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute, program_layout)) {
+				if (attribute_type->findUserAttributeByName("gd_Autobind")) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 Dictionary SlangShaderImporter::_get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection) {
@@ -350,10 +365,17 @@ TypedArray<Dictionary> SlangShaderImporter::_get_buffers_reflection(slang::Progr
 	return buffers;
 }
 
+// TODO: Surely there is a better way to do this
+slang::TypeReflection* SlangShaderImporter::_get_attribute_type(slang::Attribute* attribute, slang::ProgramLayout* layout) {
+	if (layout && attribute) {
+		return layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
+	}
+	return nullptr;
+}
+
 String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index, slang::ProgramLayout* layout) {
-	// TODO: Surely there is a better way to do this
 	if (attribute && layout) {
-		if (slang::TypeReflection* attribute_type = layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data())) {
+		if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute, layout)) {
 			return attribute_type->getFieldByIndex(argument_index)->getName();
 		}
 	}
