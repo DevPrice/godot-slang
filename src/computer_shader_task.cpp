@@ -418,11 +418,11 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 				return _get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
-			break;
+			return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 		case RenderingDevice::UNIFORM_TYPE_TEXTURE: {
 			const RID default_texture = user_attributes.has("gd_DefaultWhite")
-			? RenderingServer::get_singleton()->get_white_texture()
-			: RenderingServer::get_singleton()->get_test_texture();
+				? RenderingServer::get_singleton()->get_white_texture()
+				: RenderingServer::get_singleton()->get_test_texture();
 			return RenderingServer::get_singleton()->texture_get_rd_texture(default_texture);
 		}
 		default:
