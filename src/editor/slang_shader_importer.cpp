@@ -444,6 +444,9 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			}
 			break;
 		}
+		case SLANG_TYPE_KIND_SAMPLER_STATE:
+			// Not currently supported
+			return false;
 		default:
 			break;
 	}
