@@ -281,7 +281,7 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		String hint_string;
 		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
 			const uint32_t usage = _is_autobind(program_layout, param->getVariable())
-				? PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY
+				? PROPERTY_USAGE_NONE
 				: PROPERTY_USAGE_DEFAULT;
 			PropertyInfo property_info{type, param->getName(), hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
