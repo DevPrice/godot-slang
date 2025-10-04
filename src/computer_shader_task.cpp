@@ -333,6 +333,11 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 			if (value.get_type() == Variant::NIL) {
 				value = _get_default_uniform(uniform_type, param["user_attributes"]);
 			}
+			if (const Object* object = value) {
+				if (object->is_class("Texture")) {
+					value = RenderingServer::get_singleton()->texture_get_rd_texture(value);
+				}
+			}
 			if (value.get_type() != Variant::NIL) {
 				Ref uniform = memnew(RDUniform);
 				uniform->set_binding(binding_index);
@@ -386,7 +391,6 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 	if (user_attributes.has("gd_GlobalParam")) {
 		const Dictionary attribute = user_attributes["gd_GlobalParam"];
 		const String param_name = attribute["name"];
-		// TODO: This doesn't work for textures?
 		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
 	}
 	switch (type) {
