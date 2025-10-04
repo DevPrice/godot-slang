@@ -431,9 +431,15 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			break;
 		}
 		case SLANG_TYPE_KIND_RESOURCE: {
-			out_type = Variant::OBJECT;
-			out_hint = PROPERTY_HINT_RESOURCE_TYPE;
-			out_hint_string = "Texture2D";
+			switch (type->getResourceShape()) {
+				case SLANG_TEXTURE_2D:
+					out_type = Variant::OBJECT;
+					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+					out_hint_string = "Texture2D";
+					break;
+				default:
+					break;
+			}
 			return true;
 		}
 		case SLANG_TYPE_KIND_STRUCT: {
@@ -444,6 +450,7 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			}
 			break;
 		}
+		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
 		case SLANG_TYPE_KIND_SAMPLER_STATE:
 			// Not currently supported
 			return false;
