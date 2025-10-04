@@ -24,7 +24,7 @@ void RDUniformBuffer::_bind_methods() {
 }
 
 RDUniformBuffer::~RDUniformBuffer() {
-	if (rid.is_valid()) {
+	if (!is_ref && !rid.is_valid()) {
 		RenderingServer::get_singleton()->free_rid(rid);
 	}
 }
@@ -158,6 +158,7 @@ void RDUniformBuffer::set_size(const int64_t size) {
 Ref<RDUniformBuffer> RDUniformBuffer::ref(const RID& buffer_rid) {
 	Ref result = memnew(RDUniformBuffer);
 	result->set_rid(buffer_rid);
+	result->is_ref = true;
 	return result;
 }
 
@@ -245,6 +246,9 @@ void ComputeShaderTask::_reset() {
 			}
 		}
 	}
+	_uniform_buffers.clear();
+	_kernel_pipelines.clear();
+	_kernel_shaders.clear();
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {
