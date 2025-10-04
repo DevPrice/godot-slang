@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=32 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
@@ -14,21 +14,15 @@ sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
 ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
 
 [sub_resource type="Sky" id="Sky_n51mc"]
+resource_local_to_scene = true
 sky_material = SubResource("ProceduralSkyMaterial_2jas5")
 
 [sub_resource type="Environment" id="Environment_8lvy3"]
+resource_local_to_scene = true
 background_mode = 2
 sky = SubResource("Sky_n51mc")
 tonemap_mode = 2
 glow_enabled = true
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_n51mc"]
-compute_shader = ExtResource("3_ei00m")
-resource_name = "Normals effect"
-effect_callback_type = 1
-access_resolved_color = false
-access_resolved_depth = false
-needs_normal_roughness = true
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_2jas5"]
 compute_shader = ExtResource("2_n51mc")
@@ -38,30 +32,15 @@ effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = false
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_8lvy3"]
-compute_shader = ExtResource("3_8lvy3")
-resource_name = "Blur effect"
-effect_callback_type = 1
-access_resolved_color = false
-access_resolved_depth = false
-
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
 compute_shader = ExtResource("5_ei00m")
-shader_parameter/outline_size = 1.0
+shader_parameter/outline_size = 2.0
 shader_parameter/outline_color = Color(0, 0, 0, 0.75000006)
 resource_name = "Outline effect"
 effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = true
 needs_normal_roughness = true
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_wcwec"]
-compute_shader = ExtResource("4_wcwec")
-resource_name = "Ring effect"
-enabled = false
-effect_callback_type = 3
-access_resolved_color = false
-access_resolved_depth = false
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
 compute_shader = ExtResource("7_kkclv")
@@ -70,7 +49,7 @@ enabled = false
 needs_motion_vectors = true
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_n51mc"), SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_8lvy3"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_wcwec"), SubResource("ComputeShaderEffect_mt10o")])
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_mt10o")])
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)
@@ -81,9 +60,65 @@ albedo_color = Color(0.748747, 1, 0.518099, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugfer"]
 albedo_color = Color(1, 0.486275, 1, 1)
 
-[node name="Node" type="Node3D" node_paths=PackedStringArray("world_env")]
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_kkclv"]
+compute_shader = ExtResource("3_ei00m")
+resource_local_to_scene = true
+needs_normal_roughness = true
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_hl4on"]
+compute_shader = ExtResource("3_8lvy3")
+resource_local_to_scene = true
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
+resource_local_to_scene = true
+
+[sub_resource type="Compositor" id="Compositor_mt10o"]
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_kkclv"), SubResource("ComputeShaderEffect_hl4on"), SubResource("ComputeShaderEffect_v40a1")])
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_3dlnp"]
+compute_shader = ExtResource("4_wcwec")
+
+[sub_resource type="Compositor" id="Compositor_kkclv"]
+resource_local_to_scene = true
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_3dlnp")])
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_kkclv"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_mt10o"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hl4on"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_color = Color(0, 0, 0, 1)
+albedo_texture = SubResource("ViewportTexture_kkclv")
+emission_enabled = true
+emission_texture = SubResource("ViewportTexture_mt10o")
+
+[sub_resource type="QuadMesh" id="QuadMesh_kkclv"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_hl4on")
+size = Vector2(4, 4)
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_hl4on"]
+viewport_path = NodePath("SubViewport2")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kkclv"]
+resource_local_to_scene = true
+albedo_color = Color(0, 0, 0, 1)
+emission_enabled = true
+emission_texture = SubResource("ViewportTexture_hl4on")
+
+[sub_resource type="QuadMesh" id="QuadMesh_mt10o"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_kkclv")
+size = Vector2(8, 8)
+
+[node name="Node" type="Node3D"]
 script = ExtResource("1_kkclv")
-world_env = NodePath("WorldEnvironment")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_8lvy3")
@@ -99,11 +134,38 @@ material_override = SubResource("StandardMaterial3D_wcwec")
 
 [node name="CSGSphere3D" type="CSGSphere3D" parent="."]
 material_override = SubResource("StandardMaterial3D_ei00m")
+radial_segments = 32
+rings = 16
 
 [node name="CSGCylinder3D" type="CSGCylinder3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
 material_override = SubResource("StandardMaterial3D_ugfer")
+sides = 32
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.946812, 0.321787, 0, -0.321787, 0.946812, 0, 2, 4)
 script = ExtResource("7_rujmf")
+
+[node name="SubViewport" type="SubViewport" parent="."]
+transparent_bg = true
+
+[node name="ViewportCamera" type="Camera3D" parent="SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.8931594, 0.44974035, 0, -0.44974035, 0.8931594, -0.20058179, 2, 6)
+cull_mask = 1048573
+compositor = SubResource("Compositor_mt10o")
+fov = 52.3
+
+[node name="SubViewport2" type="SubViewport" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="SubViewport2"]
+compositor = SubResource("Compositor_kkclv")
+
+[node name="SubViewportMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 8.7422784e-08, 8.742277e-08, -8.742278e-08, 1, -8.742278e-08, -8.742278e-08, 8.742277e-08, 1, -0.00019919872, -0.00804925, -2.9976554)
+layers = 2
+mesh = SubResource("QuadMesh_kkclv")
+
+[node name="SubViewportMesh2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -6)
+layers = 2
+mesh = SubResource("QuadMesh_mt10o")
