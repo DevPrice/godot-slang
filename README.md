@@ -90,14 +90,11 @@ This library includes many other attributes, Godot-specific utility functions su
 
 ## Work-in-progress
 
-Not all features are supported. You should find that basic stuff works, and you can bind most basic parameters.
-You may run into issues if you try to bind more complex structures into buffers, as I haven't yet started testing that.
-Feel free to file an issue or contribute a fix if you run into any problems.
+Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functional, generating full reflection data for Godot is still very much a work-in-progress.
+If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
 
-Known issues:
-* Storage buffers and push constants are not well-supported.
-* `ParameterBlock` is not yet fully supported (but may work in some cases). `ConstantBuffer` should mostly work.
-* Nested struct parameters are untested and probably don't work yet.
+`ComputeShaderTask::set_shader_parameter` supports many basic types, but is not yet fully implemented.
+`ComputeShaderTask` and `ComputeShaderEffect` are in a useful state if you are mostly reading render buffer textures and simple uniform data, but aren't quite ready for being used with complex data or nested structs.
 
 ## License
 
