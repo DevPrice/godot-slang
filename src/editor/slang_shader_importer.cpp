@@ -431,8 +431,9 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			break;
 		}
 		case SLANG_TYPE_KIND_RESOURCE: {
-			// TODO: This is not useful as-is
 			out_type = Variant::OBJECT;
+			out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+			out_hint_string = "Texture2D";
 			return true;
 		}
 		case SLANG_TYPE_KIND_STRUCT: {
