@@ -164,8 +164,11 @@ void ComputeShaderEffect::reload_shader() {
 		task.unref();
 		return;
 	}
+	if (task.is_null() || !task->has_meta("compute_shader") || compute_shader != task->get_meta("compute_shader")) {
+		task = Ref(memnew(ComputeShaderTask));
+		task->set_meta("compute_shader", compute_shader);
+	}
 	const TypedArray<ComputeShaderKernel> kernels = compute_shader->get_kernels();
-	task = Ref(memnew(ComputeShaderTask));
 	task->set_kernels(kernels);
 
 	queued_kernels.clear();
@@ -178,7 +181,6 @@ void ComputeShaderEffect::reload_shader() {
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
 
-	// TODO: We need to apply the shader params that were set to the new shader task
 	notify_property_list_changed();
 
 	if (Engine::get_singleton()->is_editor_hint()) {
@@ -198,7 +200,7 @@ void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
 }
 
 bool ComputeShaderEffect::_set(const StringName& p_name, const Variant& p_value) {
-	if (p_name.begins_with("shader_parameter/")) {
+	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
 		const StringName param_name = p_name.substr(17);
 		task->set_shader_parameter(param_name, p_value);
 		return true;
