@@ -39,6 +39,10 @@ void ring(uint2 thread_id: SV_DispatchThreadID) {
 		hor_colour.r += x_col;
 	}
 
+	if (length(uv) < 0.0) {
+		uv *= test_struct_buffer[0].y * test_struct_buffer[0].x;
+	}
+
 	uv = (2.0 * uv) - 1.0;
     float beam_width = (0.7 + 0.5 * cos(uv.x * 10.0 * tau * 0.15 * clamp(floor(5.0 + 10.0 * cos(t)), 0.0, 10.0))) * abs(1.0 / (30.0 * uv.y));
     float3 hor_beam = float3(beam_width);

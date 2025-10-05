@@ -19,7 +19,7 @@ using namespace godot;
 
 void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		GDREGISTER_INTERNAL_CLASS(RDUniformBuffer);
+		GDREGISTER_INTERNAL_CLASS(RDBuffer);
 		GDREGISTER_CLASS(ComputeShaderKernel);
 		GDREGISTER_CLASS(ComputeShaderTask);
 		GDREGISTER_CLASS(ComputeShaderFile);

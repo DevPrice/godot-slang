@@ -294,6 +294,9 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 				param_info.set("binding_index", param->getBindingIndex());
 				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("uniform_type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
+				if (param->getTypeLayout()->getResourceShape() == SLANG_STRUCTURED_BUFFER) {
+					param_info.set("element_stride", param->getTypeLayout()->getElementTypeLayout()->getStride());
+				}
 				break;
 			case slang::ParameterCategory::Uniform:
 				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
@@ -437,6 +440,9 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
 					out_hint_string = Texture2D::get_class_static();
 					return true;
+				case SLANG_STRUCTURED_BUFFER:
+					// TODO: How should we expose this?
+					return false;
 				default:
 					break;
 			}
@@ -450,7 +456,6 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			}
 			break;
 		}
-		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
 		case SLANG_TYPE_KIND_SAMPLER_STATE:
 			// Not currently supported
 			return false;

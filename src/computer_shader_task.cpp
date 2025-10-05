@@ -20,16 +20,16 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
 }
 
-void RDUniformBuffer::_bind_methods() {
+void RDBuffer::_bind_methods() {
 }
 
-RDUniformBuffer::~RDUniformBuffer() {
+RDBuffer::~RDBuffer() {
 	if (!is_ref && !rid.is_valid()) {
 		RenderingServer::get_singleton()->free_rid(rid);
 	}
 }
 
-void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
+void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
 	ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
 	switch (data.get_type()) {
 		case Variant::BOOL:
@@ -138,9 +138,21 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
 		default:
 			break;
 	}
+}
+
+void RDBuffer::set_size(const int64_t size) {
+	buffer.resize(size);
+}
+
+void RDBuffer::flush() {
 	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
 		if (!rid.is_valid()) {
-			rid = rd->uniform_buffer_create(buffer.size(), buffer);
+			if (get_is_ssbo() && buffer.is_empty()) {
+				// TODO: This is just dumb, but gets the ball rolling
+				// We need to have a reasonable default size, and also handle resizing if the buffer grows
+				set_size(1024);
+			}
+			rid = get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer);
 		} else {
 			// TODO: Avoid updating the full buffer every frame
 			rd->buffer_update(rid, 0, buffer.size(), buffer);
@@ -148,19 +160,21 @@ void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Vari
 	}
 }
 
-void RDUniformBuffer::set_size(const int64_t size) {
-	buffer.resize(size);
+RenderingDevice::UniformType RDBuffer::get_uniform_type() const {
+	return get_is_ssbo() ? RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER : RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER;
 }
 
-Ref<RDUniformBuffer> RDUniformBuffer::ref(const RID& buffer_rid) {
-	Ref result = memnew(RDUniformBuffer);
+Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid, const bool is_ssbo) {
+	Ref result = memnew(RDBuffer);
 	result->set_rid(buffer_rid);
+	result->set_is_ssbo(is_ssbo);
 	result->is_ref = true;
 	return result;
 }
 
-GET_SET_PROPERTY_IMPL(RDUniformBuffer, RID, rid)
-GET_SET_PROPERTY_IMPL(RDUniformBuffer, PackedByteArray, buffer)
+GET_SET_PROPERTY_IMPL(RDBuffer, RID, rid)
+GET_SET_PROPERTY_IMPL(RDBuffer, PackedByteArray, buffer)
+GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_ssbo)
 
 ComputeShaderTask::ComputeShaderTask() {
 	_linear_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
@@ -243,7 +257,7 @@ void ComputeShaderTask::_reset() {
 			}
 		}
 	}
-	_uniform_buffers.clear();
+	_buffers.clear();
 	_kernel_pipelines.clear();
 	_kernel_shaders.clear();
 }
@@ -292,26 +306,28 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	for (const Variant& parameter_key : parameter_keys) {
 		const StringName& key = parameter_key;
 		const Dictionary param = parameters[key];
-		const int64_t param_type = param.get("uniform_type", -1);
+		const auto param_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
 		const StringName param_name = param.get("name", StringName{});
-		const int32_t binding_space = param.get("binding_space", 0);
-		const int32_t binding_index = param.get("binding_index", 0);
-		if (!param_name.is_empty() && param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) {
+		if (param_name.is_empty()) continue;
+		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			Variant value = _shader_parameters[param_name];
 			RID value_rid = value;
+			const int32_t binding_space = param.get("binding_space", 0);
+			const int32_t binding_index = param.get("binding_index", 0);
 			if (value_rid.is_valid()) {
-				_set_uniform_buffer(binding_index, binding_space, value_rid);
+				_set_buffer(binding_index, binding_space, value_rid, param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
 			} else {
-				if (value == Variant(nullptr)) {
-					value = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER, param["user_attributes"]);
+				if (value.get_type() == Variant::NIL) {
+					value = _get_default_uniform(param_type, param["user_attributes"]);
 				}
 
-				const Ref<RDUniformBuffer> buffer = _get_uniform_buffer(binding_index, binding_space);
+				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space, param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
 				const int64_t offset = param.get("offset", 0);
 				const int64_t size = param.get("size", 0);
 				if (size > 0) {
 					buffer->write(offset, size, value);
 				}
+				buffer->flush();
 			}
 		}
 	}
@@ -323,13 +339,12 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 	Dictionary parameters = kernel->get_parameters();
 	Array parameter_keys = parameters.keys();
-	for (uint32_t param_index = 0; param_index < parameter_keys.size(); param_index++) {
-		const StringName& key = parameter_keys[param_index];
+	for (const StringName key : parameter_keys) {
 		const Dictionary param = parameters[key];
 		const int64_t binding_space = param.get("binding_space", 0);
-		const int64_t binding_index = param.get("binding_index", 0);
+		const int32_t binding_index = param.get("binding_index", 0);
 		const int64_t param_type = param.get("uniform_type", -1);
-		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER)
+		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER)
 			continue;
 
 		const StringName param_name = param.get("name", StringName{});
@@ -357,8 +372,8 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 					uniform->add_id(value);
 				} else if (value.get_type() == Variant::ARRAY) {
 					Array array = value;
-					for (size_t i = 0; i < array.size(); ++i) {
-						uniform->add_id(array[i]);
+					for (const Variant& id: array) {
+						uniform->add_id(id);
 					}
 				} else {
 					uniform->add_id(value);
@@ -369,14 +384,12 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 		}
 	}
 
-	const Array uniform_buffer_keys = _uniform_buffers.keys();
-	for (uint32_t i = 0; i < uniform_buffer_keys.size(); i++) {
-		Vector2i key = uniform_buffer_keys[i];
-		const Ref<RDUniformBuffer> buffer = _uniform_buffers[key];
+	for (const Vector2i key : _buffers.keys()) {
+		const Ref<RDBuffer> buffer = _buffers[key];
 		if (buffer.is_valid()) {
 			const Ref uniform = memnew(RDUniform);
 			uniform->set_binding(key.x);
-			uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
+			uniform->set_uniform_type(buffer->get_uniform_type());
 			uniform->add_id(buffer->get_rid());
 			TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(key.y, TypedArray<RDUniform>{});
 			uniforms.push_back(uniform);
@@ -384,9 +397,7 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 	}
 
 	const RID shader_rid = _get_shader_rid(kernel_index, rd);
-	const Array uniform_set_keys = uniform_sets.keys();
-	for (uint32_t i = 0; i < uniform_set_keys.size(); i++) {
-		const uint32_t key = uniform_set_keys[i];
+	for (const uint32_t key : uniform_sets.keys()) {
 		const TypedArray<RDUniform> value = uniform_sets.get(key, TypedArray<RDUniform>{});
 		RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, key, value);
 		rd->compute_list_bind_uniform_set(compute_list, uniform_set, key);
@@ -401,6 +412,7 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 	}
 	switch (type) {
 		case RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER:
+		case RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER:
 			if (user_attributes.has("gd_Time")) {
 				return Time::get_singleton()->get_ticks_msec() * .001f;
 			}
@@ -433,11 +445,12 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 	return nullptr;
 }
 
-Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t binding, const int64_t set) {
+Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set, const bool is_ssbo) {
 	const Vector2i key(binding, set);
-	if (!_uniform_buffers.has(key)) {
-		const Ref buffer = memnew(RDUniformBuffer);
-		_uniform_buffers[key] = buffer;
+	if (!_buffers.has(key)) {
+		const Ref buffer = memnew(RDBuffer);
+		buffer->set_is_ssbo(is_ssbo);
+		_buffers[key] = buffer;
 		if (kernels.size() > 0) {
 			const Ref<ComputeShaderKernel> kernel = kernels[0];
 			if (kernel.is_valid()) {
@@ -455,13 +468,14 @@ Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t bindin
 				}
 			}
 		}
+		return buffer;
 	}
-	return _uniform_buffers[key];
+	return _buffers[key];
 }
 
-void ComputeShaderTask::_set_uniform_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid) {
+void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid, const bool is_ssbo) {
 	const Vector2i key(binding, set);
-	_uniform_buffers[key] = RDUniformBuffer::ref(buffer_rid);
+	_buffers[key] = RDBuffer::ref(buffer_rid, is_ssbo);
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {

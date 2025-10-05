@@ -8,22 +8,25 @@
 
 using namespace godot;
 
-class RDUniformBuffer : public RefCounted {
-	GDCLASS(RDUniformBuffer, RefCounted);
+class RDBuffer : public RefCounted {
+	GDCLASS(RDBuffer, RefCounted);
 
 	GET_SET_PROPERTY(PackedByteArray, buffer)
 	GET_SET_PROPERTY(RID, rid)
+	GET_SET_PROPERTY(bool, is_ssbo)
 
 protected:
 	static void _bind_methods();
 
 public:
-	RDUniformBuffer() = default;
-	~RDUniformBuffer() override;
+	RDBuffer() = default;
+	~RDBuffer() override;
 
 	void write(int64_t offset, int64_t size, const Variant& data);
 	void set_size(int64_t size);
-	static Ref<RDUniformBuffer> ref(const RID& buffer_rid);
+	void flush();
+	[[nodiscard]] RenderingDevice::UniformType get_uniform_type() const;
+	static Ref<RDBuffer> ref(const RID& buffer_rid, bool is_ssbo);
 
 private:
 	bool is_ref = false;
@@ -54,7 +57,7 @@ private:
 	Dictionary _shader_parameters{};
 	Dictionary _kernel_shaders{};
 	Dictionary _kernel_pipelines{};
-	Dictionary _uniform_buffers{};
+	Dictionary _buffers{};
 	TypedArray<RID> _linear_sampler_cache{};
 	TypedArray<RID> _nearest_sampler_cache{};
 
@@ -65,8 +68,8 @@ private:
 
 	[[nodiscard]] RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
 	[[nodiscard]] Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
-	Ref<RDUniformBuffer> _get_uniform_buffer(int64_t binding, int64_t set);
-	void _set_uniform_buffer(int32_t binding, int32_t set, const RID& buffer_rid);
+	Ref<RDBuffer> _get_buffer(int32_t binding, int32_t set, bool is_ssbo);
+	void _set_buffer(int32_t binding, int32_t set, const RID& buffer_rid, bool is_ssbo);
 	void _update_buffers(int64_t kernel_index);
 	void _bind_uniform_sets(int64_t kernel_index, int64_t compute_list, RenderingDevice* rd);
 	void _dispatch(int64_t kernel_index, Vector3i thread_groups);
