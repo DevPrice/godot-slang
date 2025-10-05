@@ -139,10 +139,11 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 			ERR_FAIL_COND_MSG(element_stride == 0, "Cannot write array to buffer if stride is unset!");
 			const Array array = data;
 			int64_t element_offset = offset;
+			int64_t array_size_bytes = array.size() * element_stride;
+			if (buffer.size() < array_size_bytes) {
+				set_size(array_size_bytes);
+			}
 			for (const Variant& element : array) {
-				if (element_offset >= offset + size) {
-					break;
-				}
 				write(element_offset, element_stride, element);
 				element_offset += element_stride;
 			}
@@ -162,7 +163,7 @@ void RDBuffer::flush() {
 			if (get_is_ssbo() && buffer.is_empty()) {
 				// TODO: This is just dumb, but gets the ball rolling
 				// We need to have a reasonable default size, and also handle resizing if the buffer grows
-				set_size(1024);
+				set_size(256);
 			}
 			rid = get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer);
 		} else {

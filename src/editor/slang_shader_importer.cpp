@@ -440,9 +440,20 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
 					out_hint_string = Texture2D::get_class_static();
 					return true;
-				case SLANG_STRUCTURED_BUFFER:
-					// TODO: How should we expose this?
-					return false;
+				case SLANG_STRUCTURED_BUFFER: {
+					out_type = Variant::ARRAY;
+
+					Variant::Type element_type;
+					PropertyHint element_hint;
+					String element_hint_string;
+
+					if (_get_godot_type(type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
+						String hint_string;
+						out_hint = PROPERTY_HINT_ARRAY_TYPE;
+						out_hint_string = Variant::get_type_name(element_type);
+					}
+					return true;
+				}
 				default:
 					break;
 			}
