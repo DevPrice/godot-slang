@@ -30,10 +30,7 @@ RDUniformBuffer::~RDUniformBuffer() {
 }
 
 void RDUniformBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
-	if (buffer.size() == 0) {
-		UtilityFunctions::push_error("Writing uniform buffer before initialize!");
-		return;
-	}
+	ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
 	switch (data.get_type()) {
 		case Variant::BOOL:
 			buffer.encode_s32(offset, data ? 1 : 0);
@@ -297,8 +294,8 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const Dictionary param = parameters[key];
 		const int64_t param_type = param.get("uniform_type", -1);
 		const StringName param_name = param.get("name", StringName{});
-		const int64_t binding_space = param.get("binding_space", 0);
-		const int64_t binding_index = param.get("binding_index", 0);
+		const int32_t binding_space = param.get("binding_space", 0);
+		const int32_t binding_index = param.get("binding_index", 0);
 		if (!param_name.is_empty() && param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER) {
 			Variant value = _shader_parameters[param_name];
 			RID value_rid = value;
@@ -461,25 +458,18 @@ Ref<RDUniformBuffer> ComputeShaderTask::_get_uniform_buffer(const int64_t bindin
 	}
 	return _uniform_buffers[key];
 }
-void ComputeShaderTask::_set_uniform_buffer(const int64_t binding, const int64_t set, const RID& buffer_rid) {
+
+void ComputeShaderTask::_set_uniform_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid) {
 	const Vector2i key(binding, set);
 	_uniform_buffers[key] = RDUniformBuffer::ref(buffer_rid);
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
-	if (kernel_index < 0 || kernel_index >= kernels.size()) {
-		UtilityFunctions::push_error(String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
-		return;
-	}
-	if (const Ref<ComputeShaderKernel> kernel = kernels[kernel_index]; kernel.is_null()) {
-		UtilityFunctions::push_error(String("Attempted to dispatch invalid kernel index %s (found: nil)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
-		return;
-	}
+	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
+	ERR_FAIL_NULL_MSG(static_cast<Ref<RefCounted>>(kernels[kernel_index]), String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
 	RenderingDevice* rendering_device = RenderingServer::get_singleton()->get_rendering_device();
-	if (!rendering_device) {
-		UtilityFunctions::push_error("ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
-		return;
-	}
+	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
+
 	_update_buffers(kernel_index);
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);

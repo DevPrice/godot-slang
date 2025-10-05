@@ -95,8 +95,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		if (slang_module && slang_error.is_empty()) {
 			TypedArray<ComputeShaderKernel> kernels;
 			if (const Error compile_error = _slang_compile_kernels(slang_module, kernels)) {
-				UtilityFunctions::push_error("Failed to compile Slang shader!");
-				return compile_error;
+				ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
 			}
 			slang_shader->set_kernels(kernels);
 		} else {
@@ -107,8 +106,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		const String out_filename = p_save_path + String(".") + _get_save_extension();
 		return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 	} catch (...) {
-		UtilityFunctions::push_error(String("[%s] Caught exception compiling shader!") % p_source_file);
-		return FAILED;
+		ERR_FAIL_V_MSG(FAILED, String("[%s] Caught exception compiling shader!") % p_source_file);
 	}
 }
 
@@ -135,10 +133,10 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) 
 Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels) {
 	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
-		if (slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK) {
-			UtilityFunctions::push_error(String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
-			return ERR_BUG;
-		}
+		ERR_FAIL_COND_V_MSG(
+			slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK,
+			ERR_BUG,
+			String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
 		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
 		if (kernel.is_valid()) {
 			const String compile_error = kernel->get_compile_error();
