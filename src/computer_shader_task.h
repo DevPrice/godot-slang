@@ -11,8 +11,9 @@ using namespace godot;
 class RDBuffer : public RefCounted {
 	GDCLASS(RDBuffer, RefCounted);
 
-	GET_SET_PROPERTY(PackedByteArray, buffer)
 	GET_SET_PROPERTY(RID, rid)
+	GET_SET_PROPERTY(PackedByteArray, buffer)
+	GET_SET_PROPERTY(int64_t, stride)
 	GET_SET_PROPERTY(bool, is_ssbo)
 
 protected:

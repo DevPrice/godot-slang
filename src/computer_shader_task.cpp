@@ -7,7 +7,7 @@
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 
-#define BUFFER_COPY(T)          \
+#define BUFFER_COPY(T, data, offset, size)          \
 	const T source_data = data; \
 	memcpy(buffer.ptrw() + offset, source_data.ptr(), Math::min(size, source_data.size()));
 
@@ -30,7 +30,7 @@ RDBuffer::~RDBuffer() {
 }
 
 void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
-	ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
+	ERR_FAIL_COND_MSG(!get_is_ssbo() && buffer.size() == 0, "Writing uniform buffer before initialize!");
 	switch (data.get_type()) {
 		case Variant::BOOL:
 			buffer.encode_s32(offset, data ? 1 : 0);
@@ -94,46 +94,58 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 			break;
 		}
 		case Variant::PACKED_BYTE_ARRAY: {
-			BUFFER_COPY(PackedByteArray)
+			BUFFER_COPY(PackedByteArray, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_INT32_ARRAY: {
-			BUFFER_COPY(PackedInt32Array)
+			BUFFER_COPY(PackedInt32Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_INT64_ARRAY: {
-			BUFFER_COPY(PackedInt64Array)
+			BUFFER_COPY(PackedInt64Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_FLOAT32_ARRAY: {
-			BUFFER_COPY(PackedFloat32Array)
+			BUFFER_COPY(PackedFloat32Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_FLOAT64_ARRAY: {
-			BUFFER_COPY(PackedFloat64Array)
+			BUFFER_COPY(PackedFloat64Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_VECTOR2_ARRAY: {
-			BUFFER_COPY(PackedVector2Array)
+			BUFFER_COPY(PackedVector2Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_VECTOR3_ARRAY: {
-			BUFFER_COPY(PackedVector3Array)
+			BUFFER_COPY(PackedVector3Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_VECTOR4_ARRAY: {
-			BUFFER_COPY(PackedVector4Array)
+			BUFFER_COPY(PackedVector4Array, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_COLOR_ARRAY: {
-			BUFFER_COPY(PackedColorArray)
+			BUFFER_COPY(PackedColorArray, data, offset, size)
 			break;
 		}
 		case Variant::PACKED_STRING_ARRAY: {
 			const PackedStringArray array = data;
-			const PackedByteArray byte_array = array.to_byte_array();
-			memcpy(buffer.ptrw() + offset, byte_array.ptr(), Math::min(size, byte_array.size()));
+			BUFFER_COPY(PackedByteArray, array.to_byte_array(), offset, size)
 			break;
+		}
+		case Variant::ARRAY: {
+			const int64_t element_stride = get_stride();
+			ERR_FAIL_COND_MSG(element_stride == 0, "Cannot write array to buffer if stride is unset!");
+			const Array array = data;
+			int64_t element_offset = offset;
+			for (const Variant& element : array) {
+				if (element_offset >= offset + size) {
+					break;
+				}
+				write(element_offset, element_stride, element);
+				element_offset += element_stride;
+			}
 		}
 		default:
 			break;
@@ -174,6 +186,7 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid, const bool is_ssbo) {
 
 GET_SET_PROPERTY_IMPL(RDBuffer, RID, rid)
 GET_SET_PROPERTY_IMPL(RDBuffer, PackedByteArray, buffer)
+GET_SET_PROPERTY_IMPL(RDBuffer, int64_t, stride)
 GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_ssbo)
 
 ComputeShaderTask::ComputeShaderTask() {
@@ -322,11 +335,15 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				}
 
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space, param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				const int64_t stride = param.get("element_stride", 0);
+				buffer->set_stride(stride);
+
 				const int64_t offset = param.get("offset", 0);
 				const int64_t size = param.get("size", 0);
-				if (size > 0) {
+				if (size > 0 || stride > 0) {
 					buffer->write(offset, size, value);
 				}
+
 				buffer->flush();
 			}
 		}
