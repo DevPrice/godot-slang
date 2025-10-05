@@ -83,10 +83,10 @@ resource_local_to_scene = true
 compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_3dlnp")])
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_kkclv"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("NormalsViewport")
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_mt10o"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("NormalsViewport")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hl4on"]
 resource_local_to_scene = true
@@ -104,7 +104,7 @@ material = SubResource("StandardMaterial3D_hl4on")
 size = Vector2(4, 4)
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_hl4on"]
-viewport_path = NodePath("SubViewport2")
+viewport_path = NodePath("RingViewport")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kkclv"]
 resource_local_to_scene = true
@@ -146,18 +146,18 @@ sides = 32
 transform = Transform3D(1, 0, 0, 0, 0.946812, 0.321787, 0, -0.321787, 0.946812, 0, 2, 4)
 script = ExtResource("7_rujmf")
 
-[node name="SubViewport" type="SubViewport" parent="."]
+[node name="NormalsViewport" type="SubViewport" parent="."]
 transparent_bg = true
 
-[node name="ViewportCamera" type="Camera3D" parent="SubViewport"]
+[node name="ViewportCamera" type="Camera3D" parent="NormalsViewport"]
 transform = Transform3D(1, 0, 0, 0, 0.8931594, 0.44974035, 0, -0.44974035, 0.8931594, -0.20058179, 2, 6)
 cull_mask = 1048573
 compositor = SubResource("Compositor_mt10o")
 fov = 52.3
 
-[node name="SubViewport2" type="SubViewport" parent="."]
+[node name="RingViewport" type="SubViewport" parent="."]
 
-[node name="Camera3D" type="Camera3D" parent="SubViewport2"]
+[node name="ViewportCamera" type="Camera3D" parent="RingViewport"]
 compositor = SubResource("Compositor_kkclv")
 
 [node name="SubViewportMesh" type="MeshInstance3D" parent="."]

@@ -14,6 +14,8 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
+#include "godot_cpp/classes/texture2d.hpp"
+
 void SlangShaderImporter::_bind_methods() {}
 
 String SlangShaderImporter::_get_importer_name() const {
@@ -429,16 +431,16 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			break;
 		}
 		case SLANG_TYPE_KIND_RESOURCE: {
-			switch (type->getResourceShape()) {
+			switch (type->getResourceShape() & ~SLANG_TEXTURE_COMBINED_FLAG) {
 				case SLANG_TEXTURE_2D:
 					out_type = Variant::OBJECT;
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
-					out_hint_string = "Texture2D";
-					break;
+					out_hint_string = Texture2D::get_class_static();
+					return true;
 				default:
 					break;
 			}
-			return true;
+			break;
 		}
 		case SLANG_TYPE_KIND_STRUCT: {
 			if (String(type->getName()) == "String") {
