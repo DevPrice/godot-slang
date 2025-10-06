@@ -33,6 +33,7 @@ public:
 
 private:
 	bool is_ref = false;
+	int64_t remote_size = 0;
 
 	template <typename T>
 	void buffer_copy(const T source_data, const int64_t offset, const int64_t size) {

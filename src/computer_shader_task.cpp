@@ -99,17 +99,23 @@ void RDBuffer::set_size(const int64_t size) {
 
 void RDBuffer::flush() {
 	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
-		if (!rid.is_valid()) {
-			if (get_is_ssbo() && buffer.is_empty()) {
-				// TODO: This is just dumb, but gets the ball rolling
-				// We need to have a reasonable default size, and also handle resizing if the buffer grows
+		if (get_is_ssbo()) {
+			if (!is_ref && remote_size < buffer.size() && rid.is_valid()) {
+				// the buffer grew in size, we need to recreate it
+				rd->free_rid(rid);
+				set_rid(RID());
+			} else if (buffer.is_empty()) {
+				// the buffer cannot be 0 bytes
 				set_size(256);
 			}
-			rid = get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer);
+		}
+		if (!rid.is_valid()) {
+			set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
 		} else {
 			// TODO: Avoid updating the full buffer every frame
 			rd->buffer_update(rid, 0, buffer.size(), buffer);
 		}
+		remote_size = buffer.size();
 	}
 }
 
