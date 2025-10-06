@@ -448,9 +448,38 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					String element_hint_string;
 
 					if (_get_godot_type(type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
-						String hint_string;
-						out_hint = PROPERTY_HINT_ARRAY_TYPE;
-						out_hint_string = Variant::get_type_name(element_type);
+						switch (element_type) {
+							case Variant::INT:
+								if (type->getScalarType() == SLANG_SCALAR_TYPE_INT64) {
+									out_type = Variant::PACKED_INT64_ARRAY;
+								} else {
+									out_type = Variant::PACKED_INT32_ARRAY;
+								}
+								break;
+							case Variant::FLOAT:
+								if (type->getScalarType() == SLANG_SCALAR_TYPE_FLOAT64) {
+									out_type = Variant::PACKED_FLOAT64_ARRAY;
+								} else {
+									out_type = Variant::PACKED_FLOAT32_ARRAY;
+								}
+								break;
+							case Variant::VECTOR2:
+								out_type = Variant::PACKED_VECTOR2_ARRAY;
+								break;
+							case Variant::VECTOR3:
+								out_type = Variant::PACKED_VECTOR3_ARRAY;
+								break;
+							case Variant::VECTOR4:
+								out_type = Variant::PACKED_VECTOR4_ARRAY;
+								break;
+							case Variant::COLOR:
+								out_type = Variant::PACKED_COLOR_ARRAY;
+								break;
+							default:
+								out_hint = PROPERTY_HINT_ARRAY_TYPE;
+								out_hint_string = Variant::get_type_name(element_type);
+								break;
+						}
 					}
 					return true;
 				}

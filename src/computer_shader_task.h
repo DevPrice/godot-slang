@@ -31,6 +31,14 @@ public:
 
 private:
 	bool is_ref = false;
+
+	template <typename T>
+	void buffer_copy(const T source_data, const int64_t offset, const int64_t size) {
+		using ElementType = std::remove_pointer_t<decltype(source_data.ptr())>;
+		const int64_t data_size_bytes = source_data.size() * sizeof(ElementType);
+		const int64_t write_size = get_is_ssbo() ? data_size_bytes : Math::min(size, data_size_bytes);
+		memcpy(buffer.ptrw() + offset, source_data.ptr(), write_size);
+	}
 };
 
 class ComputeShaderTask : public RefCounted {
