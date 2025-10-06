@@ -269,6 +269,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 
 Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
 	Dictionary parameters{};
+	size_t push_constant_offset = 0;
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
@@ -305,6 +306,14 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 				param_info.set("offset", param->getOffset());
 				param_info.set("size", param->getTypeLayout()->getSize());
 				break;
+			case slang::ParameterCategory::PushConstantBuffer: {
+				slang::TypeLayoutReflection* element_type_layout = param->getTypeLayout()->getElementTypeLayout();
+				const size_t size = element_type_layout->getSize();
+				param_info.set("offset", push_constant_offset);
+				param_info.set("size", size);
+				push_constant_offset += size; // TODO: Smells like a hack, but I can't figure out where to fetch this otherwise
+				break;
+			}
 			default:
 				param_info.set("unhandled_category", param->getCategory());
 				break;
@@ -480,13 +489,20 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 								out_hint_string = Variant::get_type_name(element_type);
 								break;
 						}
+						return true;
 					}
-					return true;
+					return false;
 				}
 				default:
 					break;
 			}
 			break;
+		}
+		case SLANG_TYPE_KIND_CONSTANT_BUFFER: {
+			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
+				return true;
+			}
+			return false;
 		}
 		case SLANG_TYPE_KIND_STRUCT: {
 			if (String(type->getName()) == "String") {

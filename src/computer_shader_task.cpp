@@ -32,67 +32,6 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 		ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
 	}
 	switch (data.get_type()) {
-		case Variant::BOOL:
-			buffer.encode_s32(offset, data ? 1 : 0);
-			break;
-		case Variant::INT:
-			buffer.encode_s32(offset, data);
-			break;
-		case Variant::FLOAT:
-			buffer.encode_float(offset, data);
-			break;
-		case Variant::VECTOR2: {
-			const Vector2 vector = data;
-			buffer.encode_float(offset, vector.x);
-			buffer.encode_float(offset + 4, vector.y);
-			break;
-		}
-		case Variant::VECTOR3: {
-			const Vector3 vector = data;
-			buffer.encode_float(offset, vector.x);
-			buffer.encode_float(offset + 4, vector.y);
-			buffer.encode_float(offset + 8, vector.z);
-			break;
-		}
-		case Variant::VECTOR4: {
-			const Vector4 vector = data;
-			buffer.encode_float(offset, vector.x);
-			buffer.encode_float(offset + 4, vector.y);
-			buffer.encode_float(offset + 8, vector.z);
-			buffer.encode_float(offset + 12, vector.w);
-			break;
-		}
-		case Variant::COLOR: {
-			const Color color = data;
-			buffer.encode_float(offset, color.r);
-			buffer.encode_float(offset + 4, color.g);
-			buffer.encode_float(offset + 8, color.b);
-			if (size >= 16) {
-				buffer.encode_float(offset + 12, color.a);
-			}
-			break;
-		}
-		case Variant::VECTOR2I: {
-			const Vector2i vector = data;
-			buffer.encode_s32(offset, vector.x);
-			buffer.encode_s32(offset + 4, vector.y);
-			break;
-		}
-		case Variant::VECTOR3I: {
-			const Vector3i vector = data;
-			buffer.encode_s32(offset, vector.x);
-			buffer.encode_s32(offset + 4, vector.y);
-			buffer.encode_s32(offset + 8, vector.z);
-			break;
-		}
-		case Variant::VECTOR4I: {
-			const Vector4i vector = data;
-			buffer.encode_s32(offset, vector.x);
-			buffer.encode_s32(offset + 4, vector.y);
-			buffer.encode_s32(offset + 8, vector.z);
-			buffer.encode_s32(offset + 12, vector.w);
-			break;
-		}
 		case Variant::PACKED_BYTE_ARRAY: {
 			buffer_copy<PackedByteArray>(data, offset, size);
 			break;
@@ -149,6 +88,7 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 			}
 		}
 		default:
+			write(buffer, offset, size, data);
 			break;
 	}
 }
@@ -183,6 +123,74 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid, const bool is_ssbo) {
 	result->set_is_ssbo(is_ssbo);
 	result->is_ref = true;
 	return result;
+}
+
+void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data) {
+	switch (data.get_type()) {
+		case Variant::BOOL:
+			destination.encode_s32(offset, data ? 1 : 0);
+			break;
+		case Variant::INT:
+			destination.encode_s32(offset, data);
+			break;
+		case Variant::FLOAT:
+			destination.encode_float(offset, data);
+			break;
+		case Variant::VECTOR2: {
+			const Vector2 vector = data;
+			destination.encode_float(offset, vector.x);
+			destination.encode_float(offset + 4, vector.y);
+			break;
+		}
+		case Variant::VECTOR3: {
+			const Vector3 vector = data;
+			destination.encode_float(offset, vector.x);
+			destination.encode_float(offset + 4, vector.y);
+			destination.encode_float(offset + 8, vector.z);
+			break;
+		}
+		case Variant::VECTOR4: {
+			const Vector4 vector = data;
+			destination.encode_float(offset, vector.x);
+			destination.encode_float(offset + 4, vector.y);
+			destination.encode_float(offset + 8, vector.z);
+			destination.encode_float(offset + 12, vector.w);
+			break;
+		}
+		case Variant::COLOR: {
+			const Color color = data;
+			destination.encode_float(offset, color.r);
+			destination.encode_float(offset + 4, color.g);
+			destination.encode_float(offset + 8, color.b);
+			if (size >= 16) {
+				destination.encode_float(offset + 12, color.a);
+			}
+			break;
+		}
+		case Variant::VECTOR2I: {
+			const Vector2i vector = data;
+			destination.encode_s32(offset, vector.x);
+			destination.encode_s32(offset + 4, vector.y);
+			break;
+		}
+		case Variant::VECTOR3I: {
+			const Vector3i vector = data;
+			destination.encode_s32(offset, vector.x);
+			destination.encode_s32(offset + 4, vector.y);
+			destination.encode_s32(offset + 8, vector.z);
+			break;
+		}
+		case Variant::VECTOR4I: {
+			const Vector4i vector = data;
+			destination.encode_s32(offset, vector.x);
+			destination.encode_s32(offset + 4, vector.y);
+			destination.encode_s32(offset + 8, vector.z);
+			destination.encode_s32(offset + 12, vector.w);
+			break;
+		}
+		default:
+			break;
+	}
 }
 
 GET_SET_PROPERTY_IMPL(RDBuffer, RID, rid)
@@ -271,6 +279,7 @@ void ComputeShaderTask::_reset() {
 			}
 		}
 	}
+	_push_constant.clear();
 	_buffers.clear();
 	_kernel_pipelines.clear();
 	_kernel_shaders.clear();
@@ -323,7 +332,22 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const auto param_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
 		const StringName param_name = param.get("name", StringName{});
 		if (param_name.is_empty()) continue;
-		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
+		if (!param.has("uniform_type")) {
+			Variant value = _shader_parameters[param_name];
+			if (value.get_type() == Variant::NIL) {
+				value = _get_default_uniform(param_type, param["user_attributes"]);
+			}
+
+			const int64_t offset = param.get("offset", 0);
+			const int64_t size = param.get("size", 0);
+			if (size > 0) {
+				const int64_t buffer_size = 16 * ((offset + size + 15) / 16);
+				if (_push_constant.size() < buffer_size) {
+					_push_constant.resize(buffer_size);
+				}
+				RDBuffer::write(_push_constant, offset, size, value);
+			}
+		} else if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			Variant value = _shader_parameters[param_name];
 			RID value_rid = value;
 			const int32_t binding_space = param.get("binding_space", 0);
@@ -507,6 +531,9 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
 	_bind_uniform_sets(kernel_index, compute_list, rendering_device);
+	if (!_push_constant.is_empty()) {
+		rendering_device->compute_list_set_push_constant(compute_list, _push_constant, _push_constant.size());
+	}
 	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
 	rendering_device->compute_list_end();
 }
