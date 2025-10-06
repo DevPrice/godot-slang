@@ -117,6 +117,24 @@ public struct gd_NearestSamplerAttribute {
 public struct gd_ColorAttribute {};
 
 /**
+ Binds a parameter to the size of the output texture.
+ Must be applied to a variable of type `int2`.
+ Only available for `ComputeTexture`s.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_texture_TextureSizeAttribute {};
+
+/**
+ Binds a parameter to the internal size of the render buffer (size before upscaling) with which textures are created by default.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
+ Only available for `ComputeTexture`s.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_texture_OutputTextureAttribute {};
+
+/**
  Binds a parameter to the scene data block uniform buffer.
  Must be applied to a ConstantBuffer of type `gd::compositor::SceneDataBlock`.
  Only available for compositor effects.
@@ -132,11 +150,11 @@ public struct gd_compositor_SceneDataAttribute {};
 */
 [gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_compositor_SizeAttribute {};
+public struct gd_compositor_InternalSizeAttribute {};
 
 /**
  Binds a parameter to the color texture we are rendering 3D content to for the current view.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
@@ -145,7 +163,7 @@ public struct gd_compositor_ColorTextureAttribute {};
 
 /**
  Binds a parameter to the depth texture we are rendering 3D content to for the current view.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
@@ -154,7 +172,7 @@ public struct gd_compositor_DepthTextureAttribute {};
 
 /**
  Binds a parameter to the velocity texture we are rendering 3D content to for the current view.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
@@ -163,7 +181,7 @@ public struct gd_compositor_VelocityTextureAttribute {};
 
 /**
  Binds a parameter to the texture with the provided context and name.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
@@ -175,7 +193,7 @@ public struct gd_compositor_SceneBufferAttribute {
 
 /**
  Binds a parameter to a new texture.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
@@ -186,7 +204,7 @@ public struct gd_compositor_TextureAttribute {
 
 /**
  Binds a parameter to the texture with this name.
- Must be applied to a variable of type `Texture2D`.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]

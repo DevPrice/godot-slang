@@ -9,6 +9,7 @@
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
 #include "compute_shader_task.h"
+#include "compute_texture.h"
 #include "rdbuffer.h"
 
 #ifdef TOOLS_ENABLED
@@ -25,6 +26,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(ComputeShaderTask);
 		GDREGISTER_CLASS(ComputeShaderFile);
 		GDREGISTER_CLASS(ComputeShaderEffect);
+		GDREGISTER_CLASS(ComputeTexture);
 	}
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 #ifdef TOOLS_ENABLED

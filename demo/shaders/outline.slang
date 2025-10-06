@@ -15,7 +15,7 @@ let normal_roughness_texture : Texture2D<float4>;
 [gd::LinearSampler(SamplerRepeatMode.REPEAT)]
 let sampler_state : SamplerState;
 
-[gd::compositor::Size]
+[gd::compositor::InternalSize]
 let viewport_size : int2;
 
 [gd::compositor::SceneData]

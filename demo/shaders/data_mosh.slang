@@ -3,7 +3,7 @@ import godot;
 using gd;
 using gd::compositor;
 
-[gd::compositor::Size]
+[gd::compositor::InternalSize]
 let viewport_size : int2;
 
 [gd::compositor::Texture(DataFormat.DATA_FORMAT_R16G16B16A16_SNORM)]

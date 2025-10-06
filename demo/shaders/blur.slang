@@ -9,7 +9,7 @@ Texture2D<float4> scene_texture;
 [gd::LinearSampler(SamplerRepeatMode.REPEAT)]
 SamplerState sampler_state;
 
-[gd::compositor::Size]
+[gd::compositor::InternalSize]
 int2 viewport_size;
 
 static const int KERNEL_RADIUS = 2;

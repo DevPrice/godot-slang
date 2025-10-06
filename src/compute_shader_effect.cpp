@@ -104,7 +104,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			static StringName key_name("name");
 			Dictionary param_dict = params[param_name];
 			Dictionary user_attributes = param_dict["user_attributes"];
-			if (user_attributes.has("gd_compositor_Size")) {
+			if (user_attributes.has("gd_compositor_InternalSize")) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
 			}
 			if (user_attributes.has("gd_compositor_SceneData")) {
@@ -183,6 +183,7 @@ void ComputeShaderEffect::reload_shader() {
 
 	notify_property_list_changed();
 
+#ifdef TOOLS_ENABLED
 	if (Engine::get_singleton()->is_editor_hint()) {
 		if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
 			if (EditorFileSystem* editor_fs = editor_interface->get_resource_filesystem()) {
@@ -193,6 +194,7 @@ void ComputeShaderEffect::reload_shader() {
 			}
 		}
 	}
+#endif
 }
 
 void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {

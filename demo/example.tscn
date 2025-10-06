@@ -103,18 +103,18 @@ resource_local_to_scene = true
 material = SubResource("StandardMaterial3D_hl4on")
 size = Vector2(4, 4)
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_hl4on"]
-viewport_path = NodePath("RingViewport")
+[sub_resource type="ComputeTexture" id="ComputeTexture_kkclv"]
+size = Vector2i(1024, 1024)
+is_animated = true
+compute_shader = ExtResource("4_wcwec")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kkclv"]
-resource_local_to_scene = true
-albedo_color = Color(0, 0, 0, 1)
-emission_enabled = true
-emission_texture = SubResource("ViewportTexture_hl4on")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mt10o"]
+albedo_color = Color(2.454227, 2.454227, 2.454227, 1)
+albedo_texture = SubResource("ComputeTexture_kkclv")
+albedo_texture_force_srgb = true
 
-[sub_resource type="QuadMesh" id="QuadMesh_mt10o"]
-resource_local_to_scene = true
-material = SubResource("StandardMaterial3D_kkclv")
+[sub_resource type="QuadMesh" id="QuadMesh_hl4on"]
+material = SubResource("StandardMaterial3D_mt10o")
 size = Vector2(8, 8)
 
 [node name="Node" type="Node3D"]
@@ -165,7 +165,7 @@ transform = Transform3D(1, 8.7422784e-08, 8.742277e-08, -8.742278e-08, 1, -8.742
 layers = 2
 mesh = SubResource("QuadMesh_kkclv")
 
-[node name="SubViewportMesh2" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -6)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.99999994, 0, 0, 0, 1, 0, 0, 0, 0.99999994, 0, 2, -7)
 layers = 2
-mesh = SubResource("QuadMesh_mt10o")
+mesh = SubResource("QuadMesh_hl4on")

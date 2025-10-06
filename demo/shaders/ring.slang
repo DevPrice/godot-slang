@@ -4,14 +4,14 @@
 
 import godot;
 
-[gd::compositor::ColorTexture]
-RWTexture2D<float4> scene_color;
+[gd::texture::OutputTexture]
+RWTexture2D<float4> texture;
 
 [gd::Time]
 float t;
 
 [vk::push_constant]
-[gd::compositor::Size]
+[gd::texture::TextureSize]
 int2 screen_size;
 
 [shader("compute")]
@@ -43,5 +43,5 @@ void ring(uint2 thread_id: SV_DispatchThreadID) {
 	uv = (2.0 * uv) - 1.0;
     float beam_width = (0.7 + 0.5 * cos(uv.x * 10.0 * tau * 0.15 * clamp(floor(5.0 + 10.0 * cos(t)), 0.0, 10.0))) * abs(1.0 / (30.0 * uv.y));
     float3 hor_beam = float3(beam_width);
-    scene_color[thread_id.xy] = float4(((hor_beam)*hor_colour), 1.0);
+    texture[thread_id.xy] = float4(((hor_beam)*hor_colour), 1.0);
 }
