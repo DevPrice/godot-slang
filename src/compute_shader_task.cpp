@@ -1,4 +1,4 @@
-#include "computer_shader_task.h"
+#include "compute_shader_task.h"
 
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"

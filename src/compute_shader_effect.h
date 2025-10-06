@@ -7,7 +7,7 @@
 
 #include "binding_macros.h"
 #include "compute_shader_file.h"
-#include "computer_shader_task.h"
+#include "compute_shader_task.h"
 
 using namespace godot;
 
