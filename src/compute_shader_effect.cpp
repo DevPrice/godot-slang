@@ -210,8 +210,8 @@ bool ComputeShaderEffect::_set(const StringName& p_name, const Variant& p_value)
 
 bool ComputeShaderEffect::_get(const StringName& p_name, Variant& r_ret) const {
 	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		Dictionary params = task->get_shader_parameters();
 		const StringName param_name = p_name.substr(17);
+		Dictionary params = task->get_shader_parameters();
 		const Dictionary reflection = params[param_name];
 		if (reflection.has("property_info")) {
 			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
@@ -238,7 +238,12 @@ void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
 bool ComputeShaderEffect::_property_can_revert(const StringName& p_name) const {
 	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
 		const StringName param_name = p_name.substr(17);
-		return task->get_shader_parameter(param_name).get_type() != Variant::NIL;
+		Dictionary params = task->get_shader_parameters();
+		const Dictionary reflection = params[param_name];
+		if (reflection.has("property_info")) {
+			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
+			return UtilityFunctions::type_convert(task->get_shader_parameter(param_name), property_info.type) != UtilityFunctions::type_convert(nullptr, property_info.type);
+		}
 	}
 	return false;
 }

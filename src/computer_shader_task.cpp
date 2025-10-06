@@ -88,7 +88,6 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 				write(element_offset, element_stride, element);
 				element_offset += element_stride;
 			}
-			dirty_end = offset + array_size_bytes;
 		}
 		default:
 			write(buffer, offset, size, data);
