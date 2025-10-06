@@ -88,6 +88,7 @@ private:
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
 	[[nodiscard]] RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
+	[[nodiscard]] Variant _get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const;
 	[[nodiscard]] Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
 	Ref<RDBuffer> _get_buffer(int32_t binding, int32_t set, bool is_ssbo);
 	void _set_buffer(int32_t binding, int32_t set, const RID& buffer_rid, bool is_ssbo);

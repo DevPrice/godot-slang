@@ -331,6 +331,27 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
 	return {};
 }
 
+Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const {
+	Variant value = _shader_parameters[param_name];
+	if (value.get_type() == Variant::NIL) {
+		value = _get_default_uniform(uniform_type, attributes);
+	}
+	if (attributes.has("gd_Color")) {
+		if (value.get_type() == Variant::COLOR) {
+			const Color color = value;
+			return color.srgb_to_linear();
+		}
+		if (value.get_type() == Variant::PACKED_COLOR_ARRAY) {
+			PackedColorArray colors = value.duplicate();
+			for (Color& color: colors) {
+				color = color.srgb_to_linear();
+			}
+			return colors;
+		}
+	}
+	return value;
+}
+
 void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 	Dictionary parameters = kernel->get_parameters();
@@ -338,14 +359,12 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	for (const Variant& parameter_key : parameter_keys) {
 		const StringName& key = parameter_key;
 		const Dictionary param = parameters[key];
-		const auto param_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
+		const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
 		const StringName param_name = param.get("name", StringName{});
 		if (param_name.is_empty()) continue;
+		const Dictionary attributes = param["user_attributes"];
 		if (!param.has("uniform_type")) {
-			Variant value = _shader_parameters[param_name];
-			if (value.get_type() == Variant::NIL) {
-				value = _get_default_uniform(param_type, param["user_attributes"]);
-			}
+			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
 
 			const int64_t offset = param.get("offset", 0);
 			const int64_t size = param.get("size", 0);
@@ -356,19 +375,17 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				}
 				RDBuffer::write(_push_constant, offset, size, value);
 			}
-		} else if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
+		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			Variant value = _shader_parameters[param_name];
 			RID value_rid = value;
 			const int32_t binding_space = param.get("binding_space", 0);
 			const int32_t binding_index = param.get("binding_index", 0);
 			if (value_rid.is_valid()) {
-				_set_buffer(binding_index, binding_space, value_rid, param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				_set_buffer(binding_index, binding_space, value_rid, uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
 			} else {
-				if (value.get_type() == Variant::NIL) {
-					value = _get_default_uniform(param_type, param["user_attributes"]);
-				}
+				value = _get_parameter_value(param_name, uniform_type, attributes);
 
-				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space, param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space, uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
 				const int64_t stride = param.get("element_stride", 0);
 				buffer->set_stride(stride);
 
@@ -401,10 +418,8 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 		const StringName param_name = param.get("name", StringName{});
 		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
-			Variant value = _shader_parameters[param_name];
-			if (value.get_type() == Variant::NIL) {
-				value = _get_default_uniform(uniform_type, param["user_attributes"]);
-			}
+			const Dictionary attributes = param["user_attributes"];
+			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
 			if (const Object* object = value) {
 				if (object->is_class("Texture")) {
 					value = RenderingServer::get_singleton()->texture_get_rd_texture(value);
@@ -415,7 +430,7 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 				uniform->set_binding(binding_index);
 				uniform->set_uniform_type(uniform_type);
 				if (uniform_type == RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && value.get_type() != Variant::ARRAY) {
-					Variant sampler = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_SAMPLER, param["user_attributes"]);
+					Variant sampler = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_SAMPLER, attributes);
 					if (sampler.get_type() == Variant::NIL) {
 						sampler = _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_REPEAT);
 					}
