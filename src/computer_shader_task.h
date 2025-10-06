@@ -34,6 +34,8 @@ public:
 private:
 	bool is_ref = false;
 	int64_t remote_size = 0;
+	int64_t dirty_start = 0;
+	int64_t dirty_end = 0;
 
 	template <typename T>
 	void buffer_copy(const T source_data, const int64_t offset, const int64_t size) {
@@ -45,6 +47,8 @@ private:
 			buffer.resize(write_size + offset);
 		}
 		memcpy(buffer.ptrw() + offset, source_data.ptr(), write_size);
+		dirty_start = Math::min(offset, dirty_start);
+		dirty_end = Math::max(offset + write_size, dirty_end);
 	}
 };
 

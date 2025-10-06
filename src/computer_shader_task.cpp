@@ -31,6 +31,8 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 	} else {
 		ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
 	}
+	dirty_start = Math::min(offset, dirty_start);
+	dirty_end = Math::max(offset + size, dirty_end);
 	switch (data.get_type()) {
 		case Variant::PACKED_BYTE_ARRAY: {
 			buffer_copy<PackedByteArray>(data, offset, size);
@@ -86,6 +88,7 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 				write(element_offset, element_stride, element);
 				element_offset += element_stride;
 			}
+			dirty_end = offset + array_size_bytes;
 		}
 		default:
 			write(buffer, offset, size, data);
@@ -111,11 +114,12 @@ void RDBuffer::flush() {
 		}
 		if (!rid.is_valid()) {
 			set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
-		} else {
-			// TODO: Avoid updating the full buffer every frame
-			rd->buffer_update(rid, 0, buffer.size(), buffer);
+		} else if (dirty_start != dirty_end) {
+			rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
 		}
 		remote_size = buffer.size();
+		dirty_start = 0;
+		dirty_end = 0;
 	}
 }
 
