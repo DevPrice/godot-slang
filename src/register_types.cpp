@@ -9,6 +9,7 @@
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
 #include "compute_shader_task.h"
+#include "rdbuffer.h"
 
 #ifdef TOOLS_ENABLED
 #include "slang_shader_editor_plugin.h"
