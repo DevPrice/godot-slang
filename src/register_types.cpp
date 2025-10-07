@@ -8,7 +8,7 @@
 #include "compute_shader_effect.h"
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
-#include "computer_shader_task.h"
+#include "compute_shader_task.h"
 
 #ifdef TOOLS_ENABLED
 #include "slang_shader_editor_plugin.h"

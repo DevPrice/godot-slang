@@ -1,11 +1,11 @@
-#include "compute_shader_task.h"
-
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
+
+#include "compute_shader_task.h"
 
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderTask, kernels, ComputeShaderKernel)
@@ -100,26 +100,30 @@ void RDBuffer::set_size(const int64_t size) {
 }
 
 void RDBuffer::flush() {
-	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
-		if (get_is_ssbo()) {
-			if (!is_ref && remote_size < buffer.size() && rid.is_valid()) {
-				// the buffer grew in size, we need to recreate it
-				rd->free_rid(rid);
-				set_rid(RID());
-			} else if (buffer.is_empty()) {
-				// the buffer cannot be 0 bytes
-				set_size(256);
-			}
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
+	ERR_FAIL_NULL(rendering_server);
+	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
+	RenderingDevice* rd = rendering_server->get_rendering_device();
+	ERR_FAIL_NULL(rd);
+
+	if (get_is_ssbo()) {
+		if (!is_ref && remote_size < buffer.size() && rid.is_valid()) {
+			// the buffer grew in size, we need to recreate it
+			rd->free_rid(rid);
+			set_rid(RID());
+		} else if (buffer.is_empty()) {
+			// the buffer cannot be 0 bytes
+			set_size(256);
 		}
-		if (!rid.is_valid()) {
-			set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
-		} else if (dirty_start != dirty_end) {
-			rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
-		}
-		remote_size = buffer.size();
-		dirty_start = 0;
-		dirty_end = 0;
 	}
+	if (!rid.is_valid()) {
+		set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
+	} else if (dirty_start != dirty_end) {
+		rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
+	}
+	remote_size = buffer.size();
+	dirty_start = 0;
+	dirty_end = 0;
 }
 
 RenderingDevice::UniformType RDBuffer::get_uniform_type() const {
@@ -213,8 +217,9 @@ ComputeShaderTask::ComputeShaderTask() {
 }
 
 ComputeShaderTask::~ComputeShaderTask() {
-	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
-		_reset();
+	_reset();
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
+	if (RenderingDevice* rd = rendering_server ? rendering_server->get_rendering_device() : nullptr) {
 		for (int64_t i = 0; i < RenderingDevice::SAMPLER_REPEAT_MODE_MAX; ++i) {
 			if (RID rid = _nearest_sampler_cache[i]; rid.is_valid()) {
 				rd->free_rid(rid);
@@ -276,7 +281,8 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 }
 
 void ComputeShaderTask::_reset() {
-	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
+	if (RenderingDevice* rd = rendering_server ? rendering_server->get_rendering_device() : nullptr) {
 		for (const auto& pipeline_key : _kernel_pipelines.keys()) {
 			if (RID key = pipeline_key; key.is_valid()) {
 				rd->free_rid(_kernel_pipelines[key]);
@@ -316,19 +322,22 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
 	if (RID cached_value = sampler_cache[repeat_mode]; cached_value.is_valid()) {
 		return cached_value;
 	}
-	if (RenderingDevice* rd = RenderingServer::get_singleton()->get_rendering_device()) {
-		const Ref sampler_state = memnew(RDSamplerState);
-		sampler_state->set_min_filter(filter);
-		sampler_state->set_mag_filter(filter);
-		sampler_state->set_mip_filter(filter);
-		sampler_state->set_repeat_u(repeat_mode);
-		sampler_state->set_repeat_v(repeat_mode);
-		sampler_state->set_repeat_w(repeat_mode);
-		const RID sampler_rid = rd->sampler_create(sampler_state);
-		sampler_cache[repeat_mode] = sampler_rid;
-		return sampler_rid;
-	}
-	return {};
+
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
+	ERR_FAIL_NULL_V(rendering_server, RID{});
+	RenderingDevice* rd = rendering_server->get_rendering_device();
+	ERR_FAIL_NULL_V(rd, RID{});
+
+	const Ref sampler_state = memnew(RDSamplerState);
+	sampler_state->set_min_filter(filter);
+	sampler_state->set_mag_filter(filter);
+	sampler_state->set_mip_filter(filter);
+	sampler_state->set_repeat_u(repeat_mode);
+	sampler_state->set_repeat_v(repeat_mode);
+	sampler_state->set_repeat_w(repeat_mode);
+	const RID sampler_rid = rd->sampler_create(sampler_state);
+	sampler_cache[repeat_mode] = sampler_rid;
+	return sampler_rid;
 }
 
 Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const {
@@ -547,7 +556,10 @@ void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, co
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 	ERR_FAIL_NULL_MSG(static_cast<Ref<RefCounted>>(kernels[kernel_index]), String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
-	RenderingDevice* rendering_device = RenderingServer::get_singleton()->get_rendering_device();
+	RenderingServer* rendering_server = RenderingServer::get_singleton();
+	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
+	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
+	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
 	_update_buffers(kernel_index);
