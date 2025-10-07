@@ -96,7 +96,9 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 }
 
 void RDBuffer::set_size(const int64_t size) {
-	buffer.resize(size);
+	constexpr int64_t alignment = 16;
+	const int64_t aligned_size = alignment * ((size + (alignment - 1)) / alignment);
+	buffer.resize(aligned_size);
 }
 
 void RDBuffer::flush() {
@@ -116,6 +118,8 @@ void RDBuffer::flush() {
 			set_size(256);
 		}
 	}
+	ERR_FAIL_COND(buffer.is_empty());
+
 	if (!rid.is_valid()) {
 		set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
 	} else if (dirty_start != dirty_end) {
