@@ -165,7 +165,7 @@ void ComputeShaderEffect::reload_shader() {
 		return;
 	}
 	if (task.is_null() || !task->has_meta("compute_shader") || compute_shader != task->get_meta("compute_shader")) {
-		task = Ref(memnew(ComputeShaderTask));
+		task.instantiate();
 		task->set_meta("compute_shader", compute_shader);
 	}
 	const TypedArray<ComputeShaderKernel> kernels = compute_shader->get_kernels();

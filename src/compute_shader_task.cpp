@@ -19,6 +19,10 @@ void ComputeShaderTask::_bind_methods() {
 void RDBuffer::_bind_methods() {
 }
 
+RDBuffer::RDBuffer() {
+	alignment = 16;
+}
+
 RDBuffer::~RDBuffer() {
 	if (!is_ref && !rid.is_valid()) {
 		RenderingServer::get_singleton()->free_rid(rid);
@@ -26,10 +30,10 @@ RDBuffer::~RDBuffer() {
 }
 
 void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
-	if (get_is_ssbo()) {
-		ERR_FAIL_COND_MSG(get_stride() == 0, "Attempted to write SSBO without stride!");
+	if (get_is_fixed_size()) {
+		ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing fixed-size buffer before initialize!");
 	} else {
-		ERR_FAIL_COND_MSG(buffer.size() == 0, "Writing uniform buffer before initialize!");
+		ERR_FAIL_COND_MSG(get_stride() == 0, "Attempted to write storage buffer without stride!");
 	}
 	dirty_start = Math::min(offset, dirty_start);
 	dirty_end = Math::max(offset + size, dirty_end);
@@ -81,7 +85,7 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 			const Array array = data;
 			int64_t element_offset = offset;
 			const int64_t array_size_bytes = array.size() * element_stride;
-			if (buffer.size() < array_size_bytes) {
+			if (!get_is_fixed_size() && buffer.size() < array_size_bytes) {
 				set_size(array_size_bytes);
 			}
 			for (const Variant& element : array) {
@@ -96,9 +100,15 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 }
 
 void RDBuffer::set_size(const int64_t size) {
-	constexpr int64_t alignment = 16;
-	const int64_t aligned_size = alignment * ((size + (alignment - 1)) / alignment);
-	buffer.resize(aligned_size);
+	ERR_FAIL_COND_MSG(is_ref, "Attempted to change size of ref buffer!");
+	ERR_FAIL_COND_MSG(get_is_fixed_size(), "Attempted to change size of fixed size buffer!");
+	const int64_t alignment = get_alignment();
+	if (alignment > 0) {
+		const int64_t aligned_size = alignment * ((size + (alignment - 1)) / alignment);
+		buffer.resize(aligned_size);
+	} else {
+		buffer.resize(size);
+	}
 }
 
 void RDBuffer::flush() {
@@ -108,20 +118,24 @@ void RDBuffer::flush() {
 	RenderingDevice* rd = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL(rd);
 
-	if (get_is_ssbo()) {
-		if (!is_ref && remote_size < buffer.size() && rid.is_valid()) {
+	if (!get_is_fixed_size()) {
+		if (remote_size < buffer.size() && rid.is_valid()) {
 			// the buffer grew in size, we need to recreate it
 			rd->free_rid(rid);
 			set_rid(RID());
+			dirty_start = 0;
+			dirty_end = buffer.size();
 		} else if (buffer.is_empty()) {
 			// the buffer cannot be 0 bytes
 			set_size(256);
+			dirty_start = 0;
+			dirty_end = buffer.size();
 		}
 	}
 	ERR_FAIL_COND(buffer.is_empty());
 
 	if (!rid.is_valid()) {
-		set_rid(get_is_ssbo() ? rd->storage_buffer_create(buffer.size(), buffer) : rd->uniform_buffer_create(buffer.size(), buffer));
+		set_rid(get_is_fixed_size() ? rd->uniform_buffer_create(buffer.size(), buffer) : rd->storage_buffer_create(buffer.size(), buffer));
 	} else if (dirty_start != dirty_end) {
 		rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
 	}
@@ -131,13 +145,13 @@ void RDBuffer::flush() {
 }
 
 RenderingDevice::UniformType RDBuffer::get_uniform_type() const {
-	return get_is_ssbo() ? RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER : RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER;
+	return get_is_fixed_size() ? RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER : RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER;
 }
 
-Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid, const bool is_ssbo) {
+Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 	Ref result = memnew(RDBuffer);
 	result->set_rid(buffer_rid);
-	result->set_is_ssbo(is_ssbo);
+	result->set_is_fixed_size(true);
 	result->is_ref = true;
 	return result;
 }
@@ -213,7 +227,8 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 GET_SET_PROPERTY_IMPL(RDBuffer, RID, rid)
 GET_SET_PROPERTY_IMPL(RDBuffer, PackedByteArray, buffer)
 GET_SET_PROPERTY_IMPL(RDBuffer, int64_t, stride)
-GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_ssbo)
+GET_SET_PROPERTY_IMPL(RDBuffer, int64_t, alignment)
+GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_fixed_size)
 
 ComputeShaderTask::ComputeShaderTask() {
 	_linear_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
@@ -394,11 +409,11 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 			const int32_t binding_space = param.get("binding_space", 0);
 			const int32_t binding_index = param.get("binding_index", 0);
 			if (value_rid.is_valid()) {
-				_set_buffer(binding_index, binding_space, value_rid, uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
 				value = _get_parameter_value(param_name, uniform_type, attributes);
 
-				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space, uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
+				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
 				const int64_t stride = param.get("element_stride", 0);
 				buffer->set_stride(stride);
 
@@ -524,11 +539,10 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 	return nullptr;
 }
 
-Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set, const bool is_ssbo) {
+Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set) {
 	const Vector2i key(binding, set);
 	if (!_buffers.has(key)) {
 		const Ref buffer = memnew(RDBuffer);
-		buffer->set_is_ssbo(is_ssbo);
 		_buffers[key] = buffer;
 		if (kernels.size() > 0) {
 			const Ref<ComputeShaderKernel> kernel = kernels[0];
@@ -543,6 +557,7 @@ Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_
 						// TODO: This whole method should be refactored to make sense, but this works for now
 						const int64_t buffer_size = buffer_info["size"];
 						buffer->set_size(buffer_size);
+						buffer->set_is_fixed_size(true);
 					}
 				}
 			}
@@ -552,9 +567,9 @@ Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_
 	return _buffers[key];
 }
 
-void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid, const bool is_ssbo) {
+void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid) {
 	const Vector2i key(binding, set);
-	_buffers[key] = RDBuffer::ref(buffer_rid, is_ssbo);
+	_buffers[key] = RDBuffer::ref(buffer_rid);
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
