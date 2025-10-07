@@ -93,8 +93,24 @@ This library includes many other attributes, Godot-specific utility functions su
 Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functional, generating full reflection data for Godot is still very much a work-in-progress.
 If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
 
-`ComputeShaderTask::set_shader_parameter` supports many basic types, but is not yet fully implemented.
+`ComputeShaderTask::set_shader_parameter` supports many basic types, but is not yet fully implemented. See the table below for the status of specific binding types.
 `ComputeShaderTask` and `ComputeShaderEffect` are in a useful state if you are mostly reading render buffer textures and simple uniform data, but aren't quite ready for being used with complex data or nested structs.
+
+| Binding type                                       | Status                |
+|----------------------------------------------------|-----------------------|
+| Global uniforms                                    | ✅ Mostly working      |
+| Push constants                                     | ✅ Mostly working      |
+| `Texture2D`/`RWTexture2D`                          | ✅ Mostly working      |
+| `Sampler2D`                                        | ✅ Mostly working      |
+| `SamplerState`                                     | ✅ Mostly working      |
+| `ConstantBuffer`                                   | ✅ Mostly working      |
+| `StructuredBuffer`                                 | ✅ Mostly working      |
+| `RWStructuredBuffer`                               | ❌ Untested            |
+| `ByteAddressBuffer`/`RWByteAddressBuffer`          | ❌ Not yet implemented |
+| `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ❌ Not yet implemented |
+| `ParameterBlock`                                   | ❌ Not yet implemented |
+| User-defined structs                               | ❌ Not yet implemented |
+| Interfaces                                         | ❌ Not yet implemented |
 
 ## License
 
