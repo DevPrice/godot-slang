@@ -10,6 +10,7 @@ RWTexture2D<float4> scene_color;
 [gd::Time]
 float t;
 
+[vk::push_constant]
 [gd::compositor::Size]
 int2 screen_size;
 

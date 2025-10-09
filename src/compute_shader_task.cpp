@@ -179,9 +179,10 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const Dictionary attributes = param["user_attributes"];
 		if (!param.has("uniform_type")) {
 			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
+			Dictionary shape = param["shape"];
 
 			const int64_t offset = param.get("offset", 0);
-			const int64_t size = param.get("size", 0);
+			const int64_t size = shape.get("size", 0);
 			if (size > 0) {
 				const int64_t buffer_size = 16 * ((offset + size + 15) / 16);
 				if (_push_constant.size() < buffer_size) {
@@ -198,13 +199,14 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
 				value = _get_parameter_value(param_name, uniform_type, attributes);
+				Dictionary shape = param["shape"];
 
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
-				const int64_t stride = param.get("element_stride", 0);
+				const int64_t stride = shape.get("stride", 0);
 				buffer->set_stride(stride);
 
 				const int64_t offset = param.get("offset", 0);
-				const int64_t size = param.get("size", 0);
+				const int64_t size = shape.get("size", 0);
 				if (size > 0 || stride > 0) {
 					buffer->write(offset, size, value);
 				}

@@ -276,6 +276,12 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		param_info.set("name", param->getName());
 
 		Dictionary param_attributes = _get_attributes(program_layout, param->getVariable());
+		param_info.set("user_attributes", param_attributes);
+
+		Dictionary shape = _get_shape(param->getTypeLayout());
+		if (!shape.is_empty()) {
+			param_info.set("shape", shape);
+		}
 
 		Variant::Type type;
 		PropertyHint hint;
@@ -288,42 +294,87 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 			param_info.set("property_info", Dictionary(property_info));
 		}
 
-		param_info.set("user_attributes", param_attributes);
-
 		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
 				param_info.set("binding_index", param->getBindingIndex());
 				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("uniform_type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
-				if (param->getTypeLayout()->getResourceShape() == SLANG_RESOURCE_NONE) {
-					param_info.set("size", param->getTypeLayout()->getElementTypeLayout()->getSize());
-				}
-				if (param->getTypeLayout()->getResourceShape() == SLANG_STRUCTURED_BUFFER) {
-					param_info.set("element_stride", param->getTypeLayout()->getElementTypeLayout()->getStride());
-				}
 				break;
 			case slang::ParameterCategory::Uniform:
 				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
 				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("uniform_type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
 				param_info.set("offset", param->getOffset());
-				param_info.set("size", param->getTypeLayout()->getSize());
 				break;
 			case slang::ParameterCategory::PushConstantBuffer: {
 				slang::TypeLayoutReflection* element_type_layout = param->getTypeLayout()->getElementTypeLayout();
-				const size_t size = element_type_layout->getSize();
 				param_info.set("offset", push_constant_offset);
-				param_info.set("size", size);
-				push_constant_offset += size; // TODO: Smells like a hack, but I can't figure out where to fetch this otherwise
+				// TODO: Smells like a hack, but I can't figure out where to fetch this otherwise
+				// Getting mixed signals from Slang on whether more than one parameter can be bound to the push constant buffer
+				// Maybe can remove this, under the assumption that the offset is always zero?
+				push_constant_offset += element_type_layout->getSize();
 				break;
 			}
 			default:
 				param_info.set("unhandled_category", param->getCategory());
 				break;
 		}
+
 		parameters.set(param->getName(), param_info);
 	}
 	return parameters;
+}
+
+Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_layout) {
+	Dictionary shape{};
+	if (!type_layout) return shape;
+
+	switch (type_layout->getKind()) {
+		case SLANG_TYPE_KIND_SCALAR:
+		case SLANG_TYPE_KIND_VECTOR:
+		case SLANG_TYPE_KIND_MATRIX:
+			shape.set("type", "simple");
+			shape.set("size", type_layout->getSize());
+			break;
+		case SLANG_TYPE_KIND_STRUCT: {
+			shape.set("type", "structured");
+			shape.set("size", type_layout->getSize());
+			Dictionary property_shapes{};
+			for (int i = 0; i < type_layout->getFieldCount(); i++) {
+				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
+				property_shapes.set(field->getName(), _get_shape(field->getTypeLayout()));
+			}
+			shape.set("properties", property_shapes);
+			break;
+		}
+		case SLANG_TYPE_KIND_ARRAY:
+		case SLANG_TYPE_KIND_RESOURCE:
+		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
+			shape.set("type", "array");
+			shape.set("element_type", _get_shape(type_layout->getElementTypeLayout()));
+			const size_t stride = type_layout->getElementTypeLayout()->getStride();
+			if (stride > 0) {
+				shape.set("stride", stride);
+			}
+			const int32_t alignment = type_layout->getElementTypeLayout()->getAlignment();
+			if (alignment > 0) {
+				shape.set("alignment", alignment);
+			}
+			if (type_layout->isArray()) {
+				const size_t size = stride * type_layout->getElementCount();
+				if (size > 0) {
+					shape.set("size", type_layout->getSize());
+				}
+			}
+			break;
+		}
+		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
+			return _get_shape(type_layout->getElementTypeLayout());
+		default:
+			break;
+	}
+
+	return shape;
 }
 
 bool SlangShaderImporter::_is_autobind(slang::ProgramLayout* program_layout, slang::VariableReflection* var) {
