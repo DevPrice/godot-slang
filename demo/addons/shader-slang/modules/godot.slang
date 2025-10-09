@@ -37,6 +37,14 @@ using gd;
 public struct gd_AutobindAttribute {};
 
 /**
+ Indicates that a struct is represented by a global Godot class.
+*/
+[__AttributeUsage(_AttributeTargets.Struct)]
+public struct gd_ClassAttribute {
+    let class_name : String;
+};
+
+/**
  Binds a parameter to the current time in seconds.
  Must be applied to a variable of type `float`.
 */

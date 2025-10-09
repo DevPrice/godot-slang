@@ -34,12 +34,28 @@ private:
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
 	static Dictionary _get_shape(slang::TypeLayoutReflection* type_layout);
 	static bool _is_autobind(slang::ProgramLayout* program_layout, slang::VariableReflection* var);
-	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, slang::VariableReflection* variable_reflection);
 	static TypedArray<Dictionary> _get_buffers_reflection(slang::ProgramLayout* program_layout);
 	static slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute, slang::ProgramLayout* layout);
 	static String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index, slang::ProgramLayout* layout);
-	static bool _get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string);
-	static Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index);
+	static bool _get_godot_type(slang::ProgramLayout* program_layout, slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string);
+	static Variant _to_godot_value(slang::ProgramLayout* program_layout, slang::Attribute* attribute, uint32_t argument_index);
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
 	static slang::IGlobalSession* _get_global_session();
+
+	template<typename T>
+	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, T* reflection) {
+		Dictionary param_attributes{};
+		if (!reflection) return param_attributes;
+		for (size_t attribute_index = 0; attribute_index < reflection->getUserAttributeCount(); ++attribute_index) {
+			if (slang::Attribute* attribute = reflection->getUserAttributeByIndex(attribute_index)) {
+				Dictionary arguments{};
+				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
+					String argument_name = _get_attribute_argument_name(attribute, argument_index, program_layout);
+					arguments.set(argument_name, _to_godot_value(program_layout, attribute, argument_index));
+				}
+				param_attributes.set(attribute->getName(), arguments);
+			}
+		}
+		return param_attributes;
+	}
 };
