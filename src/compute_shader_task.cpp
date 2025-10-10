@@ -188,7 +188,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				if (_push_constant.size() < buffer_size) {
 					_push_constant.resize(buffer_size);
 				}
-				RDBuffer::write(_push_constant, offset, size, value);
+				RDBuffer::write_shape(_push_constant, offset, shape, value);
 			}
 		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			Variant value = _shader_parameters[param_name];
@@ -202,17 +202,22 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				Dictionary shape = param["shape"];
 
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
-				const int64_t stride = shape.get("stride", 0);
-				buffer->set_stride(stride);
 
 				const int64_t offset = param.get("offset", 0);
 				const int64_t size = shape.get("size", 0);
+				const int64_t stride = shape.get("stride", 0);
 				if (size > 0 || stride > 0) {
-					buffer->write(offset, size, value);
+					buffer->write_shape(offset, shape, value);
+				} else {
+					UtilityFunctions::push_error("Invalid size/stride for param: ", param_name);
 				}
-
-				buffer->flush();
 			}
+		}
+	}
+
+	for (const Ref<RDBuffer> buffer : _buffers.values()) {
+		if (buffer.is_valid()) {
+			buffer->flush();
 		}
 	}
 }

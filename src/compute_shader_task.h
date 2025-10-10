@@ -37,7 +37,7 @@ private:
 	Dictionary _buffers{};
 	TypedArray<RID> _linear_sampler_cache{};
 	TypedArray<RID> _nearest_sampler_cache{};
-	PackedByteArray _push_constant;
+	PackedByteArray _push_constant{};
 
 	void _reset();
 

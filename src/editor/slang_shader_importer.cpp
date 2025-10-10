@@ -339,6 +339,10 @@ Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_lay
 		case SLANG_TYPE_KIND_STRUCT: {
 			shape.set("type", "structured");
 			shape.set("size", type_layout->getSize());
+			const int32_t alignment = type_layout->getAlignment();
+			if (alignment > 0) {
+				shape.set("alignment", alignment);
+			}
 			Dictionary property_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
@@ -351,7 +355,7 @@ Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_lay
 		case SLANG_TYPE_KIND_RESOURCE:
 		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
 			shape.set("type", "array");
-			shape.set("element_type", _get_shape(type_layout->getElementTypeLayout()));
+			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout()));
 			const size_t stride = type_layout->getElementTypeLayout()->getStride();
 			if (stride > 0) {
 				shape.set("stride", stride);
@@ -552,6 +556,7 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			const Dictionary type_attributes = _get_attributes(program_layout, type);
 			const Dictionary class_args = type_attributes["gd_Class"];
 			const StringName class_name = class_args["class_name"];
+			// TODO: Verify the class_name is a Resource subtype
 			if (!class_name.is_empty()) {
 				out_type = Variant::OBJECT;
 				out_hint = PROPERTY_HINT_RESOURCE_TYPE;
