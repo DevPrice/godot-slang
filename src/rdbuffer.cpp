@@ -184,12 +184,19 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 		for (const StringName property_name : properties.keys()) {
 			const Dictionary property = properties[property_name];
 			const Dictionary property_shape = property["shape"];
+			const Dictionary property_attributes = property["user_attributes"];
 			const int64_t property_size = property_shape["size"];
 			const int64_t alignment = shape["alignment"];
 			ERR_FAIL_COND_V(property_size == 0, property_offset - offset);
 
 			bool is_valid{};
-			const Variant property_value = data.get_named(property_name, is_valid);
+			Variant property_value = data.get_named(property_name, is_valid);
+
+			// TODO: If this gets any more complex, it needs to move out of here
+			if (property_value.get_type() == Variant::COLOR && property_attributes.has("gd_Color")) {
+				property_value = static_cast<Color>(property_value).srgb_to_linear();
+			}
+
 			if (is_valid) {
 				write_shape(destination, property_offset, property_shape, property_value, resize);
 			}
