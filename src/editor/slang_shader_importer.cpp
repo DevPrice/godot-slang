@@ -278,7 +278,7 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		Dictionary param_attributes = _get_attributes(program_layout, param->getVariable());
 		param_info.set("user_attributes", param_attributes);
 
-		Dictionary shape = _get_shape(param->getTypeLayout());
+		const Dictionary shape = _get_shape(program_layout, param->getTypeLayout());
 		if (!shape.is_empty()) {
 			param_info.set("shape", shape);
 		}
@@ -325,7 +325,7 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 	return parameters;
 }
 
-Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_layout) {
+Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout, slang::TypeLayoutReflection* type_layout) {
 	Dictionary shape{};
 	if (!type_layout) return shape;
 
@@ -346,7 +346,11 @@ Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_lay
 			Dictionary property_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
-				property_shapes.set(field->getName(), _get_shape(field->getTypeLayout()));
+				Dictionary property{};
+				Dictionary property_shape = _get_shape(program_layout, field->getTypeLayout());
+				property.set("shape", property_shape);
+				property.set("user_attributes", _get_attributes(program_layout, field->getVariable()));
+				property_shapes.set(field->getName(), property);
 			}
 			shape.set("properties", property_shapes);
 			break;
@@ -355,7 +359,7 @@ Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_lay
 		case SLANG_TYPE_KIND_RESOURCE:
 		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
 			shape.set("type", "array");
-			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout()));
+			shape.set("element_shape", _get_shape(program_layout, type_layout->getElementTypeLayout()));
 			const size_t stride = type_layout->getElementTypeLayout()->getStride();
 			if (stride > 0) {
 				shape.set("stride", stride);
@@ -373,10 +377,12 @@ Dictionary SlangShaderImporter::_get_shape(slang::TypeLayoutReflection* type_lay
 			break;
 		}
 		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
-			return _get_shape(type_layout->getElementTypeLayout());
+			return _get_shape(program_layout, type_layout->getElementTypeLayout());
 		default:
 			break;
 	}
+
+	shape.set("user_attributes", _get_attributes(program_layout, type_layout->getType()));
 
 	return shape;
 }

@@ -182,7 +182,8 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 		const Dictionary properties = shape["properties"];
 		int64_t property_offset = offset;
 		for (const StringName property_name : properties.keys()) {
-			const Dictionary property_shape = properties[property_name];
+			const Dictionary property = properties[property_name];
+			const Dictionary property_shape = property["shape"];
 			const int64_t property_size = property_shape["size"];
 			const int64_t alignment = shape["alignment"];
 			ERR_FAIL_COND_V(property_size == 0, property_offset - offset);
