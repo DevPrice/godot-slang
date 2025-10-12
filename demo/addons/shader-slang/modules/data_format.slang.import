@@ -1,15 +1,3 @@
 [remap]
 
-importer="slang.shader.importer"
-type="ComputeShaderFile"
-uid="uid://hc8k6neyxlwe"
-path="res://.godot/imported/data_format.slang-a08e9483f266460fcfd368e882c34d41.res"
-
-[deps]
-
-source_file="res://addons/shader-slang/modules/data_format.slang"
-dest_files=["res://.godot/imported/data_format.slang-a08e9483f266460fcfd368e882c34d41.res"]
-
-[params]
-
-shader_type=0
+importer="skip"
