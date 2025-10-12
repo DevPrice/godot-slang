@@ -100,6 +100,7 @@ If you don't need reflection information, then these should suffice for importin
 |----------------------------------------------------|-----------------------|
 | Global uniforms                                    | ✅ Mostly working      |
 | Push constants                                     | ✅ Mostly working      |
+| User-defined structs                               | ✅ Mostly working      |
 | `Texture2D`/`RWTexture2D`                          | ✅ Mostly working      |
 | `Sampler2D`                                        | ✅ Mostly working      |
 | `SamplerState`                                     | ✅ Mostly working      |
@@ -109,7 +110,6 @@ If you don't need reflection information, then these should suffice for importin
 | `ByteAddressBuffer`/`RWByteAddressBuffer`          | ❌ Not yet implemented |
 | `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ❌ Not yet implemented |
 | `ParameterBlock`                                   | ❌ Not yet implemented |
-| User-defined structs                               | ❌ Not yet implemented |
 | Interfaces                                         | ❌ Not yet implemented |
 
 ## License
