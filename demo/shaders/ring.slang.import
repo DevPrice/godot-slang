@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/ring.slang-68f2ebc72e5ea8e4d102a660ee210036.r
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray()

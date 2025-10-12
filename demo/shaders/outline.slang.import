@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/outline.slang-5a0716822482f5ad5dfd7b1425a0ec0
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray()

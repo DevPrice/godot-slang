@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/grayscale.glsl-f36d5def71a7aff7d5e9e312f97176
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray("main")

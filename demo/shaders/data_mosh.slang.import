@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/data_mosh.slang-31c6ad3f5c9febc77523081859d2a
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray()

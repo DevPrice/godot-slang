@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/blur.slang-43abd47a7dc3b54ec64550db742ab007.r
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray()

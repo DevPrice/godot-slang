@@ -40,10 +40,10 @@ PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
 
 TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_path, int32_t p_preset_index) const {
 	TypedArray<Dictionary> options{};
-	Dictionary default_options{};
-	default_options.set("name", "shader_type");
-	default_options.set("default_value", 0);
-	options.push_back(default_options);
+	Dictionary entry_points_option{};
+	entry_points_option.set("name", "entry_points");
+	entry_points_option.set("default_value", PackedStringArray());
+	options.push_back(entry_points_option);
 	return options;
 }
 
@@ -69,7 +69,7 @@ bool SlangShaderImporter::_get_option_visibility(const String& p_path, const Str
 
 Error SlangShaderImporter::_import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const {
 	Slang::ComPtr<slang::ISession> session;
-	_create_session(session.writeRef());
+	_create_session(session.writeRef(), p_options);
 
 	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
 	if (shader_file.is_null()) {
@@ -112,7 +112,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	}
 }
 
-SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) {
+SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, const Dictionary& options) {
 	slang::IGlobalSession* global_session = _get_global_session();
 
 	slang::SessionDesc session_desc = {};
@@ -122,6 +122,27 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) 
 
 	session_desc.targets = &target_desc;
 	session_desc.targetCount = 1;
+
+	std::vector<slang::CompilerOptionEntry> compiler_options{};
+
+	PackedStringArray entry_points = options["entry_points"];
+	for (const String& entry_point : entry_points) {
+		// TODO: This doesn't actually work
+		constexpr auto compute_stage = "compute";
+		slang::CompilerOptionValue entry_point_value{};
+		entry_point_value.kind = slang::CompilerOptionValueKind::String;
+		entry_point_value.stringValue0 = entry_point.utf8().get_data();
+		const slang::CompilerOptionEntry entry_point_option = {slang::CompilerOptionName::EntryPointName, entry_point_value};
+		compiler_options.push_back(entry_point_option);
+		slang::CompilerOptionValue stage_value{};
+		stage_value.kind = slang::CompilerOptionValueKind::String;
+		stage_value.stringValue0 = compute_stage;
+		const slang::CompilerOptionEntry stage_option = {slang::CompilerOptionName::Stage, stage_value};
+		compiler_options.push_back(stage_option);
+	}
+
+	session_desc.compilerOptionEntries = compiler_options.data();
+	session_desc.compilerOptionEntryCount = compiler_options.size();
 
 	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
 	const String modules_path = extension_path.get_base_dir().path_join("modules");

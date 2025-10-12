@@ -12,4 +12,4 @@ dest_files=["res://.godot/imported/normals.slang-07a6dbcb252e12f0780a9ba3b09877b
 
 [params]
 
-shader_type=0
+entry_points=PackedStringArray()
