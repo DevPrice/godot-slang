@@ -35,7 +35,7 @@ String SlangShaderImporter::_get_preset_name(int32_t p_preset_index) const {
 }
 
 PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
-	return PackedStringArray({ "slang" });
+	return PackedStringArray({ "slang", "hlsl" });
 }
 
 TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_path, int32_t p_preset_index) const {
