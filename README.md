@@ -6,10 +6,11 @@ This project is a work-in-progress to support [Slang](https://shader-slang.org/)
 
 ## Features
 * Simple and straightforward handling of `.slang` files. You can `load("res://something.slang")` and it works exactly how you would expect.
+* Supports most `.glsl` and `.hlsl` shaders in addition to `.slang`
 * Supports most major Slang features, including modules.
 * Uses a high-level API for binding shader parameters, similar to GDShader (`set_shader_parameter(...)`).
 * Minimizes boilerplate by automatically binding shader parameters for common textures (color, depth, normal/roughness, etc.), current time, shader globals, and more.
-* First-class support for compositor effects written in Slang.
+* First-class support for compositor effects.
 
 ## Usage
 
