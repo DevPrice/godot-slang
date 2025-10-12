@@ -23,7 +23,7 @@ String SlangShaderImporter::_get_importer_name() const {
 }
 
 String SlangShaderImporter::_get_visible_name() const {
-	return "Slang Compute Shader";
+	return "Compute Shader";
 }
 
 int32_t SlangShaderImporter::_get_preset_count() const {
@@ -35,7 +35,7 @@ String SlangShaderImporter::_get_preset_name(int32_t p_preset_index) const {
 }
 
 PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
-	return PackedStringArray({ "slang", "hlsl" });
+	return PackedStringArray({ "slang", "hlsl", "glsl" });
 }
 
 TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_path, int32_t p_preset_index) const {
@@ -133,7 +133,7 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session) 
 }
 
 Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels) {
-	for (SlangInt32 entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
+	for (int32_t entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		ERR_FAIL_COND_V_MSG(
 			slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK,
@@ -244,6 +244,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	{
 		SlangUInt sizes[3];
 		entry_point_layout->getComputeThreadGroupSize(3, sizes);
+		// TODO: This seems to report (1,1,1) for GLSL files for some reason
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 	}
 
@@ -667,8 +668,11 @@ RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::
 slang::IGlobalSession* SlangShaderImporter::_get_global_session() {
 	static slang::IGlobalSession* global_session = [] {
 		slang::IGlobalSession* ptr = nullptr;
-		slang::createGlobalSession(&ptr);
+		SlangGlobalSessionDesc desc = {};
+		desc.enableGLSL = true;
+		slang::createGlobalSession(&desc, &ptr);
 		return ptr;
 	}();
+
 	return global_session;
 }
