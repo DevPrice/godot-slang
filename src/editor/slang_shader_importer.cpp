@@ -244,7 +244,6 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	{
 		SlangUInt sizes[3];
 		entry_point_layout->getComputeThreadGroupSize(3, sizes);
-		// TODO: This seems to report (1,1,1) for GLSL files for some reason
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 	}
 
@@ -280,9 +279,13 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		param_info.set("user_attributes", param_attributes);
 
 		const Dictionary shape = _get_shape(program_layout, param->getTypeLayout());
-		if (!shape.is_empty()) {
-			param_info.set("shape", shape);
+		const bool is_valid_shape = !shape.is_empty() &&
+			(shape["type"] != "simple" || static_cast<int64_t>(shape.get("size", -1)) != 0);
+		if (!is_valid_shape) {
+			continue;
 		}
+
+		param_info.set("shape", shape);
 
 		Variant::Type type;
 		PropertyHint hint;

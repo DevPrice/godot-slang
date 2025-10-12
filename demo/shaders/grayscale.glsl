@@ -8,6 +8,7 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(rgba32f, binding = 0) uniform image2D scene_color;
 
 [shader("compute")]
+[numthreads(8, 8, 1)]
 void main() {
     ivec2 threadId = ivec2(gl_GlobalInvocationID.xy);
 
