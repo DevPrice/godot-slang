@@ -356,8 +356,12 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 			shape.set("properties", property_shapes);
 			break;
 		}
-		case SLANG_TYPE_KIND_ARRAY:
 		case SLANG_TYPE_KIND_RESOURCE:
+			if (type_layout->getResourceShape() != SLANG_STRUCTURED_BUFFER) {
+				shape.set("type", "resource");
+				break;
+			}
+		case SLANG_TYPE_KIND_ARRAY:
 		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
 			shape.set("type", "array");
 			shape.set("element_shape", _get_shape(program_layout, type_layout->getElementTypeLayout()));
@@ -509,14 +513,14 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					if (_get_godot_type(program_layout, type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
 						switch (element_type) {
 							case Variant::INT:
-								if (type->getScalarType() == SLANG_SCALAR_TYPE_INT64) {
+								if (type->getElementType()->getScalarType() == SLANG_SCALAR_TYPE_INT64) {
 									out_type = Variant::PACKED_INT64_ARRAY;
 								} else {
 									out_type = Variant::PACKED_INT32_ARRAY;
 								}
 								break;
 							case Variant::FLOAT:
-								if (type->getScalarType() == SLANG_SCALAR_TYPE_FLOAT64) {
+								if (type->getElementType()->getScalarType() == SLANG_SCALAR_TYPE_FLOAT64) {
 									out_type = Variant::PACKED_FLOAT64_ARRAY;
 								} else {
 									out_type = Variant::PACKED_FLOAT32_ARRAY;
