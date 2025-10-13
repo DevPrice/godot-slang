@@ -255,6 +255,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 	static const StringName type_structured = "structured";
 	static const StringName type_array = "array";
 	static const StringName type_simple = "simple";
+	static const StringName type_raw_bytes = "raw_bytes";
 	const String type = shape["type"];
 	if (type == type_simple) {
 		const int64_t size = shape["size"];
@@ -339,6 +340,18 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 			} while (data.iter_next(key, is_valid) && is_valid);
 		}
 		return element_offset - offset;
+	}
+	if (type == type_raw_bytes) {
+		// TODO: Handle other types
+		const PackedByteArray bytes = data;
+		const int64_t size = bytes.size();
+
+		if (resize && destination.size() < offset + size) {
+			destination.resize(offset + size);
+		}
+
+		write(destination, offset, size, data);
+		return size;
 	}
 	UtilityFunctions::push_warning("Unable to write invalid shape: ", shape);
 	return 0;

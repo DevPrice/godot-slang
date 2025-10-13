@@ -381,11 +381,17 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 			shape.set("properties", property_shapes);
 			break;
 		}
-		case SLANG_TYPE_KIND_RESOURCE:
-			if (type_layout->getResourceShape() != SLANG_STRUCTURED_BUFFER) {
+		case SLANG_TYPE_KIND_RESOURCE: {
+			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
+			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
+				shape.set("type", "raw_bytes");
+				break;
+			}
+			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
 				shape.set("type", "resource");
 				break;
 			}
+		}
 		case SLANG_TYPE_KIND_ARRAY:
 		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
 			shape.set("type", "array");
@@ -528,6 +534,10 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
 					out_hint_string = Texture2D::get_class_static();
 					return true;
+				case SLANG_BYTE_ADDRESS_BUFFER: {
+					out_type = Variant::PACKED_BYTE_ARRAY;
+					return true;
+				}
 				case SLANG_STRUCTURED_BUFFER: {
 					out_type = Variant::ARRAY;
 

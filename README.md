@@ -107,7 +107,7 @@ If you don't need reflection information, then these should suffice for importin
 | `SamplerState`                                     | ✅ Mostly working      |
 | `ConstantBuffer`                                   | ✅ Mostly working      |
 | `StructuredBuffer`/`RWStructuredBuffer`            | ✅ Mostly working      |
-| `ByteAddressBuffer`/`RWByteAddressBuffer`          | ❌ Not yet implemented |
+| `ByteAddressBuffer`/`RWByteAddressBuffer`          | ✅ Mostly working      |
 | `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ❌ Not yet implemented |
 | `ParameterBlock`                                   | ❌ Not yet implemented |
 | Interfaces                                         | ❌ Not yet implemented |
