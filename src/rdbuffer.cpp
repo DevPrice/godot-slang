@@ -155,6 +155,13 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			destination.encode_s32(offset + 12, vector.w);
 			break;
 		}
+		case Variant::AABB: {
+			ERR_FAIL_COND(size < 32);
+			const AABB aabb = data;
+			write(destination, offset, 16, aabb.position);
+			write(destination, offset + 16, 16, aabb.size);
+			break;
+		}
 		case Variant::TRANSFORM3D: {
 			ERR_FAIL_COND(size < 64);
 			const Transform3D transform = data;
