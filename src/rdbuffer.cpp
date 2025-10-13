@@ -208,7 +208,12 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 			if (is_valid) {
 				write_shape(destination, property_offset, property_shape, property_value, resize);
+			} else if (data.get_type() == Variant::PACKED_BYTE_ARRAY) {
+				write(destination, property_offset, property_size, data);
+			} else {
+				UtilityFunctions::push_error("Failed to write structured data!");
 			}
+
 			property_offset = aligned_size(property_offset + property_size, alignment);
 		}
 		return property_offset - offset;
