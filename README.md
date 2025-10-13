@@ -106,8 +106,7 @@ If you don't need reflection information, then these should suffice for importin
 | `Sampler2D`                                        | ✅ Mostly working      |
 | `SamplerState`                                     | ✅ Mostly working      |
 | `ConstantBuffer`                                   | ✅ Mostly working      |
-| `StructuredBuffer`                                 | ✅ Mostly working      |
-| `RWStructuredBuffer`                               | ❌ Untested            |
+| `StructuredBuffer`/`RWStructuredBuffer`            | ✅ Mostly working      |
 | `ByteAddressBuffer`/`RWByteAddressBuffer`          | ❌ Not yet implemented |
 | `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ❌ Not yet implemented |
 | `ParameterBlock`                                   | ❌ Not yet implemented |
