@@ -5,6 +5,74 @@
 
 #include "rdbuffer.h"
 
+inline bool get_container_size(const Variant &v, int64_t &size) {
+	switch (v.get_type()) {
+		case Variant::ARRAY: {
+			const Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_BYTE_ARRAY: {
+			const PackedByteArray &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_INT32_ARRAY: {
+			const PackedInt32Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_INT64_ARRAY: {
+			const PackedInt64Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_FLOAT32_ARRAY: {
+			const PackedFloat32Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_FLOAT64_ARRAY: {
+			const PackedFloat64Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_STRING_ARRAY: {
+			const PackedStringArray &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_VECTOR2_ARRAY: {
+			const PackedVector2Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_VECTOR3_ARRAY: {
+			const PackedVector3Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_VECTOR4_ARRAY: {
+			const PackedVector4Array &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::PACKED_COLOR_ARRAY: {
+			const PackedColorArray &arr = v;
+			size = arr.size();
+			break;
+		}
+		case Variant::DICTIONARY: {
+			const Dictionary &dict = v;
+			size = dict.size();
+			break;
+		}
+		default:
+			return false;
+	}
+	return true;
+}
+
 void RDBuffer::_bind_methods() {
 }
 
@@ -191,6 +259,11 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 	if (type == type_simple) {
 		const int64_t size = shape["size"];
 		ERR_FAIL_COND_V(size <= 0, 0);
+
+		if (resize && destination.size() < offset + size) {
+			destination.resize(offset + size);
+		}
+
 		write(destination, offset, size, data);
 		return size;
 	}
@@ -198,6 +271,10 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 		const Dictionary properties = shape["properties"];
 		const int64_t size = shape["size"];
 		ERR_FAIL_COND_V(size <= 0, 0);
+
+		if (resize && destination.size() < offset + size) {
+			destination.resize(offset + size);
+		}
 
 		for (const StringName property_name : properties.keys()) {
 			const Dictionary property = properties[property_name];
@@ -234,7 +311,16 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 		const int64_t stride = shape["stride"];
 		ERR_FAIL_COND_V(stride <= 0, 0);
-		const int64_t size = shape["size"];
+
+		int64_t size = shape["size"];
+		if (size == 0) {
+			int64_t container_size;
+			if (get_container_size(data, container_size)) {
+				size = container_size * stride;
+			}
+		}
+		ERR_FAIL_COND_V(size <= 0, 0);
+
 		if (resize && destination.size() < offset + size) {
 			destination.resize(offset + size);
 		}
