@@ -155,6 +155,15 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			destination.encode_s32(offset + 12, vector.w);
 			break;
 		}
+		case Variant::TRANSFORM3D: {
+			ERR_FAIL_COND(size < 64);
+			const Transform3D transform = data;
+			write(destination, offset, 16, transform.basis.rows[0]);
+			write(destination, offset + 16, 16, transform.basis.rows[1]);
+			write(destination, offset + 32, 16, transform.basis.rows[2]);
+			write(destination, offset + 48, 16, transform.origin);
+			break;
+		}
 		case Variant::PACKED_BYTE_ARRAY: {
 			const PackedByteArray& array = data;
 			memcpy(destination.ptrw() + offset, array.ptr(), Math::min(array.size(), size));

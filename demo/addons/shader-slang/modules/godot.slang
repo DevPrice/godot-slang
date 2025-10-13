@@ -45,6 +45,13 @@ public struct gd_ClassAttribute {
 };
 
 /**
+ Hides a parameter from the property inspector. Use for parameters that should only be set from code.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_HideAttribute {};
+
+/**
  Binds a parameter to the current time in seconds.
  Must be applied to a variable of type `float`.
 */
