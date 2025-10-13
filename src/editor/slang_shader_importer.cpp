@@ -375,6 +375,7 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 				Dictionary property_shape = _get_shape(program_layout, field->getTypeLayout());
 				property.set("shape", property_shape);
 				property.set("user_attributes", _get_attributes(program_layout, field->getVariable()));
+				property.set("offset", field->getOffset());
 				property_shapes.set(field->getName(), property);
 			}
 			shape.set("properties", property_shapes);

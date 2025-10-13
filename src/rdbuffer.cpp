@@ -196,14 +196,21 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 	}
 	if (type == type_structured) {
 		const Dictionary properties = shape["properties"];
-		int64_t property_offset = offset;
+		const int64_t size = shape["size"];
+		ERR_FAIL_COND_V(size <= 0, 0);
+
 		for (const StringName property_name : properties.keys()) {
 			const Dictionary property = properties[property_name];
+
+			const int64_t property_offset = property["offset"];
 			const Dictionary property_shape = property["shape"];
 			const Dictionary property_attributes = property["user_attributes"];
+
 			const int64_t property_size = property_shape["size"];
-			const int64_t alignment = shape["alignment"];
-			ERR_FAIL_COND_V(property_size == 0, property_offset - offset);
+			if (property_size <= 0) {
+				UtilityFunctions::push_error("Property missing size: ", property_name);
+				continue;
+			}
 
 			bool is_valid{};
 			Variant property_value = data.get_named(property_name, is_valid);
@@ -214,16 +221,13 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 			}
 
 			if (is_valid) {
-				write_shape(destination, property_offset, property_shape, property_value, resize);
+				write_shape(destination, offset + property_offset, property_shape, property_value, resize);
 			} else if (data.get_type() == Variant::PACKED_BYTE_ARRAY) {
-				write(destination, property_offset, property_size, data);
-			} else {
-				UtilityFunctions::push_error("Failed to write structured data!");
+				write(destination, offset + property_offset, property_size, data);
 			}
-
-			property_offset = aligned_size(property_offset + property_size, alignment);
 		}
-		return property_offset - offset;
+
+		return size;
 	}
 	if (type == type_array) {
 		const Dictionary element_shape = shape["element_shape"];
