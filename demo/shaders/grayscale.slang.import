@@ -13,3 +13,4 @@ dest_files=["res://.godot/imported/grayscale.slang-66b752061baa30d984ed52705d5ad
 [params]
 
 entry_points=PackedStringArray()
+matrix_layout=1

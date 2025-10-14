@@ -13,3 +13,4 @@ dest_files=["res://.godot/imported/ring.slang-68f2ebc72e5ea8e4d102a660ee210036.r
 [params]
 
 entry_points=PackedStringArray()
+matrix_layout=1

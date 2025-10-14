@@ -16,7 +16,10 @@
 
 #include "godot_cpp/classes/texture2d.hpp"
 
-void SlangShaderImporter::_bind_methods() {}
+void SlangShaderImporter::_bind_methods() {
+	BIND_ENUM_CONSTANT(RowMajor)
+	BIND_ENUM_CONSTANT(ColumnMajor)
+}
 
 String SlangShaderImporter::_get_importer_name() const {
 	return "slang.shader.importer";
@@ -40,10 +43,20 @@ PackedStringArray SlangShaderImporter::_get_recognized_extensions() const {
 
 TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_path, int32_t p_preset_index) const {
 	TypedArray<Dictionary> options{};
-	Dictionary entry_points_option{};
-	entry_points_option.set("name", "entry_points");
-	entry_points_option.set("default_value", PackedStringArray());
-	options.push_back(entry_points_option);
+	{
+		Dictionary entry_points_option{};
+		entry_points_option.set("name", "entry_points");
+		entry_points_option.set("default_value", PackedStringArray());
+		options.push_back(entry_points_option);
+	}
+	{
+		Dictionary matrix_layout_option{};
+		matrix_layout_option.set("name", "matrix_layout");
+		matrix_layout_option.set("default_value", RowMajor);
+		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
+		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(RowMajor), String::num_int64(ColumnMajor) });
+		options.push_back(matrix_layout_option);
+	}
 	return options;
 }
 
@@ -143,6 +156,11 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 
 	session_desc.compilerOptionEntries = compiler_options.data();
 	session_desc.compilerOptionEntryCount = compiler_options.size();
+
+	const int64_t matrix_layout = options["matrix_layout"];
+	if (matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
+		session_desc.defaultMatrixLayoutMode = static_cast<SlangMatrixLayoutMode>(matrix_layout);
+	}
 
 	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
 	const String modules_path = extension_path.get_base_dir().path_join("modules");

@@ -13,3 +13,4 @@ dest_files=["res://.godot/imported/data_mosh.slang-31c6ad3f5c9febc77523081859d2a
 [params]
 
 entry_points=PackedStringArray()
+matrix_layout=1

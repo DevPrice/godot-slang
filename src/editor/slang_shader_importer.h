@@ -27,6 +27,11 @@ public:
 	[[nodiscard]] bool _get_option_visibility(const String& p_path, const StringName& p_option_name, const Dictionary& p_options) const override;
 	[[nodiscard]] Error _import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const override;
 
+	enum MatrixLayout {
+		RowMajor = SLANG_MATRIX_LAYOUT_ROW_MAJOR,
+		ColumnMajor = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR,
+	};
+
 private:
 	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options);
 	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
@@ -59,3 +64,5 @@ private:
 		return param_attributes;
 	}
 };
+
+VARIANT_ENUM_CAST(SlangShaderImporter::MatrixLayout)
