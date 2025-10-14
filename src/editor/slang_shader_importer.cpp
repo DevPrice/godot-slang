@@ -438,6 +438,11 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 
 	shape.set("user_attributes", _get_attributes(program_layout, type_layout->getType()));
 
+	const SlangMatrixLayoutMode matrix_layout = type_layout->getMatrixLayoutMode();
+	if (matrix_layout != SLANG_MATRIX_LAYOUT_MODE_UNKNOWN) {
+		shape.set("matrix_layout", type_layout->getMatrixLayoutMode());
+	}
+
 	return shape;
 }
 
