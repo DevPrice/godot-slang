@@ -28,8 +28,8 @@ public:
 	[[nodiscard]] Error _import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const override;
 
 	enum MatrixLayout {
-		RowMajor = SLANG_MATRIX_LAYOUT_ROW_MAJOR,
-		ColumnMajor = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR,
+		ROW_MAJOR = SLANG_MATRIX_LAYOUT_ROW_MAJOR,
+		COLUMN_MAJOR = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR,
 	};
 
 private:

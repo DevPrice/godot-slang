@@ -17,8 +17,8 @@
 #include "godot_cpp/classes/texture2d.hpp"
 
 void SlangShaderImporter::_bind_methods() {
-	BIND_ENUM_CONSTANT(RowMajor)
-	BIND_ENUM_CONSTANT(ColumnMajor)
+	BIND_ENUM_CONSTANT(ROW_MAJOR)
+	BIND_ENUM_CONSTANT(COLUMN_MAJOR)
 }
 
 String SlangShaderImporter::_get_importer_name() const {
@@ -52,9 +52,9 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 	{
 		Dictionary matrix_layout_option{};
 		matrix_layout_option.set("name", "matrix_layout");
-		matrix_layout_option.set("default_value", RowMajor);
+		matrix_layout_option.set("default_value", ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
-		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(RowMajor), String::num_int64(ColumnMajor) });
+		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(ROW_MAJOR), String::num_int64(COLUMN_MAJOR) });
 		options.push_back(matrix_layout_option);
 	}
 	return options;
