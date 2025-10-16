@@ -82,7 +82,9 @@ bool SlangShaderImporter::_get_option_visibility(const String& p_path, const Str
 
 Error SlangShaderImporter::_import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const {
 	Slang::ComPtr<slang::ISession> session;
-	_create_session(session.writeRef(), p_options);
+	if (SLANG_FAILED(_create_session(session.writeRef(), p_options, p_source_file.ends_with(".glsl")))) {
+		return FAILED;
+	}
 
 	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
 	if (shader_file.is_null()) {
@@ -125,8 +127,9 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	}
 }
 
-SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, const Dictionary& options) {
-	slang::IGlobalSession* global_session = _get_global_session();
+SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, const Dictionary& options, const bool enable_glsl) {
+	slang::IGlobalSession* global_session = _get_global_session(enable_glsl);
+	ERR_FAIL_NULL_V_MSG(global_session, SLANG_FAIL, "Failed to initialize global Slang session!");
 
 	slang::SessionDesc session_desc = {};
 	slang::TargetDesc target_desc = {};
@@ -727,14 +730,24 @@ RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::
 	}
 }
 
-slang::IGlobalSession* SlangShaderImporter::_get_global_session() {
-	static slang::IGlobalSession* global_session = [] {
+slang::IGlobalSession* SlangShaderImporter::_get_global_session(const bool enable_glsl) {
+	static bool glsl_initialized = enable_glsl;
+	static slang::IGlobalSession* global_session = [enable_glsl] {
 		slang::IGlobalSession* ptr = nullptr;
 		SlangGlobalSessionDesc desc = {};
-		desc.enableGLSL = true;
+		desc.enableGLSL = enable_glsl;
 		slang::createGlobalSession(&desc, &ptr);
 		return ptr;
 	}();
+
+	if (!glsl_initialized && enable_glsl) {
+		SlangGlobalSessionDesc desc = {};
+		// TODO: This crashes outside my local env
+		// probably failing to statically link the right dependencies for this
+		desc.enableGLSL = true;
+		slang::createGlobalSession(&desc, &global_session);
+		glsl_initialized = true;
+	}
 
 	return global_session;
 }

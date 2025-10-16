@@ -33,7 +33,7 @@ public:
 	};
 
 private:
-	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options);
+	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options, bool enable_glsl = false);
 	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static Dictionary _get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata);
@@ -45,7 +45,7 @@ private:
 	static bool _get_godot_type(slang::ProgramLayout* program_layout, slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string);
 	static Variant _to_godot_value(slang::ProgramLayout* program_layout, slang::Attribute* attribute, uint32_t argument_index);
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
-	static slang::IGlobalSession* _get_global_session();
+	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 
 	template<typename T>
 	static Dictionary _get_attributes(slang::ProgramLayout* program_layout, T* reflection) {
