@@ -88,13 +88,15 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 void ComputeShaderTask::_reset() {
 	const RenderingServer* rendering_server = RenderingServer::get_singleton();
 	if (RenderingDevice* rd = rendering_server ? rendering_server->get_rendering_device() : nullptr) {
-		for (const auto& pipeline_key : _kernel_pipelines.keys()) {
-			if (RID key = pipeline_key; key.is_valid()) {
+		for (const Variant& key : _kernel_pipelines.keys()) {
+			const RID rid = _kernel_pipelines[key];
+			if (rid.is_valid()) {
 				rd->free_rid(_kernel_pipelines[key]);
 			}
 		}
-		for (const auto& shader_key : _kernel_shaders.keys()) {
-			if (RID key = shader_key; key.is_valid()) {
+		for (const Variant& key : _kernel_shaders.keys()) {
+			const RID rid = _kernel_shaders[key];
+			if (rid.is_valid()) {
 				rd->free_rid(_kernel_shaders[key]);
 			}
 		}

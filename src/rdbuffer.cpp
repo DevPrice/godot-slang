@@ -81,8 +81,12 @@ RDBuffer::RDBuffer() {
 }
 
 RDBuffer::~RDBuffer() {
-	if (!is_ref && !rid.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(rid);
+	if (!is_ref && rid.is_valid()) {
+		if (const RenderingServer* rendering_server = RenderingServer::get_singleton()) {
+			if (RenderingDevice* rd = rendering_server->get_rendering_device()) {
+				rd->free_rid(rid);
+			}
+		}
 	}
 }
 
