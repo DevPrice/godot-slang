@@ -3,7 +3,9 @@
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/time.hpp"
+#include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
+#include "godot_cpp/classes/window.hpp"
 
 #include "compute_shader_task.h"
 
@@ -301,6 +303,13 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 			}
 			if (user_attributes.has("gd_FrameId")) {
 				return Engine::get_singleton()->get_frames_drawn();
+			}
+			if (user_attributes.has("gd_MousePosition")) {
+				if (const SceneTree* scene_tree = cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
+					if (const Window* window = scene_tree->get_root()) {
+						return Vector2i(window->get_mouse_position());
+					}
+				}
 			}
 			break;
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER:

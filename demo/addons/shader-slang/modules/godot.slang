@@ -68,6 +68,14 @@ public struct gd_TimeAttribute {};
 public struct gd_FrameIdAttribute {};
 
 /**
+ Binds a parameter to the current mouse position.
+ Must be applied to a variable of type `int2`.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_MousePositionAttribute {};
+
+/**
  Will bind a white color/texture if no texture is bound by the user.
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
 */
