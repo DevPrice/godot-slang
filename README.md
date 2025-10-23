@@ -26,6 +26,8 @@ After installing this plugin in Godot, you'll see a few new types available in t
 * `ComputeShaderEffect`
   * This offers a convenient way to use Slang compute shaders in `CompositorEffect`s. For many shaders, you can drag a Slang file onto an instance of this to have it running with no additional application code required.
   * Automatically reloads if the attached compute shader is modified.
+* `ComputeTexture` (experimental)
+  * `Texture2D` resource backed by a compute shader.
 
 After installing, Slang files in your project will be automatically imported as compute shaders.
 Each function in the Slang source annotated with `[shader("compute")]` will be imported as a `ComputeShaderKernel`.
