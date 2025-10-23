@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=30 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
@@ -34,7 +34,7 @@ access_resolved_depth = false
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
 compute_shader = ExtResource("5_ei00m")
-shader_parameter/outline_size = 2.0
+shader_parameter/outline_size = 1.0
 shader_parameter/outline_color = Color(0, 0, 0, 0.75000006)
 resource_name = "Outline effect"
 effect_callback_type = 1
@@ -53,6 +53,7 @@ compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)
+emission_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ei00m"]
 albedo_color = Color(0.748747, 1, 0.518099, 1)
@@ -70,17 +71,13 @@ compute_shader = ExtResource("3_8lvy3")
 resource_local_to_scene = true
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
+compute_shader = ExtResource("5_ei00m")
+shader_parameter/outline_size = 1.5
+shader_parameter/outline_color = Color(0, 0, 0, 0.5)
 resource_local_to_scene = true
 
 [sub_resource type="Compositor" id="Compositor_mt10o"]
 compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_kkclv"), SubResource("ComputeShaderEffect_hl4on"), SubResource("ComputeShaderEffect_v40a1")])
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_3dlnp"]
-compute_shader = ExtResource("4_wcwec")
-
-[sub_resource type="Compositor" id="Compositor_kkclv"]
-resource_local_to_scene = true
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_3dlnp")])
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_kkclv"]
 viewport_path = NodePath("NormalsViewport")
@@ -148,17 +145,13 @@ script = ExtResource("7_rujmf")
 
 [node name="NormalsViewport" type="SubViewport" parent="."]
 transparent_bg = true
+size = Vector2i(1024, 1024)
 
 [node name="ViewportCamera" type="Camera3D" parent="NormalsViewport"]
 transform = Transform3D(1, 0, 0, 0, 0.8931594, 0.44974035, 0, -0.44974035, 0.8931594, -0.20058179, 2, 6)
 cull_mask = 1048573
 compositor = SubResource("Compositor_mt10o")
 fov = 52.3
-
-[node name="RingViewport" type="SubViewport" parent="."]
-
-[node name="ViewportCamera" type="Camera3D" parent="RingViewport"]
-compositor = SubResource("Compositor_kkclv")
 
 [node name="SubViewportMesh" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 8.7422784e-08, 8.742277e-08, -8.742278e-08, 1, -8.742278e-08, -8.742278e-08, 8.742277e-08, 1, -0.00019919872, -0.00804925, -2.9976554)

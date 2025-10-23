@@ -37,11 +37,11 @@ func outline(uint3 threadId: SV_DispatchThreadID) {
     let screen_uv = float2(coord + .5f) / viewport_size;
 
     let edge_strength = edge(screen_uv, viewport_size, scene_data.data.inv_projection_matrix, outline_size);
-    let base_color = color_texture.Sample(sampler_state, screen_uv).rgb;
-    let edge_color = lerp(base_color, outline_color.rgb, outline_color.a);
-    let result = lerp(base_color, edge_color, edge_strength);
+    let base_color = color_texture.Sample(sampler_state, screen_uv);
+    let edge_color = lerp(base_color.rgb, outline_color.rgb, outline_color.a);
+    let result = lerp(base_color.rgb, edge_color, edge_strength);
 
-    out_color[threadId.xy] = float4(result, 1.f);
+    out_color[threadId.xy] = float4(result, base_color.a);
 }
 
 float edge(float2 uv, float2 viewport_size, float4x4 inv_projection, float scale) {
