@@ -55,14 +55,15 @@ runs:
     - name: Configure Windows CMake
       if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
-      run: cmake --preset ${{ inputs.cmake-preset }} |
-        -DSLANG_ENABLE_GFX=${{ inputs.enable-gfx }} |
-        -DSLANG_ENABLE_SLANGD=${{ inputs.enable-slangd }} |
-        -DSLANG_ENABLE_SLANGC=${{ inputs.enable-slangc }} |
-        -DSLANG_ENABLE_SLANGI=${{ inputs.enable-slangi }} |
-        -DSLANG_ENABLE_SLANGRT=${{ inputs.enable-slangrt }} |
-        -DSLANG_ENABLE_TESTS=${{ inputs.enable-tests }} |
-        -DSLANG_ENABLE_EXAMPLES=${{ inputs.enable-examples }} |
+      run: >
+        cmake --preset ${{ inputs.cmake-preset }}
+        -DSLANG_ENABLE_GFX=${{ inputs.enable-gfx }}
+        -DSLANG_ENABLE_SLANGD=${{ inputs.enable-slangd }}
+        -DSLANG_ENABLE_SLANGC=${{ inputs.enable-slangc }}
+        -DSLANG_ENABLE_SLANGI=${{ inputs.enable-slangi }}
+        -DSLANG_ENABLE_SLANGRT=${{ inputs.enable-slangrt }}
+        -DSLANG_ENABLE_TESTS=${{ inputs.enable-tests }}
+        -DSLANG_ENABLE_EXAMPLES=${{ inputs.enable-examples }}
         -DSLANG_LIB_TYPE=${{ inputs.lib-type }}
       working-directory: ${{ inputs.slang-location }}
     - name: Build Windows CMake
