@@ -239,7 +239,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	}
 
 	Slang::ComPtr<slang::IBlob> compiled_blob;
-	if (linked_program) {
+	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
 		const SlangResult result = linked_program->getEntryPointCode(
 				0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
@@ -253,7 +253,9 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		}
 	}
 
-	slang::EntryPointReflection* entry_point_layout = linked_program->getLayout()->getEntryPointByIndex(0);
+	slang::ProgramLayout* program_layout = linked_program->getLayout();
+
+	slang::EntryPointReflection* entry_point_layout = program_layout->getEntryPointByIndex(0);
 	{
 		if (entry_point_layout->getStage() != SLANG_STAGE_COMPUTE) {
 			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % entry_point_name);
@@ -289,27 +291,14 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 	}
 
-	{
-		Dictionary entry_point_attributes{};
-		for (size_t attribute_index = 0; attribute_index < entry_point_function->getUserAttributeCount(); ++attribute_index) {
-			if (slang::Attribute* attribute = entry_point_function->getUserAttributeByIndex(attribute_index)) {
-				Dictionary arguments{};
-				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-					String argument_name = _get_attribute_argument_name(attribute, argument_index, linked_program->getLayout());
-					arguments.set(argument_name, _to_godot_value(linked_program->getLayout(), attribute, argument_index));
-				}
-				entry_point_attributes.set(attribute->getName(), arguments);
-			}
-		}
-		kernel->set_user_attributes(entry_point_attributes);
-	}
-
-	kernel->set_parameters(_get_param_reflection(linked_program->getLayout(), metadata));
-	kernel->set_buffers(_get_buffers_reflection(linked_program->getLayout()));
+	SlangReflectionContext reflection_context(program_layout);
+	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
+	kernel->set_parameters(reflection_context.get_param_reflection(metadata));
+	kernel->set_buffers(reflection_context.get_buffers_reflection());
 	return kernel;
 }
 
-Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* program_layout, slang::IMetadata* metadata) {
+Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) {
 	Dictionary parameters{};
 	size_t push_constant_offset = 0;
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
@@ -317,10 +306,10 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		Dictionary param_info{};
 		param_info.set("name", param->getName());
 
-		Dictionary param_attributes = _get_attributes(program_layout, param->getVariable());
+		Dictionary param_attributes = get_attributes(param->getVariable());
 		param_info.set("user_attributes", param_attributes);
 
-		const Dictionary shape = _get_shape(program_layout, param->getTypeLayout());
+		const Dictionary shape = _get_shape(param->getTypeLayout());
 		const bool is_valid_shape = !shape.is_empty() &&
 			(shape["type"] != "simple" || static_cast<int64_t>(shape.get("size", -1)) != 0);
 		if (!is_valid_shape) {
@@ -332,8 +321,8 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 		Variant::Type type;
 		PropertyHint hint;
 		String hint_string;
-		if (_get_godot_type(program_layout, param->getType(), param_attributes, type, hint, hint_string)) {
-			const uint32_t usage = _is_autobind(program_layout, param->getVariable())
+		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
+			const uint32_t usage = _is_autobind(param->getVariable())
 				? PROPERTY_USAGE_NONE
 				: PROPERTY_USAGE_DEFAULT;
 			PropertyInfo property_info{type, param->getName(), hint, hint_string, usage};
@@ -371,7 +360,7 @@ Dictionary SlangShaderImporter::_get_param_reflection(slang::ProgramLayout* prog
 	return parameters;
 }
 
-Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout, slang::TypeLayoutReflection* type_layout) {
+Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout) const {
 	Dictionary shape{};
 	if (!type_layout) return shape;
 
@@ -393,9 +382,9 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
-				Dictionary property_shape = _get_shape(program_layout, field->getTypeLayout());
+				Dictionary property_shape = _get_shape(field->getTypeLayout());
 				property.set("shape", property_shape);
-				property.set("user_attributes", _get_attributes(program_layout, field->getVariable()));
+				property.set("user_attributes", get_attributes(field->getVariable()));
 				property.set("offset", field->getOffset());
 				property_shapes.set(field->getName(), property);
 			}
@@ -416,7 +405,7 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 		case SLANG_TYPE_KIND_ARRAY:
 		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
 			shape.set("type", "array");
-			shape.set("element_shape", _get_shape(program_layout, type_layout->getElementTypeLayout()));
+			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout()));
 			const size_t stride = type_layout->getElementTypeLayout()->getStride();
 			if (stride > 0) {
 				shape.set("stride", stride);
@@ -434,12 +423,12 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 			break;
 		}
 		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
-			return _get_shape(program_layout, type_layout->getElementTypeLayout());
+			return _get_shape(type_layout->getElementTypeLayout());
 		default:
 			break;
 	}
 
-	shape.set("user_attributes", _get_attributes(program_layout, type_layout->getType()));
+	shape.set("user_attributes", get_attributes(type_layout->getType()));
 
 	const SlangMatrixLayoutMode matrix_layout = type_layout->getMatrixLayoutMode();
 	if (matrix_layout != SLANG_MATRIX_LAYOUT_MODE_UNKNOWN) {
@@ -449,10 +438,10 @@ Dictionary SlangShaderImporter::_get_shape(slang::ProgramLayout* program_layout,
 	return shape;
 }
 
-bool SlangShaderImporter::_is_autobind(slang::ProgramLayout* program_layout, slang::VariableReflection* var) {
+bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const {
 	for (size_t attribute_index = 0; attribute_index < var->getUserAttributeCount(); ++attribute_index) {
 		if (slang::Attribute* attribute = var->getUserAttributeByIndex(attribute_index)) {
-			if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute, program_layout)) {
+			if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
 				if (attribute_type->findUserAttributeByName("gd_Autobind")) {
 					return true;
 				}
@@ -462,7 +451,7 @@ bool SlangShaderImporter::_is_autobind(slang::ProgramLayout* program_layout, sla
 	return false;
 }
 
-TypedArray<Dictionary> SlangShaderImporter::_get_buffers_reflection(slang::ProgramLayout* program_layout) {
+TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
 	TypedArray<Dictionary> buffers{};
 	const size_t global_buffer_size = program_layout->getGlobalConstantBufferSize();
 	if (global_buffer_size > 0) {
@@ -488,24 +477,23 @@ TypedArray<Dictionary> SlangShaderImporter::_get_buffers_reflection(slang::Progr
 }
 
 // TODO: Surely there is a better way to do this
-slang::TypeReflection* SlangShaderImporter::_get_attribute_type(slang::Attribute* attribute, slang::ProgramLayout* layout) {
-	if (layout && attribute) {
-		return layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
+slang::TypeReflection* SlangReflectionContext::_get_attribute_type(slang::Attribute* attribute) const {
+	if (attribute) {
+		return program_layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
 	}
 	return nullptr;
 }
 
-String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index, slang::ProgramLayout* layout) {
-	if (attribute && layout) {
-		if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute, layout)) {
+String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index) const {
+	if (attribute) {
+		if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
 			return attribute_type->getFieldByIndex(argument_index)->getName();
 		}
 	}
 	return String("argument") + String::num_int64(argument_index);
 }
 
- bool SlangShaderImporter::_get_godot_type(slang::ProgramLayout* program_layout, slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) {
-	ERR_FAIL_NULL_V(program_layout, false);
+ bool SlangReflectionContext::_get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	out_hint = PROPERTY_HINT_NONE;
 	out_hint_string = "";
 	switch (type->getKind()) {
@@ -571,7 +559,7 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 					PropertyHint element_hint;
 					String element_hint_string;
 
-					if (_get_godot_type(program_layout, type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
+					if (_get_godot_type(type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
 						switch (element_type) {
 							case Variant::INT:
 								if (type->getElementType()->getScalarType() == SLANG_SCALAR_TYPE_INT64) {
@@ -614,7 +602,7 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 			break;
 		}
 		case SLANG_TYPE_KIND_CONSTANT_BUFFER: {
-			if (_get_godot_type(program_layout, type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
+			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
 				return true;
 			}
 			return false;
@@ -625,7 +613,7 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 				out_type = Variant::STRING;
 				return true;
 			}
-			const Dictionary type_attributes = _get_attributes(program_layout, type);
+			const Dictionary type_attributes = get_attributes(type);
 			const Dictionary class_args = type_attributes["gd_Class"];
 			const StringName class_name = class_args["class_name"];
 			// TODO: Verify the class_name is a Resource subtype
@@ -651,12 +639,12 @@ String SlangShaderImporter::_get_attribute_argument_name(slang::Attribute* attri
 	return false;
 }
 
-Variant SlangShaderImporter::_to_godot_value(slang::ProgramLayout* program_layout, slang::Attribute* attribute, const uint32_t argument_index) {
+Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, const uint32_t argument_index) const {
 	if (slang::TypeReflection* type_reflection = attribute->getArgumentType(argument_index)) {
 		PropertyHint hint{};
 		Variant::Type type{};
 		String hint_string{};
-		_get_godot_type(program_layout, type_reflection, Dictionary(), type, hint, hint_string);
+		_get_godot_type(type_reflection, Dictionary(), type, hint, hint_string);
 		switch (type) {
 			case Variant::BOOL: {
 				int value{};
@@ -702,7 +690,7 @@ Variant SlangShaderImporter::_to_godot_value(slang::ProgramLayout* program_layou
 	return Variant{};
 }
 
-RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::BindingType type) {
+RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slang::BindingType type) {
 	const int64_t base_type = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_BASE_MASK;
 	const int64_t type_ext = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_EXT_MASK;
 	switch (base_type) {
