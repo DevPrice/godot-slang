@@ -732,20 +732,18 @@ RenderingDevice::UniformType SlangShaderImporter::_to_godot_uniform_type(slang::
 
 slang::IGlobalSession* SlangShaderImporter::_get_global_session(const bool enable_glsl) {
 	static bool glsl_initialized = enable_glsl;
-	static slang::IGlobalSession* global_session = [enable_glsl] {
-		slang::IGlobalSession* ptr = nullptr;
+	static Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {
+		Slang::ComPtr<slang::IGlobalSession> ptr;
 		SlangGlobalSessionDesc desc = {};
 		desc.enableGLSL = enable_glsl;
-		slang::createGlobalSession(&desc, &ptr);
+		slang::createGlobalSession(&desc, ptr.writeRef());
 		return ptr;
 	}();
 
 	if (!glsl_initialized && enable_glsl) {
 		SlangGlobalSessionDesc desc = {};
-		// TODO: This crashes outside my local env
-		// probably failing to statically link the right dependencies for this
 		desc.enableGLSL = true;
-		slang::createGlobalSession(&desc, &global_session);
+		slang::createGlobalSession(&desc, global_session.writeRef());
 		glsl_initialized = true;
 	}
 
