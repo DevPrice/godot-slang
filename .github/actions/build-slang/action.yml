@@ -49,9 +49,9 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ inputs.slang-location }}/build
-        key: slang-build-${{ runner.os }}-${{ inputs.build-preset }}-${{ hashFiles(format('{0}/CMakeLists.txt', inputs.slang-location), format('{0}/**/CMakeLists.txt', inputs.slang-location)) }}
+        key: slang-build-${{ runner.os }}-${{ inputs.build-preset }}-${{ inputs.lib-type }}-${{ hashFiles(format('{0}/CMakeLists.txt', inputs.slang-location), format('{0}/**/CMakeLists.txt', inputs.slang-location)) }}
         restore-keys: |
-          slang-build-${{ runner.os }}-${{ inputs.build-preset }}-
+          slang-build-${{ runner.os }}-${{ inputs.build-preset }}-${{ inputs.lib-type }}-
     - name: Configure Windows CMake
       if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
