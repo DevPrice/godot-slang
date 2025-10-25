@@ -57,7 +57,7 @@ After cloning the repo, build Slang:
 ```shell
 git submodule update --init --recursive
 cd slang
-cmake --preset vs2022 -DSLANG_LIB_TYPE=STATIC # or 'vs2019' or `vs2022-dev` or `default`
+cmake --preset vs2022 -DSLANG_ENABLE_GFX=FALSE -DSLANG_ENABLE_SLANGD=FALSE -DSLANG_ENABLE_SLANGRT=FALSE -DSLANG_ENABLE_EXAMPLES=FALSE -DSLANG_ENABLE_TESTS=FALSE # or 'vs2019' or `vs2022-dev` or `default`
 cmake --build --preset releaseWithDebugInfo
 ```
 

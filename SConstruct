@@ -4,13 +4,6 @@ import sys
 
 from methods import print_error
 
-
-libname = "shader-slang"
-addondir = "addons"
-plugindir = "{}/{}".format(addondir, libname)
-libdir = "{}/bin".format(plugindir)
-projectdir = "demo"
-
 localEnv = Environment(tools=["default"], PLATFORM="")
 
 # Build profiles can be used to decrease compile times.
@@ -43,20 +36,29 @@ env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 
+actions = []
+
+libname = "shader-slang"
+addondir = "addons"
+plugindir = "{}/{}".format(addondir, libname)
+libdir = "{}/bin".format(plugindir)
+projectdir = "demo"
+platformdir = "{}/{}".format(libdir, env['platform'])
+
 if env["target"] == "editor":
-    env.Append(CPPPATH=["src/editor"])
-    env.Append(CPPDEFINES=['SLANG_STATIC'])
-    env.Append(CPPPATH=["slang/build/RelWithDebInfo/include"])
-    env.Append(LIBS=[
-        "ole32",
-        "slang/build/RelWithDebInfo/lib/slang.lib",
-        "slang/build/RelWithDebInfo/lib/compiler-core.lib",
-        "slang/build/RelWithDebInfo/lib/core.lib",
-        "slang/build/external/miniz/RelWithDebInfo/miniz.lib",
-        "slang/build/external/lz4/build/cmake/RelWithDebInfo/lz4.lib",
-        "slang/build/external/glslang/glslang/RelWithDebInfo/glslang.lib",
-    ])
+    env.Append(
+        CPPPATH=[
+            "src/editor",
+            "slang/build/slang-2025.19-windows-x86_64/include",
+        ],
+        LIBPATH=["slang/build/slang-2025.19-windows-x86_64/lib"],
+        LIBS=[
+            "slang",
+        ]
+    )
     sources.extend(Glob("src/editor/*.cpp"))
+    # TODO: Support non-Windows platforms
+    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), Glob("slang/build/slang-2025.19-windows-x86_64/bin/slang.dll")))
 
 if env["target"] in ["editor", "template_debug"]:
     try:
@@ -71,12 +73,11 @@ suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
 
 lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
 
-library = env.SharedLibrary(
-    "{}/{}/{}/{}".format(projectdir, libdir, env['platform'], lib_filename),
-    source=sources,
-)
-
-copy = env.Install(addondir, "{}/{}".format(projectdir, plugindir))
-
-default_args = [library, copy]
-Default(*default_args)
+actions.extend([
+    env.SharedLibrary(
+        "{}/{}/{}".format(projectdir, platformdir, lib_filename),
+        source=sources,
+    ),
+    env.Install(addondir, "{}/{}".format(projectdir, plugindir)),
+])
+Default(*actions)
