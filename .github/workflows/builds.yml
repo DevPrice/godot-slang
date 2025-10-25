@@ -156,8 +156,15 @@ jobs:
         with:
           platform: ${{ matrix.target.platform }}
           cmake-preset: 'vs2022'
-          lib-type: 'STATIC'
-          slang-location: "slang"
+          slang-location: 'slang'
+          lib-type: 'SHARED'
+          enable-gfx: 'FALSE'
+          enable-slangc: 'FALSE'
+          enable-slangd: 'FALSE'
+          enable-slangi: 'FALSE'
+          enable-slangrt: 'FALSE'
+          enable-tests: 'FALSE'
+          enable-examples: 'FALSE'
 
       - name: Build GDExtension
         shell: sh

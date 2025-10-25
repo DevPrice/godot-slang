@@ -19,6 +19,27 @@ inputs:
   lib-type:
     default: 'SHARED'
     description: How to build the slang library
+  enable-gfx:
+    default: 'TRUE'
+    description: Enable gfx targets
+  enable-slangc:
+    default: 'TRUE'
+    description: Enable standalone compiler target
+  enable-slangd:
+    default: 'TRUE'
+    description: Enable language server target
+  enable-slangi:
+    default: 'TRUE'
+    description: Enable Slang interpreter target
+  enable-slangrt:
+    default: 'TRUE'
+    description: Enable runtime target
+  enable-tests:
+    default: 'TRUE'
+    description: Enable test targets, requires SLANG_ENABLE_GFX, SLANG_ENABLE_SLANGD and SLANG_ENABLE_SLANGRT
+  enable-examples:
+    default: 'TRUE'
+    description: Enable example targets, requires SLANG_ENABLE_GFX
 
 runs:
   using: composite
@@ -34,7 +55,15 @@ runs:
     - name: Configure Windows CMake
       if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
       shell: pwsh
-      run: cmake --preset ${{ inputs.cmake-preset }} -DSLANG_LIB_TYPE=${{ inputs.lib-type }}
+      run: cmake --preset ${{ inputs.cmake-preset }} |
+        -DSLANG_ENABLE_GFX=${{ inputs.enable-gfx }} |
+        -DSLANG_ENABLE_SLANGD=${{ inputs.enable-slangd }} |
+        -DSLANG_ENABLE_SLANGC=${{ inputs.enable-slangc }} |
+        -DSLANG_ENABLE_SLANGI=${{ inputs.enable-slangi }} |
+        -DSLANG_ENABLE_SLANGRT=${{ inputs.enable-slangrt }} |
+        -DSLANG_ENABLE_TESTS=${{ inputs.enable-tests }} |
+        -DSLANG_ENABLE_EXAMPLES=${{ inputs.enable-examples }} |
+        -DSLANG_LIB_TYPE=${{ inputs.lib-type }}
       working-directory: ${{ inputs.slang-location }}
     - name: Build Windows CMake
       if: ${{ inputs.platform == 'windows' && steps.cache-slang.outputs.cache-hit != 'true' }}
