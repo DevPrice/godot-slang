@@ -49,16 +49,16 @@ if env["target"] == "editor":
     env.Append(
         CPPPATH=[
             "src/editor",
-            "slang/build/slang-2025.19-windows-x86_64/include",
+            "slang/build/RelWithDebInfo/include",
         ],
-        LIBPATH=["slang/build/slang-2025.19-windows-x86_64/lib"],
+        LIBPATH=["slang/build/RelWithDebInfo/lib"],
         LIBS=[
             "slang",
         ]
     )
     sources.extend(Glob("src/editor/*.cpp"))
     # TODO: Support non-Windows platforms
-    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), Glob("slang/build/slang-2025.19-windows-x86_64/bin/slang.dll")))
+    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), Glob("slang/build/RelWithDebInfo/bin/slang.dll")))
 
 if env["target"] in ["editor", "template_debug"]:
     try:
