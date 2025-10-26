@@ -20,4 +20,8 @@ protected:
 public:
 	ComputeShaderFile() = default;
 	~ComputeShaderFile() override = default;
+
+	void set_bytecode(const Ref<RDShaderSPIRV> &p_bytecode, const StringName &p_version = StringName(), int64_t kernel_index = 0);
+	[[nodiscard]] Ref<RDShaderSPIRV> get_spirv(const StringName &p_version = StringName(), int64_t kernel_index = 0) const;
+	[[nodiscard]] TypedArray<StringName> get_version_list(int64_t kernel_index = 0) const;
 };
