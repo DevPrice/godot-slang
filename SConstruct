@@ -57,7 +57,9 @@ if env["target"] == "editor":
     slang_sources += Glob("slang/source/slang/*.cpp")
     slang_sources += Glob("slang/source/slang/*.h")
 
-    slang_lib_file = "slang/build/RelWithDebInfo/bin/{}slang{}".format(env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
+    slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
+
+    slang_lib_file = "slang/build/RelWithDebInfo/{}/{}slang{}".format(slang_lib_dir, env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
     slang_lib_outputs = [slang_lib_file]
 
     if env["platform"] == "windows":
