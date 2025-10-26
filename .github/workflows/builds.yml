@@ -151,21 +151,6 @@ jobs:
           scons-cache: ${{ github.workspace }}/.scons-cache/
           cache-name: ${{ matrix.target.platform }}_${{ matrix.target.arch }}_${{ matrix.float-precision }}_${{ matrix.target-type }}
 
-      - name: Slang Build
-        uses: ./.github/actions/build-slang
-        with:
-          platform: ${{ matrix.target.platform }}
-          cmake-preset: 'vs2022'
-          slang-location: 'slang'
-          lib-type: 'SHARED'
-          enable-gfx: 'FALSE'
-          enable-slangc: 'FALSE'
-          enable-slangd: 'FALSE'
-          enable-slangi: 'FALSE'
-          enable-slangrt: 'FALSE'
-          enable-tests: 'FALSE'
-          enable-examples: 'FALSE'
-
       - name: Build GDExtension
         shell: sh
         env:
