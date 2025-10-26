@@ -60,14 +60,14 @@ if env["target"] == "editor":
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
 
     slang_lib_file = "slang/build/RelWithDebInfo/{}/{}slang{}".format(slang_lib_dir, env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
-    slang_lib_outputs = [slang_lib_file]
+    slang_outputs = [env.File(slang_lib_file), env.Dir("slang/build/RelWithDebInfo/include/")]
 
     if env["platform"] == "windows":
-        slang_lib_outputs += ["slang/build/RelWithDebInfo/lib/slang.lib"]
+        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang.lib")]
     else:
-        slang_lib_outputs += ["slang/build/RelWithDebInfo/lib/libslang.a"]
+        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/libslang.a")]
 
-    slang_build = env.Command(slang_lib_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
+    slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
     env.Append(
         CPPPATH=[
