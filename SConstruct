@@ -57,8 +57,8 @@ if env["target"] == "editor":
         ]
     )
     sources.extend(Glob("src/editor/*.cpp"))
-    # TODO: Support non-Windows platforms
-    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), Glob("slang/build/RelWithDebInfo/bin/slang.dll")))
+    slang_lib_file = "slang/build/RelWithDebInfo/bin/{}slang{}".format(env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
+    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), slang_lib_file))
 
 if env["target"] in ["editor", "template_debug"]:
     try:
