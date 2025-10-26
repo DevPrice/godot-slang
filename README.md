@@ -52,13 +52,12 @@ After downloading a release, you can install this addon in Godot by:
 
 ## Building
 
-After cloning the repo, build Slang:
+Set up your dev environment for [compiling GDExtension with scons](https://docs.godotengine.org/en/stable/engine_details/development/compiling/index.html#building-from-source).
+
+After cloning the repo, initialize submodules:
 
 ```shell
 git submodule update --init --recursive
-cd slang
-cmake --preset vs2022 -DSLANG_ENABLE_GFX=FALSE -DSLANG_ENABLE_SLANGD=FALSE -DSLANG_ENABLE_SLANGRT=FALSE -DSLANG_ENABLE_EXAMPLES=FALSE -DSLANG_ENABLE_TESTS=FALSE # or 'vs2019' or `vs2022-dev` or `default`
-cmake --build --preset releaseWithDebugInfo
 ```
 
 Then, build the GDExtension:

@@ -3,6 +3,7 @@ import os
 import sys
 
 from methods import print_error
+from build_slang import build_slang
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
@@ -46,19 +47,43 @@ projectdir = "demo"
 platformdir = "{}/{}".format(libdir, env['platform'])
 
 if env["target"] == "editor":
+    slang_sources = [
+        "slang/slang-tag-version.h.in",
+        "slang/CMakeLists.txt",
+    ]
+
+    slang_sources += Glob("slang/*/CMakeLists.txt")
+    slang_sources += Glob("slang/include/*.h")
+    slang_sources += Glob("slang/source/slang/*.cpp")
+    slang_sources += Glob("slang/source/slang/*.h")
+
+    slang_lib_file = "slang/build/RelWithDebInfo/bin/{}slang{}".format(env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
+    slang_lib_outputs = [slang_lib_file]
+
+    if env["platform"] == "windows":
+        slang_lib_outputs += ["slang/build/RelWithDebInfo/lib/slang.lib"]
+    else:
+        slang_lib_outputs += ["slang/build/RelWithDebInfo/lib/libslang.a"]
+
+    slang_build = env.Command(slang_lib_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
+
     env.Append(
         CPPPATH=[
             "src/editor",
             "slang/build/RelWithDebInfo/include",
         ],
         LIBPATH=["slang/build/RelWithDebInfo/lib"],
-        LIBS=[
-            "slang",
-        ]
+        LIBS=["slang"]
     )
-    sources.extend(Glob("src/editor/*.cpp"))
-    slang_lib_file = "slang/build/RelWithDebInfo/bin/{}slang{}".format(env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
-    actions.extend(env.Install("{}/{}".format(projectdir, platformdir), slang_lib_file))
+
+    editor_sources = Glob("src/editor/*.cpp")
+    for src in editor_sources + Glob("src/editor/*.h"):
+        env.Depends(src, slang_build)
+    sources += editor_sources
+
+    slang_install_command = env.Install("{}/{}".format(projectdir, platformdir), slang_lib_file)
+    env.Depends(slang_install_command, slang_build)
+    actions += slang_install_command
 
 if env["target"] in ["editor", "template_debug"]:
     try:
@@ -73,11 +98,11 @@ suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
 
 lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
 
-actions.extend([
+actions += [
     env.SharedLibrary(
         "{}/{}/{}".format(projectdir, platformdir, lib_filename),
         source=sources,
     ),
     env.Install(addondir, "{}/{}".format(projectdir, plugindir)),
-])
+]
 Default(*actions)
