@@ -105,8 +105,7 @@ jobs:
         target:
           [
             { platform: windows, arch: x86_64, os: windows-latest },
-            # TODO: Add support for other platforms in the Slang build action
-            # { platform: linux, arch: x86_64, os: ubuntu-22.04 },
+            { platform: linux, arch: x86_64, os: ubuntu-22.04 },
             # { platform: macos, arch: universal, os: macos-latest },
           ]
         target-type: [editor]
