@@ -361,13 +361,13 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 	if (!type_layout) return shape;
 
 	switch (type_layout->getKind()) {
-		case SLANG_TYPE_KIND_SCALAR:
-		case SLANG_TYPE_KIND_VECTOR:
-		case SLANG_TYPE_KIND_MATRIX:
+		case slang::TypeReflection::Kind::Scalar:
+		case slang::TypeReflection::Kind::Vector:
+		case slang::TypeReflection::Kind::Matrix:
 			shape.set("type", "simple");
 			shape.set("size", type_layout->getSize());
 			break;
-		case SLANG_TYPE_KIND_STRUCT: {
+		case slang::TypeReflection::Kind::Struct: {
 			shape.set("type", "structured");
 			shape.set("size", type_layout->getSize());
 			const int32_t alignment = type_layout->getAlignment();
@@ -387,7 +387,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			shape.set("properties", property_shapes);
 			break;
 		}
-		case SLANG_TYPE_KIND_RESOURCE: {
+		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
 			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
 				shape.set("type", "raw_bytes");
@@ -398,8 +398,8 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 				break;
 			}
 		}
-		case SLANG_TYPE_KIND_ARRAY:
-		case SLANG_TYPE_KIND_SHADER_STORAGE_BUFFER: {
+		case slang::TypeReflection::Kind::Array:
+		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
 			shape.set("type", "array");
 			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout()));
 			const size_t stride = type_layout->getElementTypeLayout()->getStride();
@@ -418,7 +418,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			}
 			break;
 		}
-		case SLANG_TYPE_KIND_CONSTANT_BUFFER:
+		case slang::TypeReflection::Kind::ConstantBuffer:
 			return _get_shape(type_layout->getElementTypeLayout());
 		default:
 			break;
@@ -493,30 +493,30 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	out_hint = PROPERTY_HINT_NONE;
 	out_hint_string = "";
 	switch (type->getKind()) {
-		case SLANG_TYPE_KIND_SCALAR:
+		case slang::TypeReflection::Kind::Scalar:
 			switch (type->getScalarType()) {
-			case SLANG_SCALAR_TYPE_BOOL:
+			case slang::TypeReflection::ScalarType::Bool:
 				out_type = Variant::BOOL;
 				return true;
-			case SLANG_SCALAR_TYPE_FLOAT16:
-			case SLANG_SCALAR_TYPE_FLOAT32:
-			case SLANG_SCALAR_TYPE_FLOAT64:
+			case slang::TypeReflection::ScalarType::Float16:
+			case slang::TypeReflection::ScalarType::Float32:
+			case slang::TypeReflection::ScalarType::Float64:
 				out_type = Variant::FLOAT;
 				return true;
-			case SLANG_SCALAR_TYPE_INT32:
-			case SLANG_SCALAR_TYPE_UINT32:
-			case SLANG_SCALAR_TYPE_INT64:
-			case SLANG_SCALAR_TYPE_UINT64:
-			case SLANG_SCALAR_TYPE_INT8:
-			case SLANG_SCALAR_TYPE_UINT8:
-			case SLANG_SCALAR_TYPE_INT16:
-			case SLANG_SCALAR_TYPE_UINT16:
+			case slang::TypeReflection::ScalarType::Int32:
+			case slang::TypeReflection::ScalarType::UInt32:
+			case slang::TypeReflection::ScalarType::Int64:
+			case slang::TypeReflection::ScalarType::UInt64:
+			case slang::TypeReflection::ScalarType::Int8:
+			case slang::TypeReflection::ScalarType::UInt8:
+			case slang::TypeReflection::ScalarType::Int16:
+			case slang::TypeReflection::ScalarType::UInt16:
 				out_type = Variant::INT;
 				return true;
 			default:
 				break;
 			}
-		case SLANG_TYPE_KIND_VECTOR: {
+		case slang::TypeReflection::Kind::Vector: {
 			const bool is_color = attributes.has("gd_Color");
 			switch (type->getColumnCount()) {
 				case 2:
@@ -537,7 +537,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			}
 			break;
 		}
-		case SLANG_TYPE_KIND_RESOURCE: {
+		case slang::TypeReflection::Kind::Resource: {
 			switch (type->getResourceShape() & ~SLANG_TEXTURE_COMBINED_FLAG) {
 				case SLANG_TEXTURE_2D:
 					out_type = Variant::OBJECT;
@@ -558,14 +558,14 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 					if (_get_godot_type(type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
 						switch (element_type) {
 							case Variant::INT:
-								if (type->getElementType()->getScalarType() == SLANG_SCALAR_TYPE_INT64) {
+								if (type->getElementType()->getScalarType() == slang::TypeReflection::ScalarType::Int64) {
 									out_type = Variant::PACKED_INT64_ARRAY;
 								} else {
 									out_type = Variant::PACKED_INT32_ARRAY;
 								}
 								break;
 							case Variant::FLOAT:
-								if (type->getElementType()->getScalarType() == SLANG_SCALAR_TYPE_FLOAT64) {
+								if (type->getElementType()->getScalarType() == slang::TypeReflection::ScalarType::Float64) {
 									out_type = Variant::PACKED_FLOAT64_ARRAY;
 								} else {
 									out_type = Variant::PACKED_FLOAT32_ARRAY;
@@ -597,13 +597,13 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			}
 			break;
 		}
-		case SLANG_TYPE_KIND_CONSTANT_BUFFER: {
+		case slang::TypeReflection::Kind::ConstantBuffer: {
 			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
 				return true;
 			}
 			return false;
 		}
-		case SLANG_TYPE_KIND_STRUCT: {
+		case slang::TypeReflection::Kind::Struct: {
 			if (String(type->getName()) == "String") {
 				// TODO: Is there a better way to detect the String type?
 				out_type = Variant::STRING;
@@ -624,7 +624,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			out_hint_string = String("%s:;%s:") % Array { Variant::STRING_NAME, Variant::NIL };
 			return true;
 		}
-		case SLANG_TYPE_KIND_SAMPLER_STATE:
+		case slang::TypeReflection::Kind::SamplerState:
 			// Not currently supported
 			return false;
 		default:
