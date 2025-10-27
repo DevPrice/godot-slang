@@ -45,7 +45,7 @@ plugindir = "{}/{}".format(addondir, libname)
 libdir = "{}/bin".format(plugindir)
 projectdir = "demo"
 
-platformdir = f"{libdir}/{env['platform']}-{env["arch"]}" if env["arch"] else f"{libdir}/{env['platform']}"
+platformdir = f"{libdir}/{env['platform']}" if env["arch"] == "universal" else f"{libdir}/{env['platform']}-{env["arch"]}"
 
 if env["target"] == "editor":
     slang_sources = [
