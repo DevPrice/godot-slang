@@ -44,7 +44,8 @@ addondir = "addons"
 plugindir = "{}/{}".format(addondir, libname)
 libdir = "{}/bin".format(plugindir)
 projectdir = "demo"
-platformdir = "{}/{}".format(libdir, env['platform'])
+
+platformdir = f"{libdir}/{env['platform']}-{env["arch"]}" if env["arch"] else f"{libdir}/{env['platform']}"
 
 if env["target"] == "editor":
     slang_sources = [
@@ -98,7 +99,10 @@ if env["target"] in ["editor", "template_debug"]:
 # .universal just means "compatible with all relevant arches" so we don't need to key it.
 suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
 
-lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
+debug_suffix = "" if env["target"] == "template_release" else ".{}".format(env["target"].replace("template_", ""))
+threads_suffix = ".nothreads" if not env["threads"] else ""
+
+lib_filename = "".join([env.subst('$SHLIBPREFIX'), libname, debug_suffix, threads_suffix, env["SHLIBSUFFIX"]])
 
 actions += [
     env.SharedLibrary(
