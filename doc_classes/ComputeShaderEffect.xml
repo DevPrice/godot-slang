@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ComputeShaderEffect" inherits="CompositorEffect" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Allows using a compute shader to create a custom rendering effect.
+	</brief_description>
+	<description>
+		This resource defines a custom rendering effect backed by a [ComputeShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="_bind_view" qualifiers="virtual">
+			<return type="void" />
+			<param index="0" name="task" type="ComputeShaderTask" />
+			<param index="1" name="kernel" type="ComputeShaderKernel" />
+			<param index="2" name="render_data" type="RenderData" />
+			<param index="3" name="view" type="int" />
+			<description>
+				Called before a view is rendered. Shader parameters that are updated every frame should be set during this callback.
+			</description>
+		</method>
+		<method name="get_task" qualifiers="const">
+			<return type="ComputeShaderTask" />
+			<description>
+				Gets the underlying task associated with this effect.
+			</description>
+		</method>
+		<method name="queue_dispatch">
+			<return type="void" />
+			<param index="0" name="kernel_name" type="String" />
+			<description>
+				Queues the specified kernel to be dispatched during the next frame render.
+				By default, kernels are dispatched every frame, so only call this if you have explicitly declared otherwise in your shader using [code][gd::compositor::Skip][/code] or [code][gd::compositor::Once][/code].
+			</description>
+		</method>
+		<method name="reload_shader">
+			<return type="void" />
+			<description>
+				Reload the shader used by this effect and reset any internal state.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="compute_shader" type="ComputeShaderFile" setter="set_compute_shader" getter="get_compute_shader">
+			The compute shader associated with this texture.
+		</member>
+	</members>
+	<signals>
+		<signal name="uniforms_bound">
+			<param index="0" name="view" type="int" />
+			<description>
+				Emitted when uniforms are bound for this effect, but before the effect is executed. You may bind additional uniforms at this time.
+			</description>
+		</signal>
+	</signals>
+</class>

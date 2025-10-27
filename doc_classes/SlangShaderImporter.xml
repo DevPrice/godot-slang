@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangShaderImporter" inherits="EditorImportPlugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Enables importing shaders written in Slang.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="entry_points" type="PackedStringArray" setter="" getter="" default="PackedStringArray()">
+		</member>
+		<member name="matrix_layout" type="int" setter="" getter="" default="1">
+			The layout used by matrices within a shader.
+		</member>
+	</members>
+	<constants>
+		<constant name="ROW_MAJOR" value="1" enum="MatrixLayout">
+			Matrices are stored using row-major order.
+		</constant>
+		<constant name="COLUMN_MAJOR" value="2" enum="MatrixLayout">
+			Matrices are stored using column-major order.
+		</constant>
+	</constants>
+</class>
