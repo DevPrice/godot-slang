@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ComputeShaderTask" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Wraps a list of [ComputeShaderKernel]s into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="dispatch">
+			<return type="void" />
+			<param index="0" name="kernel_name" type="StringName" />
+			<param index="1" name="thread_groups" type="Vector3i" />
+			<description>
+				Dispatches a kernel by name with the specified number of thread groups.
+			</description>
+		</method>
+		<method name="dispatch_all">
+			<return type="void" />
+			<param index="0" name="thread_groups" type="Vector3i" />
+			<description>
+				Dispatches all kernels associated with this task with the specified number of thread groups. Dispatch is ordered based on each kernel's index.
+			</description>
+		</method>
+		<method name="dispatch_at">
+			<return type="void" />
+			<param index="0" name="kernel_index" type="int" />
+			<param index="1" name="thread_groups" type="Vector3i" />
+			<description>
+				Dispatches a kernel by index with the specified number of thread groups.
+			</description>
+		</method>
+		<method name="get_shader_parameter" qualifiers="const">
+			<return type="Variant" />
+			<param index="0" name="param" type="StringName" />
+			<description>
+				Gets the shader parameter value by name.
+			</description>
+		</method>
+		<method name="set_shader_parameter">
+			<return type="void" />
+			<param index="0" name="param" type="StringName" />
+			<param index="1" name="value" type="Variant" />
+			<description>
+				Sets the shader parameter value by name.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="kernels" type="ComputeShaderKernel[]" setter="set_kernels" getter="get_kernels" default="[]">
+			The kernels executed as part of this task.
+		</member>
+	</members>
+</class>
