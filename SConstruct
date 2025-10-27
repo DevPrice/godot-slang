@@ -95,10 +95,6 @@ if env["target"] in ["editor", "template_debug"]:
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")
 
-# .dev doesn't inhibit compatibility, so we don't need to key it.
-# .universal just means "compatible with all relevant arches" so we don't need to key it.
-suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
-
 debug_suffix = "" if env["target"] == "template_release" else ".{}".format(env["target"].replace("template_", ""))
 threads_suffix = ".nothreads" if not env["threads"] else ""
 
