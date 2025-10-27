@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ComputeShaderFile" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Compiled compute shader with SPIR-V and reflection information for each shader kernel.
+		In most cases, this can be used as a drop-in replacement for [RDShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_spirv" qualifiers="const">
+			<return type="RDShaderSPIRV" />
+			<param index="0" name="version" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="1" name="kernel_index" type="int" default="0" />
+			<description>
+				Returns the SPIR-V intermediate representation of the specified kernel (at [param kernel_index]).
+			</description>
+		</method>
+		<method name="get_version_list" qualifiers="const">
+			<return type="StringName[]" />
+			<param index="0" name="kernel_index" type="int" default="0" />
+			<description>
+				Returns the list of compiled versions for this shader. This is always empty for Slang compute shaders.
+			</description>
+		</method>
+		<method name="set_bytecode">
+			<return type="void" />
+			<param index="0" name="bytecode" type="RDShaderSPIRV" />
+			<param index="1" name="version" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="2" name="kernel_index" type="int" default="0" />
+			<description>
+				Sets the SPIR-V [param bytecode] that will be compiled for the specified kernel (at [param kernel_index]).
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="base_error" type="String" setter="set_base_error" getter="get_base_error" default="&quot;&quot;">
+			The base compilation error message, which indicates errors not related to a specific shader stage if non-empty. If empty, shader compilation is not necessarily successful (check each [ComputeShaderKernel]'s [RDShaderSPIRV] error message members).
+		</member>
+		<member name="kernels" type="ComputeShaderKernel[]" setter="set_kernels" getter="get_kernels" default="[]">
+			The kernels declared in this shader file, one for each entry-point.
+		</member>
+	</members>
+</class>
