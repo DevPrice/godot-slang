@@ -26,6 +26,15 @@ public func normal_roughness_compatibility(float4 normal_roughness) -> float4 {
 	return float4(normalize(normal_roughness.xyz * 2.0 - 1.0) * 0.5 + 0.5, roughness);
 }
 
+struct AABB {
+	let position : float3;
+	let size : float3;
+
+	func get_end() -> float3 {
+		return position + size;
+	}
+}
+
 }
 
 using gd;
