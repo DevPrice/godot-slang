@@ -3,6 +3,9 @@
 entry_symbol = "shader_slang_init"
 compatibility_minimum = "4.5"
 
+[icons]
+ComputeShaderFile = "uid://coddu1nrabxjp"
+
 [libraries]
 macos.single.editor = "./bin/macos/libshader-slang.editor.dylib"
 macos.double.editor = "./bin/macos/libshader-slang.editor.double.dylib"
