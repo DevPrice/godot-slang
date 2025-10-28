@@ -175,6 +175,25 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 		case Variant::FLOAT:
 			destination.encode_float(offset, data);
 			break;
+		case Variant::STRING: {
+			const String string = data;
+			const PackedByteArray array = string.to_utf8_buffer();
+			memcpy(destination.ptrw() + offset, array.ptr(), Math::min(array.size(), size));
+		}
+		case Variant::RECT2: {
+			ERR_FAIL_COND(size < 16);
+			const Rect2 rect = data;
+			write(destination, offset, 8, rect.position);
+			write(destination, offset + 8, 8, rect.size);
+			break;
+		}
+		case Variant::RECT2I: {
+			ERR_FAIL_COND(size < 16);
+			const Rect2i rect = data;
+			write(destination, offset, 8, rect.position);
+			write(destination, offset + 8, 8, rect.size);
+			break;
+		}
 		case Variant::VECTOR2: {
 			const Vector2 vector = data;
 			destination.encode_float(offset, vector.x);
@@ -236,6 +255,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 		}
 		case Variant::TRANSFORM3D: {
 			ERR_FAIL_COND(size < 64);
+			// TODO: Handle different matrix layouts
 			const Transform3D transform = data;
 			write(destination, offset, 16, transform.basis.rows[0]);
 			write(destination, offset + 16, 16, transform.basis.rows[1]);
