@@ -13,13 +13,13 @@ public:
 
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
-	Dictionary get_param_reflection(slang::IMetadata* metadata);
+	Dictionary get_param_reflection(slang::IMetadata* metadata) const;
 	[[nodiscard]] TypedArray<Dictionary> get_buffers_reflection() const;
 
 	template<typename T>
 	Dictionary get_attributes(T* reflection) const {
+		ERR_FAIL_NULL_V(reflection, {});
 		Dictionary param_attributes{};
-		if (!reflection) return param_attributes;
 		for (size_t attribute_index = 0; attribute_index < reflection->getUserAttributeCount(); ++attribute_index) {
 			if (slang::Attribute* attribute = reflection->getUserAttributeByIndex(attribute_index)) {
 				Dictionary arguments{};
@@ -31,6 +31,16 @@ public:
 			}
 		}
 		return param_attributes;
+	}
+
+	template<typename T>
+	static StringName get_name(T* reflection, const Dictionary& attributes) {
+		ERR_FAIL_NULL_V(reflection, {});
+		if (attributes.has("gd_Name")) {
+			const Dictionary& name_attribute = attributes["gd_Name"];
+			return name_attribute["name"];
+		}
+		return reflection->getName();
 	}
 
 private:

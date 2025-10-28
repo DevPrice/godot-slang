@@ -45,6 +45,15 @@ public struct gd_ClassAttribute {
 };
 
 /**
+ Indicates that a variable uses the specified name within Godot.
+ The specified name will be emitted in the reflection metadata instead of the name declared in the shader code.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_NameAttribute {
+    let name : String;
+};
+
+/**
  Hides a parameter from the property inspector. Use for parameters that should only be set from code.
 */
 [gd::Autobind]

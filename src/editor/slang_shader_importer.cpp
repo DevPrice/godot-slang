@@ -294,15 +294,16 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	return kernel;
 }
 
-Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) {
+Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) const {
 	Dictionary parameters{};
 	size_t push_constant_offset = 0;
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
-		param_info.set("name", param->getName());
-
 		Dictionary param_attributes = get_attributes(param->getVariable());
+		const StringName param_name = get_name(param, param_attributes);
+		param_info.set("name", param_name);
+
 		param_info.set("user_attributes", param_attributes);
 
 		const Dictionary shape = _get_shape(param->getTypeLayout());
@@ -321,7 +322,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 			const uint32_t usage = _is_autobind(param->getVariable())
 				? PROPERTY_USAGE_NONE
 				: PROPERTY_USAGE_DEFAULT;
-			PropertyInfo property_info{type, param->getName(), hint, hint_string, usage};
+			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
 		}
 
@@ -351,7 +352,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 				break;
 		}
 
-		parameters.set(param->getName(), param_info);
+		parameters.set(param_name, param_info);
 	}
 	return parameters;
 }
@@ -379,10 +380,11 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
 				Dictionary property_shape = _get_shape(field->getTypeLayout());
+				const Dictionary field_attributes = get_attributes(field->getVariable());
 				property.set("shape", property_shape);
-				property.set("user_attributes", get_attributes(field->getVariable()));
+				property.set("user_attributes", field_attributes);
 				property.set("offset", field->getOffset());
-				property_shapes.set(field->getName(), property);
+				property_shapes.set(get_name(field, field_attributes), property);
 			}
 			shape.set("properties", property_shapes);
 			break;
@@ -483,7 +485,8 @@ slang::TypeReflection* SlangReflectionContext::_get_attribute_type(slang::Attrib
 String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index) const {
 	if (attribute) {
 		if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
-			return attribute_type->getFieldByIndex(argument_index)->getName();
+			slang::VariableReflection* field = attribute_type->getFieldByIndex(argument_index);
+			return get_name(field, get_attributes(field));
 		}
 	}
 	return String("argument") + String::num_int64(argument_index);
