@@ -336,8 +336,6 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 			if (is_valid) {
 				write_shape(destination, offset + property_offset, property_shape, property_value, resize);
-			} else if (data.get_type() == Variant::PACKED_BYTE_ARRAY) {
-				write(destination, offset + property_offset, property_size, data);
 			}
 		}
 
