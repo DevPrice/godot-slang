@@ -15,18 +15,6 @@
 				Get the data format used by the underlying render texture.
 			</description>
 		</method>
-		<method name="get_task" qualifiers="const">
-			<return type="ComputeShaderTask" />
-			<description>
-				Get the underlying task associated with this texture.
-			</description>
-		</method>
-		<method name="reload_shader">
-			<return type="void" />
-			<description>
-				Reload the shader used by this texture and reset any internal state.
-			</description>
-		</method>
 		<method name="render">
 			<return type="void" />
 			<description>
@@ -42,15 +30,15 @@
 		</method>
 	</methods>
 	<members>
-		<member name="compute_shader" type="ComputeShaderFile" setter="set_compute_shader" getter="get_compute_shader">
-			The compute shader associated with this texture.
-		</member>
 		<member name="is_animated" type="bool" setter="set_is_animated" getter="get_is_animated" default="false">
 			If [code]true[/code], the texture will be rerendered each frame.
 		</member>
 		<member name="resource_local_to_scene" type="bool" setter="set_local_to_scene" getter="is_local_to_scene" overrides="Resource" default="false" />
 		<member name="size" type="Vector2i" setter="set_size" getter="get_size" default="Vector2i(256, 256)">
 			The size of the backing texture.
+		</member>
+		<member name="task" type="ComputeShaderTask" setter="set_task" getter="get_task">
+			The task associated with this texture.
 		</member>
 	</members>
 </class>

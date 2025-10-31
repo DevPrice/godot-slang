@@ -8,12 +8,10 @@
 #include "godot_cpp/classes/rd_texture_view.hpp"
 
 void ComputeTexture::_bind_methods() {
-    BIND_METHOD(ComputeTexture, get_task)
-	BIND_METHOD(ComputeTexture, reload_shader)
     BIND_METHOD(ComputeTexture, render)
     BIND_GET_SET(ComputeTexture, size, Variant::VECTOR2I)
     BIND_GET_SET(ComputeTexture, is_animated, Variant::BOOL)
-    BIND_GET_SET_RESOURCE(ComputeTexture, compute_shader, ComputeShaderFile)
+    BIND_GET_SET_RESOURCE(ComputeTexture, task, ComputeShaderTask)
     BIND_GET_SET_METHOD(ComputeTexture, data_format)
 }
 
@@ -59,13 +57,20 @@ void ComputeTexture::set_data_format(const RenderingDevice::DataFormat p_data_fo
     }
 }
 
-Ref<ComputeShaderFile> ComputeTexture::get_compute_shader() const {
-    return compute_shader;
-}
+Ref<ComputeShaderTask> ComputeTexture::get_task() const { return task; }
 
-void ComputeTexture::set_compute_shader(Ref<ComputeShaderFile> p_compute_shader) {
-    compute_shader = p_compute_shader;
-    RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeTexture::reload_shader));
+void ComputeTexture::set_task(Ref<ComputeShaderTask> p_task) {
+    if (p_task != task) {
+        const Callable changed_callable = callable_mp(this, &ComputeTexture::_task_changed);
+        if (task.is_valid() && task->is_connected("changed", changed_callable)) {
+            task->disconnect("changed", changed_callable);
+        }
+        task = p_task;
+        if (p_task.is_valid()) {
+            p_task->connect("changed", changed_callable);
+        }
+        _task_changed();
+    }
 }
 
 int ComputeTexture::_get_width() const {
@@ -97,10 +102,6 @@ RID ComputeTexture::_get_rid() const {
 
 bool ComputeTexture::_has_alpha() const {
     return false;
-}
-
-Ref<ComputeShaderTask> ComputeTexture::get_task() const {
-    return task;
 }
 
 void ComputeTexture::render() {
@@ -139,12 +140,6 @@ void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task, cons
     }
 }
 
-void ComputeTexture::_resources_reimported(const PackedStringArray& resources) {
-    if (compute_shader.is_valid() && resources.has(compute_shader->get_path())) {
-        RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeTexture::reload_shader));
-    }
-}
-
 void ComputeTexture::_queue_update() {
     if (updated_queued) return;
     updated_queued = true;
@@ -155,7 +150,7 @@ void ComputeTexture::_queue_update() {
 
 void ComputeTexture::_update_textures() {
     updated_queued = false;
-    if (compute_shader.is_null()) return;
+    if (task.is_null()) return;
 
     const Size2i new_size = size;
     const RenderingDevice::DataFormat new_format = data_format;
@@ -197,33 +192,9 @@ void ComputeTexture::_update_textures() {
     remote_data_format = new_format;
 }
 
-void ComputeTexture::reload_shader() {
-    if (compute_shader.is_null()) {
-        task.unref();
-        return;
-    }
-    if (task.is_null() || !task->has_meta("compute_shader") || compute_shader != task->get_meta("compute_shader")) {
-        task = Ref(memnew(ComputeShaderTask));
-        task->set_meta("compute_shader", compute_shader);
-    }
-    const TypedArray<ComputeShaderKernel> kernels = compute_shader->get_kernels();
-    task->set_kernels(kernels);
-
-    notify_property_list_changed();
-
-#ifdef TOOLS_ENABLED
-    if (Engine::get_singleton()->is_editor_hint()) {
-        if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
-            if (EditorFileSystem* editor_fs = editor_interface->get_resource_filesystem()) {
-                const Callable callable = callable_mp(this, &ComputeTexture::_resources_reimported);
-                if (!editor_fs->is_connected("resources_reimported", callable)) {
-                    editor_fs->connect("resources_reimported", callable, CONNECT_ONE_SHOT);
-                }
-            }
-        }
-    }
-#endif
-
+void ComputeTexture::_task_changed() {
+    const Ref<ComputeShaderTask> t = get_task();
+    if (t.is_null()) return;
     _queue_update();
     if (!get_is_animated()) {
         if (RenderingServer* rendering_server = RenderingServer::get_singleton()) {

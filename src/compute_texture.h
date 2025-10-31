@@ -11,7 +11,7 @@ using namespace godot;
 class ComputeTexture final : public Texture2D {
     GDCLASS(ComputeTexture, Texture2D)
 
-    GET_SET_PROPERTY(Ref<ComputeShaderFile>, compute_shader)
+    GET_SET_PROPERTY(Ref<ComputeShaderTask>, task)
     GET_SET_PROPERTY(Size2i, size)
     GET_SET_PROPERTY(RenderingDevice::DataFormat, data_format)
     GET_SET_PROPERTY(bool, is_animated)
@@ -28,21 +28,17 @@ public:
     [[nodiscard]] RID _get_rid() const override;
     [[nodiscard]] bool _has_alpha() const override;
 
-    [[nodiscard]] Ref<ComputeShaderTask> get_task() const;
-
     void render();
-    void reload_shader();
 
 private:
     RID texture_rid{};
     RID texture_rd_rid{};
-    Ref<ComputeShaderTask> task;
     Size2i remote_size{};
     RenderingDevice::DataFormat remote_data_format{};
     bool updated_queued{};
 
     void _bind_parameters(const Ref<ComputeShaderTask>& p_task, const Ref<ComputeShaderKernel>& p_kernel) const;
-    void _resources_reimported(const PackedStringArray& resources);
     void _queue_update();
     void _update_textures();
+	void _task_changed();
 };

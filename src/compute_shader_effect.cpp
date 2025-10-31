@@ -33,20 +33,25 @@ struct Attributes {
 
 void ComputeShaderEffect::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("uniforms_bound",  PropertyInfo(Variant::INT, "view")));
-	BIND_GET_SET_RESOURCE(ComputeShaderEffect, compute_shader, ComputeShaderFile);
-	BIND_METHOD(ComputeShaderEffect, get_task);
-	BIND_METHOD(ComputeShaderEffect, reload_shader);
+	BIND_GET_SET_RESOURCE(ComputeShaderEffect, task, ComputeShaderTask);
 	BIND_METHOD(ComputeShaderEffect, queue_dispatch, "kernel_name");
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
 }
 
-Ref<ComputeShaderFile> ComputeShaderEffect::get_compute_shader() const {
-	return compute_shader;
-}
+Ref<ComputeShaderTask> ComputeShaderEffect::get_task() const { return task; }
 
-void ComputeShaderEffect::set_compute_shader(Ref<ComputeShaderFile> p_compute_shader) {
-	compute_shader = p_compute_shader;
-	RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeShaderEffect::reload_shader));
+void ComputeShaderEffect::set_task(Ref<ComputeShaderTask> p_task) {
+	if (p_task != task) {
+		const Callable changed_callable = callable_mp(this, &ComputeShaderEffect::_task_changed);
+		if (task.is_valid() && task->is_connected("changed", changed_callable)) {
+			task->disconnect("changed", changed_callable);
+		}
+		task = p_task;
+		if (p_task.is_valid()) {
+			p_task->connect("changed", changed_callable);
+		}
+		_task_changed();
+	}
 }
 
 void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type, RenderData* p_render_data) {
@@ -91,8 +96,19 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	}
 }
 
-Ref<ComputeShaderTask> ComputeShaderEffect::get_task() const {
-	return task;
+void ComputeShaderEffect::_task_changed() {
+	const Ref<ComputeShaderTask> t = get_task();
+	if (t.is_null()) return;
+	// TODO: This is a race condition
+	queued_kernels.clear();
+	for (const Ref<ComputeShaderKernel> kernel : t->get_kernels()) {
+		if (kernel->get_user_attributes().has(Attributes::once())) {
+			queue_dispatch(kernel->get_kernel_name());
+		}
+	}
+
+	// Work around render callback not being called?
+	set_effect_callback_type(get_effect_callback_type());
 }
 
 void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
@@ -153,98 +169,6 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 	}
 }
 
-void ComputeShaderEffect::_resources_reimported(const PackedStringArray& resources) {
-	if (compute_shader.is_valid() && resources.has(compute_shader->get_path())) {
-		RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeShaderEffect::reload_shader));
-	}
-}
-
-void ComputeShaderEffect::reload_shader() {
-	if (compute_shader.is_null()) {
-		task.unref();
-		return;
-	}
-	if (task.is_null() || !task->has_meta("compute_shader") || compute_shader != task->get_meta("compute_shader")) {
-		task.instantiate();
-		task->set_meta("compute_shader", compute_shader);
-	}
-	const TypedArray<ComputeShaderKernel> kernels = compute_shader->get_kernels();
-	task->set_kernels(kernels);
-
-	queued_kernels.clear();
-	for (const Ref<ComputeShaderKernel> kernel : kernels) {
-		if (kernel->get_user_attributes().has(Attributes::once())) {
-			queue_dispatch(kernel->get_kernel_name());
-		}
-	}
-
-	// Work around render callback not being called?
-	set_effect_callback_type(get_effect_callback_type());
-
-	notify_property_list_changed();
-
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		if (const EditorInterface* editor_interface = EditorInterface::get_singleton()) {
-			if (EditorFileSystem* editor_fs = editor_interface->get_resource_filesystem()) {
-				const Callable callable = callable_mp(this, &ComputeShaderEffect::_resources_reimported);
-				if (!editor_fs->is_connected("resources_reimported", callable)) {
-					editor_fs->connect("resources_reimported", callable, CONNECT_ONE_SHOT);
-				}
-			}
-		}
-	}
-#endif
-}
-
 void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
 	queued_kernels.set(kernel_name, true);
-}
-
-bool ComputeShaderEffect::_set(const StringName& p_name, const Variant& p_value) {
-	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		return task->_set(p_name, p_value);
-	}
-	return false;
-}
-
-bool ComputeShaderEffect::_get(const StringName& p_name, Variant& r_ret) const {
-	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		return task->_get(p_name, r_ret);
-	}
-	return false;
-}
-
-void ComputeShaderEffect::_get_property_list(List<PropertyInfo>* p_list) const {
-	if (task.is_null()) return;
-	Dictionary params = task->get_shader_parameters();
-	for (const StringName param_name : params.keys()) {
-		const Dictionary param_info = params[param_name];
-		PropertyInfo property_info = PropertyInfo::from_dict(param_info["property_info"]);
-		property_info.name = "shader_parameter/" + property_info.name;
-		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
-			p_list->push_back(property_info);
-		}
-	}
-}
-
-bool ComputeShaderEffect::_property_can_revert(const StringName& p_name) const {
-	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
-		Dictionary params = task->get_shader_parameters();
-		const Dictionary reflection = params[param_name];
-		if (reflection.has("property_info")) {
-			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-			return UtilityFunctions::type_convert(task->get_shader_parameter(param_name), property_info.type) != UtilityFunctions::type_convert(nullptr, property_info.type);
-		}
-	}
-	return false;
-}
-
-bool ComputeShaderEffect::_property_get_revert(const StringName& p_name, Variant& r_property) const {
-	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		r_property = nullptr;
-		return true;
-	}
-	return false;
 }

@@ -1,12 +1,12 @@
-[gd_scene load_steps=30 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene load_steps=37 format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
-[ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_n51mc"]
-[ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="3_8lvy3"]
-[ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="3_ei00m"]
-[ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="4_wcwec"]
-[ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="5_ei00m"]
-[ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="7_kkclv"]
+[ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_wcwec"]
+[ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="3_8lvy3"]
+[ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="3_ei00m"]
+[ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="4_ugfer"]
+[ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="6_rujmf"]
+[ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="7_kkclv"]
 [ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
@@ -24,26 +24,35 @@ sky = SubResource("Sky_n51mc")
 tonemap_mode = 2
 glow_enabled = true
 
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ei00m"]
+shader = ExtResource("2_wcwec")
+
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_2jas5"]
-compute_shader = ExtResource("2_n51mc")
+task = SubResource("ComputeShaderTask_ei00m")
 resource_name = "Grayscale effect"
 enabled = false
 effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = false
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
-compute_shader = ExtResource("5_ei00m")
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ugfer"]
+shader = ExtResource("3_ei00m")
 shader_parameter/outline_size = 1.0
 shader_parameter/outline_color = Color(0, 0, 0, 0.75000006)
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
+task = SubResource("ComputeShaderTask_ugfer")
 resource_name = "Outline effect"
 effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = true
 needs_normal_roughness = true
 
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_rujmf"]
+shader = ExtResource("4_ugfer")
+
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
-compute_shader = ExtResource("7_kkclv")
+task = SubResource("ComputeShaderTask_rujmf")
 resource_name = "Data mosh effect"
 enabled = false
 needs_motion_vectors = true
@@ -61,23 +70,32 @@ albedo_color = Color(0.748747, 1, 0.518099, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugfer"]
 albedo_color = Color(1, 0.486275, 1, 1)
 
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_hl4on"]
+shader = ExtResource("7_kkclv")
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_hl4on"]
+task = SubResource("ComputeShaderTask_hl4on")
+resource_local_to_scene = true
+
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_mt10o"]
+shader = ExtResource("6_rujmf")
+
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_kkclv"]
-compute_shader = ExtResource("3_ei00m")
+task = SubResource("ComputeShaderTask_mt10o")
 resource_local_to_scene = true
 needs_normal_roughness = true
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_hl4on"]
-compute_shader = ExtResource("3_8lvy3")
-resource_local_to_scene = true
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
-compute_shader = ExtResource("5_ei00m")
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_v40a1"]
+shader = ExtResource("3_ei00m")
 shader_parameter/outline_size = 1.5
 shader_parameter/outline_color = Color(0, 0, 0, 0.5)
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
+task = SubResource("ComputeShaderTask_v40a1")
 resource_local_to_scene = true
 
 [sub_resource type="Compositor" id="Compositor_mt10o"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_kkclv"), SubResource("ComputeShaderEffect_hl4on"), SubResource("ComputeShaderEffect_v40a1")])
+compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_hl4on"), SubResource("ComputeShaderEffect_kkclv"), SubResource("ComputeShaderEffect_v40a1")])
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_kkclv"]
 viewport_path = NodePath("NormalsViewport")
@@ -100,10 +118,13 @@ resource_local_to_scene = true
 material = SubResource("StandardMaterial3D_hl4on")
 size = Vector2(4, 4)
 
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_kkclv"]
+shader = ExtResource("3_8lvy3")
+
 [sub_resource type="ComputeTexture" id="ComputeTexture_kkclv"]
 size = Vector2i(1024, 1024)
 is_animated = true
-compute_shader = ExtResource("4_wcwec")
+task = SubResource("ComputeShaderTask_kkclv")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mt10o"]
 albedo_color = Color(2.454227, 2.454227, 2.454227, 1)

@@ -1,3 +1,5 @@
+#include "godot_cpp/classes/editor_file_system.hpp"
+#include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
@@ -10,7 +12,7 @@
 #include "compute_shader_task.h"
 
 void ComputeShaderTask::_bind_methods() {
-	BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderTask, kernels, ComputeShaderKernel)
+	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
 	BIND_METHOD(ComputeShaderTask, dispatch, "kernel_name", "thread_groups")
@@ -39,12 +41,28 @@ ComputeShaderTask::~ComputeShaderTask() {
 }
 
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
-	return kernels;
+	if (shader.is_valid()) {
+		return shader->get_kernels().duplicate();
+	}
+	return {};
 }
 
-void ComputeShaderTask::set_kernels(TypedArray<ComputeShaderKernel> p_kernels) {
-	_reset();
-	kernels = p_kernels;
+Ref<ComputeShaderFile> ComputeShaderTask::get_shader() const { return shader; }
+
+void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
+	if (shader != p_shader) {
+		const Callable reset_callable = callable_mp(this, &ComputeShaderTask::_reset);
+		if (shader.is_valid() && shader->is_connected("changed", reset_callable)) {
+			shader->disconnect("changed", reset_callable);
+		}
+		shader = p_shader;
+		if (p_shader.is_valid()) {
+			p_shader->connect("changed", reset_callable);
+		}
+		RenderingServer::get_singleton()->call_on_render_thread(reset_callable);
+		notify_property_list_changed();
+		emit_changed();
+	}
 }
 
 Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
@@ -56,12 +74,16 @@ void ComputeShaderTask::set_shader_parameter(const StringName& param, const Vari
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
 		_dispatch(i, thread_groups);
 	}
 }
 
 void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
 		Ref<ComputeShaderKernel> kernel = kernels[i];
 		if (kernel.is_valid() && kernel->get_kernel_name() == kernel_name) {
@@ -75,6 +97,10 @@ void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i t
 }
 
 Dictionary ComputeShaderTask::get_shader_parameters() const {
+	if (shader.is_null()) {
+		return {};
+	}
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	Dictionary shader_params;
 	for (const Ref<ComputeShaderKernel> kernel : kernels) {
 		if (kernel.is_valid()) {
@@ -166,6 +192,8 @@ void ComputeShaderTask::_reset() {
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {
+	ERR_FAIL_NULL_V(shader, {});
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	if (!_kernel_shaders.has(kernel_index)) {
 		const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 		_kernel_shaders.set(kernel_index, rd->shader_create_from_spirv(kernel->get_spirv()));
@@ -227,6 +255,8 @@ Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, co
 }
 
 void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 	Dictionary parameters = kernel->get_parameters();
 	Array parameter_keys = parameters.keys();
@@ -277,6 +307,8 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 }
 
 void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	Dictionary uniform_sets{};
 
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
@@ -394,6 +426,8 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 }
 
 Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set) {
+	ERR_FAIL_NULL_V(shader, {});
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	const Vector2i key(binding, set);
 	if (!_buffers.has(key)) {
 		const Ref buffer = memnew(RDBuffer);
@@ -427,6 +461,8 @@ void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, co
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 	ERR_FAIL_NULL_MSG(static_cast<Ref<RefCounted>>(kernels[kernel_index]), String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
 	RenderingServer* rendering_server = RenderingServer::get_singleton();

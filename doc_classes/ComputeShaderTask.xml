@@ -63,8 +63,8 @@
 		</method>
 	</methods>
 	<members>
-		<member name="kernels" type="ComputeShaderKernel[]" setter="set_kernels" getter="get_kernels" default="[]">
-			The kernels executed as part of this task.
+		<member name="shader" type="ComputeShaderFile" setter="set_shader" getter="get_shader">
+			The shader executed during dispatch of this task.
 		</member>
 	</members>
 </class>

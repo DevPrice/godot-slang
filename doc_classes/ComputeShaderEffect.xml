@@ -19,12 +19,6 @@
 				Called before a view is rendered. Shader parameters that are updated every frame should be set during this callback.
 			</description>
 		</method>
-		<method name="get_task" qualifiers="const">
-			<return type="ComputeShaderTask" />
-			<description>
-				Gets the underlying task associated with this effect.
-			</description>
-		</method>
 		<method name="queue_dispatch">
 			<return type="void" />
 			<param index="0" name="kernel_name" type="String" />
@@ -33,16 +27,10 @@
 				By default, kernels are dispatched every frame, so only call this if you have explicitly declared otherwise in your shader using [code][gd::compositor::Skip][/code] or [code][gd::compositor::Once][/code].
 			</description>
 		</method>
-		<method name="reload_shader">
-			<return type="void" />
-			<description>
-				Reload the shader used by this effect and reset any internal state.
-			</description>
-		</method>
 	</methods>
 	<members>
-		<member name="compute_shader" type="ComputeShaderFile" setter="set_compute_shader" getter="get_compute_shader">
-			The compute shader associated with this texture.
+		<member name="task" type="ComputeShaderTask" setter="set_task" getter="get_task">
+			The task associated with this texture.
 		</member>
 	</members>
 	<signals>

@@ -4,7 +4,7 @@
 #include "godot_cpp/variant/typed_array.hpp"
 
 #include "binding_macros.h"
-#include "compute_shader_kernel.h"
+#include "compute_shader_file.h"
 #include "rdbuffer.h"
 
 using namespace godot;
@@ -12,7 +12,7 @@ using namespace godot;
 class ComputeShaderTask : public Resource {
 	GDCLASS(ComputeShaderTask, Resource);
 
-	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
+	GET_SET_PROPERTY(Ref<ComputeShaderFile>, shader)
 
 protected:
 	static void _bind_methods();
@@ -20,6 +20,8 @@ protected:
 public:
 	ComputeShaderTask();
 	~ComputeShaderTask() override;
+
+	[[nodiscard]] TypedArray<ComputeShaderKernel> get_kernels() const;
 
 	[[nodiscard]] Variant get_shader_parameter(const StringName& param) const;
 	void set_shader_parameter(const StringName& param, const Variant& value);
