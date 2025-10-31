@@ -28,16 +28,22 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
 	}
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 #ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_CLASS(SlangShaderEditorPlugin);
 		GDREGISTER_CLASS(SlangShaderImporter);
 		EditorPlugins::add_by_type<SlangShaderEditorPlugin>();
-#endif
 	}
+#endif
 }
 
-void uninitialize_gdextension_types(const ModuleInitializationLevel p_level) {}
+void uninitialize_gdextension_types(const ModuleInitializationLevel p_level) {
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		EditorPlugins::remove_by_type<SlangShaderEditorPlugin>();
+	}
+#endif
+}
 
 extern "C" {
 GDExtensionBool GDE_EXPORT shader_slang_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization* r_initialization) {
