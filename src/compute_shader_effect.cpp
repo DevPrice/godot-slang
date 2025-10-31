@@ -203,23 +203,14 @@ void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
 
 bool ComputeShaderEffect::_set(const StringName& p_name, const Variant& p_value) {
 	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
-		task->set_shader_parameter(param_name, p_value);
-		return true;
+		return task->_set(p_name, p_value);
 	}
 	return false;
 }
 
 bool ComputeShaderEffect::_get(const StringName& p_name, Variant& r_ret) const {
 	if (task.is_valid() && p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
-		Dictionary params = task->get_shader_parameters();
-		const Dictionary reflection = params[param_name];
-		if (reflection.has("property_info")) {
-			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-			r_ret = UtilityFunctions::type_convert(task->get_shader_parameter(param_name), property_info.type);
-			return true;
-		}
+		return task->_get(p_name, r_ret);
 	}
 	return false;
 }

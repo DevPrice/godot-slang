@@ -27,11 +27,11 @@ public:
 	void reload_shader();
 	void queue_dispatch(const String& kernel_name);
 
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	[[nodiscard]] bool _property_can_revert(const StringName &p_name) const;
-	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant &r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
+	[[nodiscard]] bool _property_can_revert(const StringName& p_name) const;
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 	GDVIRTUAL4(_bind_view, Ref<ComputeShaderTask>, Ref<ComputeShaderKernel>, RenderData*, int32_t)
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "godot_cpp/classes/ref_counted.hpp"
+#include "godot_cpp/classes/resource.hpp"
 #include "godot_cpp/variant/typed_array.hpp"
 
 #include "binding_macros.h"
@@ -9,8 +9,8 @@
 
 using namespace godot;
 
-class ComputeShaderTask : public RefCounted {
-	GDCLASS(ComputeShaderTask, RefCounted);
+class ComputeShaderTask : public Resource {
+	GDCLASS(ComputeShaderTask, Resource);
 
 	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
 
@@ -29,6 +29,12 @@ public:
 	void dispatch_at(int64_t kernel_index, Vector3i thread_groups);
 
 	[[nodiscard]] Dictionary get_shader_parameters() const;
+
+	bool _set(const StringName& p_name, const Variant& p_value);
+	bool _get(const StringName& p_name, Variant &r_ret) const;
+	void _get_property_list(List<PropertyInfo>* p_list) const;
+	[[nodiscard]] bool _property_can_revert(const StringName& p_name) const;
+	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
 private:
 	Dictionary _shader_parameters{};
