@@ -354,10 +354,11 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 				size = container_size * stride;
 			}
 		}
-		ERR_FAIL_COND_V(size <= 0, 0);
 
-		if (resize && destination.size() < offset + size) {
-			destination.resize(offset + size);
+		if (size > 0) {
+			if (resize && destination.size() < offset + size) {
+				destination.resize(offset + size);
+			}
 		}
 
 		int64_t element_offset = offset;

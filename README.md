@@ -95,8 +95,7 @@ This library includes many other attributes, Godot-specific utility functions su
 Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functional, generating full reflection data for Godot is still very much a work-in-progress.
 If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
 
-`ComputeShaderTask::set_shader_parameter` supports many basic types, but is not yet fully implemented. See the table below for the status of specific binding types.
-`ComputeShaderTask` and `ComputeShaderEffect` are in a useful state if you are mostly reading render buffer textures and simple uniform data, but aren't quite ready for being used with complex data or nested structs.
+`ComputeShaderTask::set_shader_parameter` supports most parameter types, but is not yet fully implemented. See the table below for the status of specific binding types.
 
 | Binding type                                       | Status                |
 |----------------------------------------------------|-----------------------|
@@ -109,7 +108,7 @@ If you don't need reflection information, then these should suffice for importin
 | `ConstantBuffer`                                   | ✅ Mostly working      |
 | `StructuredBuffer`/`RWStructuredBuffer`            | ✅ Mostly working      |
 | `ByteAddressBuffer`/`RWByteAddressBuffer`          | ✅ Mostly working      |
-| `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ❌ Not yet implemented |
+| `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ✅ Mostly working      |
 | `ParameterBlock`                                   | ❌ Not yet implemented |
 | Interfaces                                         | ❌ Not yet implemented |
 
