@@ -9,6 +9,15 @@
 [ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="7_kkclv"]
 [ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_rujmf"]
+shader = ExtResource("4_ugfer")
+
+[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
+task = SubResource("ComputeShaderTask_rujmf")
+resource_name = "Data mosh effect"
+enabled = false
+needs_motion_vectors = true
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_2jas5"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
 ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -47,15 +56,6 @@ effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = true
 needs_normal_roughness = true
-
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_rujmf"]
-shader = ExtResource("4_ugfer")
-
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
-task = SubResource("ComputeShaderTask_rujmf")
-resource_name = "Data mosh effect"
-enabled = false
-needs_motion_vectors = true
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
 compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_mt10o")])
@@ -137,6 +137,7 @@ size = Vector2(8, 8)
 
 [node name="Node" type="Node3D"]
 script = ExtResource("1_kkclv")
+data_mosh_effect = SubResource("ComputeShaderEffect_mt10o")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_8lvy3")
