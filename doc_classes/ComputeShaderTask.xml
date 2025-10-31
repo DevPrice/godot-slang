@@ -3,7 +3,7 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		Wraps a list of [ComputeShaderKernel]s into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
+		Wraps a [ComputeShaderFile] into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
 	</description>
 	<tutorials>
 	</tutorials>
