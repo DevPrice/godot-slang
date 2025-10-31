@@ -27,6 +27,7 @@ public:
 
 private:
 	Dictionary queued_kernels;
+	bool is_first_run = true;
 
 	void _task_changed();
 

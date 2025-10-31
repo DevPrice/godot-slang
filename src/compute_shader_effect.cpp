@@ -59,20 +59,25 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	if (task.is_null()) {
 		return;
 	}
-	const Ref<RenderSceneBuffers> render_scene_buffers = p_render_data->get_render_scene_buffers();
-	if (render_scene_buffers.is_null()) {
-		return;
-	}
-	auto* rsb = cast_to<RenderSceneBuffersRD>(render_scene_buffers.ptr());
-	if (!rsb) {
-		return;
-	}
-	const Vector2i size = rsb->get_internal_size();
-	if (size.x <= 0 || size.y <= 0) {
-		return;
-	}
-	const uint32_t view_count = rsb->get_view_count();
 	const TypedArray<ComputeShaderKernel> kernels = task->get_kernels();
+	if (kernels.is_empty()) return;
+
+	if (is_first_run) {
+		is_first_run = false;
+		queued_kernels.clear();
+		for (const Ref<ComputeShaderKernel> kernel : kernels) {
+			if (kernel->get_user_attributes().has(Attributes::once())) {
+				queue_dispatch(kernel->get_kernel_name());
+			}
+		}
+	}
+
+	auto* render_scene_buffers = cast_to<RenderSceneBuffersRD>(p_render_data->get_render_scene_buffers().ptr());
+	ERR_FAIL_NULL(render_scene_buffers);
+	const Vector2i size = render_scene_buffers->get_internal_size();
+	ERR_FAIL_COND(size.x <= 0 || size.y <= 0);
+
+	const uint32_t view_count = render_scene_buffers->get_view_count();
 	const uint64_t kernel_count = kernels.size();
 	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
 		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
@@ -87,7 +92,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					(size.y - 1) / local_size.y + 1,
 					1);
 			for (int32_t view = 0; view < view_count; ++view) {
-				_bind_parameters(task, kernel, p_render_data->get_render_scene_data(), rsb, view);
+				_bind_parameters(task, kernel, p_render_data->get_render_scene_data(), render_scene_buffers, view);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
 				emit_signal("uniforms_bound", view);
 				task->dispatch_at(kernel_index, groups);
@@ -99,13 +104,8 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 void ComputeShaderEffect::_task_changed() {
 	const Ref<ComputeShaderTask> t = get_task();
 	if (t.is_null()) return;
-	// TODO: This is a race condition
-	queued_kernels.clear();
-	for (const Ref<ComputeShaderKernel> kernel : t->get_kernels()) {
-		if (kernel->get_user_attributes().has(Attributes::once())) {
-			queue_dispatch(kernel->get_kernel_name());
-		}
-	}
+
+	is_first_run = true;
 
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
