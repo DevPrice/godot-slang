@@ -24,7 +24,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_INTERNAL_CLASS(RDBuffer);
 		GDREGISTER_CLASS(ComputeShaderKernel);
 		GDREGISTER_CLASS(ComputeShaderTask);
-		GDREGISTER_CLASS(ComputeShaderFile);
+		GDREGISTER_VIRTUAL_CLASS(ComputeShaderFile);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
 	}
