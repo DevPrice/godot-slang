@@ -51,16 +51,15 @@ Ref<ComputeShaderFile> ComputeShaderTask::get_shader() const { return shader; }
 
 void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
 	if (shader != p_shader) {
-		const Callable reset_callable = callable_mp(this, &ComputeShaderTask::_reset);
-		if (shader.is_valid() && shader->is_connected("changed", reset_callable)) {
-			shader->disconnect("changed", reset_callable);
+		const Callable changed_callable = callable_mp(this, &ComputeShaderTask::_shader_changed);
+		if (shader.is_valid() && shader->is_connected("changed", changed_callable)) {
+			shader->disconnect("changed", changed_callable);
 		}
 		shader = p_shader;
 		if (p_shader.is_valid()) {
-			p_shader->connect("changed", reset_callable);
+			p_shader->connect("changed", changed_callable);
 		}
-		RenderingServer::get_singleton()->call_on_render_thread(reset_callable);
-		notify_property_list_changed();
+		RenderingServer::get_singleton()->call_on_render_thread(changed_callable);
 		emit_changed();
 	}
 }
@@ -132,6 +131,8 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 			r_ret = UtilityFunctions::type_convert(get_shader_parameter(param_name), property_info.type);
 			return true;
 		}
+		r_ret = get_shader_parameter(param_name);
+		return true;
 	}
 	return false;
 }
@@ -144,6 +145,30 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 		property_info.name = "shader_parameter/" + property_info.name;
 		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);
+		} else {
+			_get_property_list(p_list, "shader_parameter/" + param_name + "/", param_info["shape"]);
+		}
+	}
+}
+
+void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& shape) const {
+	{
+		PropertyInfo property_info = PropertyInfo::from_dict(shape["property_info"]);
+		property_info.name = prefix + property_info.name;
+		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
+			p_list->push_back(property_info);
+		}
+	}
+
+	const Dictionary properties = shape["properties"];
+	for (const StringName property_name : properties.keys()) {
+		const Dictionary property = properties[property_name];
+		PropertyInfo property_info = PropertyInfo::from_dict(property["property_info"]);
+		property_info.name = prefix + property_info.name;
+		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
+			p_list->push_back(property_info);
+		} else {
+			_get_property_list(p_list, prefix + property_name + "/", property["shape"]);
 		}
 	}
 }
@@ -189,6 +214,11 @@ void ComputeShaderTask::_reset() {
 	_buffers.clear();
 	_kernel_pipelines.clear();
 	_kernel_shaders.clear();
+}
+
+void ComputeShaderTask::_shader_changed() {
+	_reset();
+	notify_property_list_changed();
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {
@@ -274,7 +304,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 			const int64_t offset = param.get("offset", 0);
 			const int64_t size = shape.get("size", 0);
 			if (size > 0) {
-				const int64_t buffer_size = 16 * ((offset + size + 15) / 16);
+				const int64_t buffer_size = RDBuffer::aligned_size(offset + size, 16);
 				if (_push_constant.size() < buffer_size) {
 					_push_constant.resize(buffer_size);
 				}

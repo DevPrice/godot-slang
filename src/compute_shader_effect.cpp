@@ -102,9 +102,6 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 }
 
 void ComputeShaderEffect::_task_changed() {
-	const Ref<ComputeShaderTask> t = get_task();
-	if (t.is_null()) return;
-
 	is_first_run = true;
 
 	// Work around render callback not being called?

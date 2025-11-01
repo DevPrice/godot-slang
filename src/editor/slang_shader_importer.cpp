@@ -306,7 +306,8 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 
 		param_info.set("user_attributes", param_attributes);
 
-		const Dictionary shape = _get_shape(param->getTypeLayout());
+		const bool is_autobind = _is_autobind(param->getVariable());
+		const Dictionary shape = _get_shape(param->getTypeLayout(), !is_autobind);
 		const bool is_valid_shape = !shape.is_empty() &&
 			(shape["type"] != "simple" || static_cast<int64_t>(shape.get("size", -1)) != 0);
 		if (!is_valid_shape) {
@@ -319,9 +320,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		PropertyHint hint;
 		String hint_string;
 		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
-			const uint32_t usage = _is_autobind(param->getVariable())
-				? PROPERTY_USAGE_NONE
-				: PROPERTY_USAGE_DEFAULT;
+			const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
 			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
 		}
@@ -357,7 +356,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 	return parameters;
 }
 
-Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout) const {
+Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
 	Dictionary shape{};
 	if (!type_layout) return shape;
 
@@ -379,12 +378,24 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
-				Dictionary property_shape = _get_shape(field->getTypeLayout());
+				const bool is_autobind = _is_autobind(field->getVariable());
+				Dictionary property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("offset", field->getOffset());
 				property_shapes.set(get_name(field, field_attributes), property);
+
+				if (include_property_info) {
+					Variant::Type type;
+					PropertyHint hint;
+					String hint_string;
+					if (_get_godot_type(field->getType(), field_attributes, type, hint, hint_string)) {
+						const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
+						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
+						property.set("property_info", Dictionary(property_info));
+					}
+				}
 			}
 			shape.set("properties", property_shapes);
 			break;
@@ -403,7 +414,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 		case slang::TypeReflection::Kind::Array:
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
 			shape.set("type", "array");
-			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout()));
+			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout(), include_property_info));
 			const size_t stride = type_layout->getElementTypeLayout()->getStride();
 			if (stride > 0) {
 				shape.set("stride", stride);
@@ -421,7 +432,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			break;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer:
-			return _get_shape(type_layout->getElementTypeLayout());
+			return _get_shape(type_layout->getElementTypeLayout(), include_property_info);
 		default:
 			break;
 	}
@@ -622,10 +633,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_hint_string = class_name;
 				return true;
 			}
-			out_type = Variant::DICTIONARY;
-			out_hint = PROPERTY_HINT_DICTIONARY_TYPE;
-			out_hint_string = String("%s:;%s:") % Array { Variant::STRING_NAME, Variant::NIL };
-			return true;
+			return false;
 		}
 		case slang::TypeReflection::Kind::SamplerState:
 			// Not currently supported
