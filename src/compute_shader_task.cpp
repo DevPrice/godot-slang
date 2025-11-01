@@ -200,12 +200,21 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
 	if (p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
-		Dictionary params = get_shader_parameters();
-		const Dictionary reflection = params[param_name];
-		if (reflection.has("property_info")) {
+		const PackedStringArray parts = p_name.substr(17).split("/");
+		Variant current = get_shader_parameters();
+		int64_t i = 0;
+		bool valid;
+		for (; i < parts.size() - 1; ++i) {
+			const Dictionary property = current.get_named(parts[i], valid);
+			const Dictionary shape = property["shape"];
+			if (!valid) return false;
+			current = shape["properties"];
+			if (current.get_type() == Variant::NIL) return false;
+		}
+		const Dictionary reflection = current.get_named(parts[i], valid);
+		if (valid && reflection.has("property_info")) {
 			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-			return UtilityFunctions::type_convert(get_shader_parameter(param_name), property_info.type) != UtilityFunctions::type_convert(nullptr, property_info.type);
+			return UtilityFunctions::type_convert(get(p_name), property_info.type) != UtilityFunctions::type_convert(nullptr, property_info.type);
 		}
 	}
 	return false;
