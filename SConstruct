@@ -60,13 +60,17 @@ if env["target"] == "editor":
 
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
 
-    slang_lib_file = "slang/build/RelWithDebInfo/{}/{}slang{}".format(slang_lib_dir, env.subst('$SHLIBPREFIX'), env.subst('$SHLIBSUFFIX'))
-    slang_outputs = [env.File(slang_lib_file), env.Dir("slang/build/RelWithDebInfo/include/")]
+    slang_lib_base_file = f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"
+    slang_lib_files = [slang_lib_base_file]
+    if env["platform"] in ["linux", "macos"]:
+        slang_lib_files += Glob(f"{slang_lib_base_file}.0.*")
+
+    slang_outputs = [env.File(slang_lib_files), env.Dir("slang/build/RelWithDebInfo/include/")]
 
     if env["platform"] == "windows":
-        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang.lib")]
+        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang-compiler.lib")]
     else:
-        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/libslang.a")]
+        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/libslang-compiler.a")]
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
@@ -76,7 +80,7 @@ if env["target"] == "editor":
             "slang/build/RelWithDebInfo/include",
         ],
         LIBPATH=["slang/build/RelWithDebInfo/lib"],
-        LIBS=["slang"]
+        LIBS=["slang-compiler"],
     )
 
     editor_sources = Glob("src/editor/*.cpp")
@@ -84,7 +88,7 @@ if env["target"] == "editor":
         env.Depends(src, slang_build)
     sources += editor_sources
 
-    slang_install_command = env.Install("{}/{}".format(projectdir, platformdir), slang_lib_file)
+    slang_install_command = env.Install("{}/{}".format(projectdir, platformdir), slang_lib_files)
     env.Depends(slang_install_command, slang_build)
     actions += slang_install_command
 
