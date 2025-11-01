@@ -424,9 +424,9 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 				shape.set("alignment", alignment);
 			}
 			if (type_layout->isArray()) {
-				const int64_t size = stride * type_layout->getElementCount();
+				const int64_t size = type_layout->getSize();
 				if (size > 0) {
-					shape.set("size", type_layout->getSize());
+					shape.set("size", size);
 				}
 			}
 			break;
