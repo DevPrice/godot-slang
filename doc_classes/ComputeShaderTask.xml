@@ -8,6 +8,12 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="clear_shader_parameters">
+			<return type="void" />
+			<description>
+				Clears all shader parameters for this task.
+			</description>
+		</method>
 		<method name="dispatch">
 			<return type="void" />
 			<param index="0" name="kernel_name" type="StringName" />

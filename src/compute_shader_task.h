@@ -25,6 +25,7 @@ public:
 
 	[[nodiscard]] Variant get_shader_parameter(const StringName& param) const;
 	void set_shader_parameter(const StringName& param, const Variant& value);
+	void clear_shader_parameters();
 
 	void dispatch_all(Vector3i thread_groups);
 	void dispatch(const StringName& kernel_name, Vector3i thread_groups);

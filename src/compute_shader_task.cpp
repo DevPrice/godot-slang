@@ -15,6 +15,7 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
+	BIND_METHOD(ComputeShaderTask, clear_shader_parameters)
 	BIND_METHOD(ComputeShaderTask, dispatch, "kernel_name", "thread_groups")
 	BIND_METHOD(ComputeShaderTask, dispatch_at, "kernel_index", "thread_groups")
 	BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
@@ -90,6 +91,10 @@ void ComputeShaderTask::set_shader_parameter(const StringName& param, const Vari
 		current = next;
 	}
 	current.set_named(parts[i], value, valid);
+}
+
+void ComputeShaderTask::clear_shader_parameters() {
+	_shader_parameters.clear();
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups) {
