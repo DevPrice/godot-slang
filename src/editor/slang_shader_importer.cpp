@@ -296,7 +296,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 
 Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) const {
 	Dictionary parameters{};
-	size_t push_constant_offset = 0;
+	int64_t push_constant_offset = 0;
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		Dictionary param_info{};
@@ -335,7 +335,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
 				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("uniform_type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
-				param_info.set("offset", param->getOffset());
+				param_info.set("offset", static_cast<int64_t>(param->getOffset()));
 				break;
 			case slang::ParameterCategory::PushConstantBuffer: {
 				slang::TypeLayoutReflection* element_type_layout = param->getTypeLayout()->getElementTypeLayout();
@@ -365,11 +365,11 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 		case slang::TypeReflection::Kind::Vector:
 		case slang::TypeReflection::Kind::Matrix:
 			shape.set("type", "simple");
-			shape.set("size", type_layout->getSize());
+			shape.set("size", static_cast<int64_t>(type_layout->getSize()));
 			break;
 		case slang::TypeReflection::Kind::Struct: {
 			shape.set("type", "structured");
-			shape.set("size", type_layout->getSize());
+			shape.set("size", static_cast<int64_t>(type_layout->getSize()));
 			const int32_t alignment = type_layout->getAlignment();
 			if (alignment > 0) {
 				shape.set("alignment", alignment);
@@ -383,7 +383,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
-				property.set("offset", field->getOffset());
+				property.set("offset", static_cast<int64_t>(field->getOffset()));
 				property_shapes.set(get_name(field, field_attributes), property);
 
 				if (include_property_info) {
@@ -426,7 +426,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			if (type_layout->isArray()) {
 				const size_t size = stride * type_layout->getElementCount();
 				if (size > 0) {
-					shape.set("size", type_layout->getSize());
+					shape.set("size", static_cast<int64_t>(type_layout->getSize()));
 				}
 			}
 			break;
@@ -477,7 +477,7 @@ TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
 				Dictionary buffer_info{};
 				buffer_info.set("binding_index", param->getBindingIndex());
 				buffer_info.set("binding_space", param->getBindingSpace());
-				buffer_info.set("size", type_layout->getElementTypeLayout()->getSize());
+				buffer_info.set("size", static_cast<int64_t>(type_layout->getElementTypeLayout()->getSize()));
 				buffers.push_back(buffer_info);
 			}
 		}
