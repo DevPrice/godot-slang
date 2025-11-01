@@ -29,7 +29,7 @@ jobs:
             { platform: web, arch: wasm32, os: ubuntu-22.04 },
           ]
         target-type: [template_debug, template_release]
-        float-precision: [single] # TODO: Re-enable double precision builds when CI is fixed
+        float-precision: [single]
 
     runs-on: ${{ matrix.target.os }}
     steps:
@@ -106,10 +106,10 @@ jobs:
           [
             { platform: windows, arch: x86_64, os: windows-latest },
             { platform: linux, arch: x86_64, os: ubuntu-22.04 },
-            # { platform: macos, arch: universal, os: macos-latest },
+            { platform: macos, arch: universal, os: macos-latest },
           ]
         target-type: [editor]
-        float-precision: [single] # TODO: Re-enable double precision builds when CI is fixed
+        float-precision: [single]
 
     runs-on: ${{ matrix.target.os }}
     steps:

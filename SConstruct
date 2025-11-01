@@ -60,10 +60,7 @@ if env["target"] == "editor":
 
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
 
-    slang_lib_base_file = f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"
-    slang_lib_files = [slang_lib_base_file]
-    if env["platform"] in ["linux", "macos"]:
-        slang_lib_files += Glob(f"{slang_lib_base_file}.0.*")
+    slang_lib_files = [f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"]
 
     slang_outputs = [env.File(slang_lib_files), env.Dir("slang/build/RelWithDebInfo/include/")]
 
