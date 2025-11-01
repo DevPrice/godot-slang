@@ -21,12 +21,17 @@ let viewport_size : int2;
 [gd::compositor::SceneData]
 let scene_data : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
-let outline_size : float = 1;
 static let depth_sensitivity : float = 0.25;
 static let normal_sensitivity : float = 0.1;
 
-[gd::Color]
-let outline_color : float4 = float4(0, 0, 0, .98);
+struct PushConstants {
+    let outline_size : float = 1.0;
+    [gd::Color]
+    let outline_color : float4;
+}
+
+[vk::push_constant]
+let push_constants : PushConstants;
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
@@ -36,9 +41,9 @@ func outline(uint3 threadId: SV_DispatchThreadID) {
 
     let screen_uv = float2(coord + .5f) / viewport_size;
 
-    let edge_strength = edge(screen_uv, viewport_size, scene_data.data.inv_projection_matrix, outline_size);
+    let edge_strength = edge(screen_uv, viewport_size, scene_data.data.inv_projection_matrix, push_constants.outline_size);
     let base_color = color_texture.Sample(sampler_state, screen_uv);
-    let edge_color = lerp(base_color.rgb, outline_color.rgb, outline_color.a);
+    let edge_color = lerp(base_color.rgb, push_constants.outline_color.rgb, push_constants.outline_color.a);
     let result = lerp(base_color.rgb, edge_color, edge_strength);
 
     out_color[threadId.xy] = float4(result, base_color.a);

@@ -65,11 +65,31 @@ void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
 }
 
 Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
-	return _shader_parameters.get(param, nullptr);
+	const PackedStringArray parts = param.split("/");
+	Variant current = _shader_parameters;
+	int64_t i = 0;
+	bool valid;
+	for (; i < parts.size() - 1; ++i) {
+		current = current.get_named(parts[i], valid);
+		if (!valid || current.get_type() == Variant::NIL) return nullptr;
+	}
+	return current.get_named(parts[i], valid);
 }
 
 void ComputeShaderTask::set_shader_parameter(const StringName& param, const Variant& value) {
-	_shader_parameters.set(param, value);
+	const PackedStringArray parts = param.split("/");
+	Variant current = _shader_parameters;
+	int64_t i = 0;
+	bool valid;
+	for (; i < parts.size() - 1; ++i) {
+		Variant next = current.get_named(parts[i], valid);
+		if (!valid || next.get_type() == Variant::NIL) {
+			next = Dictionary();
+			current.set_named(parts[i], next, valid);
+		}
+		current = next;
+	}
+	current.set_named(parts[i], value, valid);
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups) {

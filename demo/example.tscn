@@ -46,8 +46,8 @@ access_resolved_depth = false
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ugfer"]
 shader = ExtResource("3_ei00m")
-shader_parameter/outline_size = 1.0
-shader_parameter/outline_color = Color(0, 0, 0, 0.75000006)
+shader_parameter/push_constants/outline_size = 1.0
+shader_parameter/push_constants/gay_lol = Color(0, 0, 0, 1)
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
 task = SubResource("ComputeShaderTask_ugfer")
@@ -87,8 +87,8 @@ needs_normal_roughness = true
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_v40a1"]
 shader = ExtResource("3_ei00m")
-shader_parameter/outline_size = 1.5
-shader_parameter/outline_color = Color(0, 0, 0, 0.5)
+shader_parameter/push_constants/outline_size = null
+shader_parameter/push_constants/gay_lol = null
 
 [sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
 task = SubResource("ComputeShaderTask_v40a1")
