@@ -370,7 +370,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 		case slang::TypeReflection::Kind::Struct: {
 			shape.set("type", "structured");
 			shape.set("size", static_cast<int64_t>(type_layout->getSize()));
-			const int32_t alignment = type_layout->getAlignment();
+			const int64_t alignment = type_layout->getAlignment();
 			if (alignment > 0) {
 				shape.set("alignment", alignment);
 			}
@@ -415,7 +415,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
 			shape.set("type", "array");
 			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout(), include_property_info));
-			const size_t stride = type_layout->getElementTypeLayout()->getStride();
+			const int64_t stride = type_layout->getElementTypeLayout()->getStride();
 			if (stride > 0) {
 				shape.set("stride", stride);
 			}
@@ -424,9 +424,9 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 				shape.set("alignment", alignment);
 			}
 			if (type_layout->isArray()) {
-				const size_t size = stride * type_layout->getElementCount();
+				const int64_t size = stride * type_layout->getElementCount();
 				if (size > 0) {
-					shape.set("size", static_cast<int64_t>(type_layout->getSize()));
+					shape.set("size", type_layout->getSize());
 				}
 			}
 			break;
@@ -462,7 +462,7 @@ bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const 
 
 TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
 	TypedArray<Dictionary> buffers{};
-	const size_t global_buffer_size = program_layout->getGlobalConstantBufferSize();
+	const int64_t global_buffer_size = program_layout->getGlobalConstantBufferSize();
 	if (global_buffer_size > 0) {
 		Dictionary buffer_info{};
 		buffer_info.set("binding_index", program_layout->getGlobalParamsVarLayout()->getBindingIndex());
