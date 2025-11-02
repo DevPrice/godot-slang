@@ -198,6 +198,9 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			const Vector2 vector = data;
 			destination.encode_float(offset, vector.x);
 			destination.encode_float(offset + 4, vector.y);
+			if (size > 8) {
+				write(destination, offset + 8, size - 8, nullptr);
+			}
 			break;
 		}
 		case Variant::VECTOR3: {
@@ -205,6 +208,9 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			destination.encode_float(offset, vector.x);
 			destination.encode_float(offset + 4, vector.y);
 			destination.encode_float(offset + 8, vector.z);
+			if (size > 12) {
+				write(destination, offset + 12, size - 12, nullptr);
+			}
 			break;
 		}
 		case Variant::VECTOR4: {
@@ -251,6 +257,28 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			const AABB aabb = data;
 			write(destination, offset, 16, aabb.position);
 			write(destination, offset + 16, 16, aabb.size);
+			break;
+		}
+		case Variant::TRANSFORM2D: {
+			ERR_FAIL_COND(size < 48);
+			const Transform2D transform = data;
+			switch (matrix_layout) {
+				case ComputeShaderFile::ROW_MAJOR:
+					write(destination, offset, 16, transform[0]);
+					write(destination, offset + 16, 16, transform[1]);
+					write(destination, offset + 32, 16, transform[2]);
+					break;
+				case ComputeShaderFile::COLUMN_MAJOR: {
+					const Vector3 col0(transform[0].x, transform[1].x, transform[2].x);
+					const Vector3 col1(transform[0].y, transform[1].y, transform[2].y);
+					write(destination, offset, 16, col0);
+					write(destination, offset + 16, 16, col1);
+					write(destination, offset + 32, 16, nullptr);
+					break;
+				}
+				default:
+					ERR_FAIL_MSG("Invalid matrix layout!");
+			}
 			break;
 		}
 		case Variant::TRANSFORM3D: {
