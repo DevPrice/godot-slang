@@ -622,6 +622,11 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				return true;
 			}
 			const Dictionary type_attributes = get_attributes(type);
+			if (type_attributes.has("gd_Type")) {
+				const Dictionary type_attr = type_attributes["gd_Type"];
+				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
+				return true;
+			}
 			const Dictionary class_args = type_attributes["gd_Class"];
 			const StringName class_name = class_args["class_name"];
 			// TODO: Verify the class_name is a Resource subtype

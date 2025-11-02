@@ -5,6 +5,58 @@ __include "data_format";
 
 namespace gd {
 
+enum VariantType {
+    NIL,
+
+    // atomic types
+    BOOL,
+    INT,
+    FLOAT,
+    STRING,
+
+    // math types
+    VECTOR2,
+    VECTOR2I,
+    RECT2,
+    RECT2I,
+    VECTOR3,
+    VECTOR3I,
+    TRANSFORM2D,
+    VECTOR4,
+    VECTOR4I,
+    PLANE,
+    QUATERNION,
+    AABB,
+    BASIS,
+    TRANSFORM3D,
+    PROJECTION,
+
+    // misc types
+    COLOR,
+    STRING_NAME,
+    NODE_PATH,
+    RID,
+    OBJECT,
+    CALLABLE,
+    SIGNAL,
+    DICTIONARY,
+    ARRAY,
+
+    // typed arrays
+    PACKED_BYTE_ARRAY,
+    PACKED_INT32_ARRAY,
+    PACKED_INT64_ARRAY,
+    PACKED_FLOAT32_ARRAY,
+    PACKED_FLOAT64_ARRAY,
+    PACKED_STRING_ARRAY,
+    PACKED_VECTOR2_ARRAY,
+    PACKED_VECTOR3_ARRAY,
+    PACKED_COLOR_ARRAY,
+    PACKED_VECTOR4_ARRAY,
+
+    VARIANT_MAX
+};
+
 public enum SamplerRepeatMode {
 	REPEAT = 0,
 	MIRRORED_REPEAT = 1,
@@ -23,14 +75,42 @@ public func normal_roughness_compatibility(float4 normal_roughness) -> float4 {
 		roughness = 1.0 - roughness;
 	}
 	roughness /= (127.0 / 255.0);
-	return float4(normalize(normal_roughness.xyz * 2.0 - 1.0) * 0.5 + 0.5, roughness);
+    return float4(normalize(normal_roughness.xyz * 2.0 - 1.0) * 0.5 + 0.5, roughness);
 }
 
-struct AABB {
-	let position : float3;
-	let size : float3;
+[__AttributeUsage(_AttributeTargets.Struct)]
+struct gd_TypeAttribute {
+    let type : VariantType;
+};
 
-	func get_end() -> float3 {
+[gd::Type(VariantType.RECT2I)]
+public struct IntRect {
+    public let position : int2;
+    public let size : int2;
+
+    public func contains(int2 point)->bool {
+        return point.x >= position.x && point.y >= position.y &&
+               point.x < position.x + size.x && point.y < position.y + size.y;
+    }
+}
+
+[gd::Type(VariantType.RECT2)]
+public struct Rect {
+	let position : float2;
+	let size : float2;
+
+    public func contains(float2 point) -> bool {
+		return point.x >= position.x && point.y >= position.y &&
+		       point.x < position.x + size.x && point.y < position.y + size.y;
+	}
+}
+
+[gd::Type(VariantType.AABB)]
+public struct AABB {
+    public let position : float3;
+    public let size : float3;
+
+    public func get_end() -> float3 {
 		return position + size;
 	}
 }
