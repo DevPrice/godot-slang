@@ -24,4 +24,12 @@ public:
 	void set_bytecode(const Ref<RDShaderSPIRV> &p_bytecode, const StringName &p_version = StringName(), int64_t kernel_index = 0);
 	[[nodiscard]] Ref<RDShaderSPIRV> get_spirv(const StringName &p_version = StringName(), int64_t kernel_index = 0) const;
 	[[nodiscard]] TypedArray<StringName> get_version_list(int64_t kernel_index = 0) const;
+
+	// Values must match SlangMatrixLayoutMode
+	enum MatrixLayout {
+		ROW_MAJOR = 1,
+		COLUMN_MAJOR = 2,
+	};
 };
+
+VARIANT_ENUM_CAST(ComputeShaderFile::MatrixLayout)

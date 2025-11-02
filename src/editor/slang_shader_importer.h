@@ -76,16 +76,9 @@ public:
 	[[nodiscard]] bool _get_option_visibility(const String& p_path, const StringName& p_option_name, const Dictionary& p_options) const override;
 	[[nodiscard]] Error _import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const override;
 
-	enum MatrixLayout {
-		ROW_MAJOR = SLANG_MATRIX_LAYOUT_ROW_MAJOR,
-		COLUMN_MAJOR = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR,
-	};
-
 private:
 	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options, bool enable_glsl = false);
 	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 };
-
-VARIANT_ENUM_CAST(SlangShaderImporter::MatrixLayout)

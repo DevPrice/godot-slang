@@ -17,8 +17,6 @@
 #include "godot_cpp/classes/texture2d.hpp"
 
 void SlangShaderImporter::_bind_methods() {
-	BIND_ENUM_CONSTANT(ROW_MAJOR)
-	BIND_ENUM_CONSTANT(COLUMN_MAJOR)
 }
 
 String SlangShaderImporter::_get_importer_name() const {
@@ -52,9 +50,9 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 	{
 		Dictionary matrix_layout_option{};
 		matrix_layout_option.set("name", "matrix_layout");
-		matrix_layout_option.set("default_value", ROW_MAJOR);
+		matrix_layout_option.set("default_value", ComputeShaderFile::ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
-		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(ROW_MAJOR), String::num_int64(COLUMN_MAJOR) });
+		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(ComputeShaderFile::ROW_MAJOR), String::num_int64(ComputeShaderFile::COLUMN_MAJOR) });
 		options.push_back(matrix_layout_option);
 	}
 	return options;
@@ -638,6 +636,19 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 		case slang::TypeReflection::Kind::SamplerState:
 			// Not currently supported
 			return false;
+		case slang::TypeReflection::Kind::Matrix: {
+			const int64_t rows = type->getRowCount();
+			const int64_t columns = type->getColumnCount();
+			if (rows <= 3 && columns <= 3) {
+				out_type = Variant::TRANSFORM2D;
+				return true;
+			}
+			if (rows <= 4 && columns <= 4) {
+				out_type = Variant::TRANSFORM3D;
+				return true;
+			}
+			break;
+		}
 		default:
 			break;
 	}

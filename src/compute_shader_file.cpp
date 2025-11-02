@@ -1,6 +1,8 @@
 #include "compute_shader_file.h"
 
 void ComputeShaderFile::_bind_methods(){
+	BIND_ENUM_CONSTANT(ROW_MAJOR)
+	BIND_ENUM_CONSTANT(COLUMN_MAJOR)
 	BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderFile, kernels, ComputeShaderKernel)
 	BIND_GET_SET(ComputeShaderFile, base_error, Variant::STRING)
 	ClassDB::bind_method(D_METHOD("set_bytecode", "bytecode", "version", "kernel_index"), &ComputeShaderFile::set_bytecode, DEFVAL(StringName("")), DEFVAL(0));

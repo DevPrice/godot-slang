@@ -42,4 +42,12 @@
 			The kernels declared in this shader file, one for each entry-point.
 		</member>
 	</members>
+	<constants>
+		<constant name="ROW_MAJOR" value="1" enum="MatrixLayout">
+			Matrices are stored using row-major order.
+		</constant>
+		<constant name="COLUMN_MAJOR" value="2" enum="MatrixLayout">
+			Matrices are stored using column-major order.
+		</constant>
+	</constants>
 </class>

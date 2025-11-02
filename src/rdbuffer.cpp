@@ -159,7 +159,7 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 	return result;
 }
 
-void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data) {
+void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ComputeShaderFile::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND(offset < 0);
 	ERR_FAIL_COND(offset + size > destination.size());
 	switch (data.get_type()) {
@@ -255,12 +255,27 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 		}
 		case Variant::TRANSFORM3D: {
 			ERR_FAIL_COND(size < 64);
-			// TODO: Handle different matrix layouts
 			const Transform3D transform = data;
-			write(destination, offset, 16, transform.basis.rows[0]);
-			write(destination, offset + 16, 16, transform.basis.rows[1]);
-			write(destination, offset + 32, 16, transform.basis.rows[2]);
-			write(destination, offset + 48, 16, transform.origin);
+			switch (matrix_layout) {
+				case ComputeShaderFile::ROW_MAJOR:
+					write(destination, offset, 16, transform.basis[0]);
+					write(destination, offset + 16, 16, transform.basis[1]);
+					write(destination, offset + 32, 16, transform.basis[2]);
+					write(destination, offset + 48, 16, transform.origin);
+					break;
+				case ComputeShaderFile::COLUMN_MAJOR: {
+					const Vector4 col0(transform.basis[0].x, transform.basis[1].x, transform.basis[2].x, transform.origin.x);
+					const Vector4 col1(transform.basis[0].y, transform.basis[1].y, transform.basis[2].y, transform.origin.y);
+					const Vector4 col2(transform.basis[0].z, transform.basis[1].z, transform.basis[2].z, transform.origin.z);
+					write(destination, offset, 16, col0);
+					write(destination, offset + 16, 16, col1);
+					write(destination, offset + 32, 16, col2);
+					write(destination, offset + 48, 16, nullptr);
+					break;
+				}
+				default:
+					ERR_FAIL_MSG("Invalid matrix layout!");
+			}
 			break;
 		}
 		case Variant::PACKED_BYTE_ARRAY: {
@@ -301,7 +316,9 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 			destination.resize(offset + size);
 		}
 
-		write(destination, offset, size, data);
+		const int64_t matrix_layout = shape["matrix_layout"];
+		write(destination, offset, size, data, static_cast<ComputeShaderFile::MatrixLayout>(matrix_layout));
+
 		return size;
 	}
 	if (type == type_structured) {
