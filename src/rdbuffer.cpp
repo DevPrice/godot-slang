@@ -280,8 +280,31 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			destination.encode_float(offset + 12, quaternion[3]);
 			break;
 		}
+		case Variant::BASIS: {
+			ERR_FAIL_COND(size < 48);
+			const Basis basis = data;
+			switch (matrix_layout) {
+				case ComputeShaderFile::ROW_MAJOR:
+					write(destination, offset, 16, basis[0]);
+					write(destination, offset + 16, 16, basis[1]);
+					write(destination, offset + 32, 16, basis[2]);
+					break;
+				case ComputeShaderFile::COLUMN_MAJOR: {
+					const Vector3 col0(basis[0].x, basis[1].x, basis[2].x);
+					const Vector3 col1(basis[0].y, basis[1].y, basis[2].y);
+					const Vector3 col2(basis[0].z, basis[1].z, basis[2].z);
+					write(destination, offset, 16, col0);
+					write(destination, offset + 16, 16, col1);
+					write(destination, offset + 32, 16, col2);
+					break;
+				}
+				default:
+					ERR_FAIL_MSG("Invalid matrix layout!");
+			}
+			break;
+		}
 		case Variant::PROJECTION: {
-			ERR_FAIL_COND(size < 16);
+			ERR_FAIL_COND(size < 64);
 			const Projection projection = data;
 			switch (matrix_layout) {
 				case ComputeShaderFile::ROW_MAJOR:

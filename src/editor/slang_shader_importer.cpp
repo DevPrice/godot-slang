@@ -648,6 +648,10 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = Variant::PROJECTION;
 				return true;
 			}
+			if (rows == 3 && columns == 3) {
+				out_type = Variant::BASIS;
+				return true;
+			}
 			if (rows <= 3 && columns <= 3) {
 				out_type = Variant::TRANSFORM2D;
 				return true;
