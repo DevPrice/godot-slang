@@ -3,7 +3,7 @@ import os
 import sys
 
 from methods import print_error
-from build_slang import build_slang
+from build_slang import slang
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
@@ -48,29 +48,6 @@ projectdir = "demo"
 platformdir = f"{libdir}/{env['platform']}" if env["arch"] == "universal" else f"{libdir}/{env['platform']}-{env["arch"]}"
 
 if env["target"] == "editor":
-    slang_sources = [
-        "slang/slang-tag-version.h.in",
-        "slang/CMakeLists.txt",
-    ]
-
-    slang_sources += Glob("slang/*/CMakeLists.txt")
-    slang_sources += Glob("slang/include/*.h")
-    slang_sources += Glob("slang/source/slang/*.cpp")
-    slang_sources += Glob("slang/source/slang/*.h")
-
-    slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
-
-    slang_lib_files = [f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"]
-
-    slang_outputs = [env.File(slang_lib_files), env.Dir("slang/build/RelWithDebInfo/include/")]
-
-    if env["platform"] == "windows":
-        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang-compiler.lib")]
-    else:
-        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/libslang-compiler.a")]
-
-    slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
-
     env.Append(
         CPPPATH=[
             "src/editor",
@@ -80,14 +57,14 @@ if env["target"] == "editor":
         LIBS=["slang-compiler"],
     )
 
+    build_preset = "vs2022" if env["platform"] == "windows" else "default"
+    slang_build = slang(env=env, output_dir=f"{projectdir}/{platformdir}", build_preset=build_preset, build_type="releaseWithDebugInfo")
+    actions += slang_build
+
     editor_sources = Glob("src/editor/*.cpp")
     for src in editor_sources + Glob("src/editor/*.h"):
         env.Depends(src, slang_build)
     sources += editor_sources
-
-    slang_install_command = env.Install("{}/{}".format(projectdir, platformdir), slang_lib_files)
-    env.Depends(slang_install_command, slang_build)
-    actions += slang_install_command
 
 if env["target"] in ["editor", "template_debug"]:
     try:
