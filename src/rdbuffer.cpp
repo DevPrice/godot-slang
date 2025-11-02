@@ -167,12 +167,15 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			memset(destination.ptrw() + offset, 0, size);
 			break;
 		case Variant::BOOL:
+			ERR_FAIL_COND(size < 4);
 			destination.encode_s32(offset, data ? 1 : 0);
 			break;
 		case Variant::INT:
+			ERR_FAIL_COND(size < 4);
 			destination.encode_s32(offset, data);
 			break;
 		case Variant::FLOAT:
+			ERR_FAIL_COND(size < 4);
 			destination.encode_float(offset, data);
 			break;
 		case Variant::STRING: {
@@ -195,6 +198,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::VECTOR2: {
+			ERR_FAIL_COND(size < 8);
 			const Vector2 vector = data;
 			destination.encode_float(offset, vector.x);
 			destination.encode_float(offset + 4, vector.y);
@@ -204,6 +208,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::VECTOR3: {
+			ERR_FAIL_COND(size < 12);
 			const Vector3 vector = data;
 			destination.encode_float(offset, vector.x);
 			destination.encode_float(offset + 4, vector.y);
@@ -214,6 +219,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::VECTOR4: {
+			ERR_FAIL_COND(size < 16);
 			const Vector4 vector = data;
 			destination.encode_float(offset, vector.x);
 			destination.encode_float(offset + 4, vector.y);
@@ -222,6 +228,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::COLOR: {
+			ERR_FAIL_COND(size < 12);
 			const Color color = data;
 			destination.encode_float(offset, color.r);
 			destination.encode_float(offset + 4, color.g);
@@ -232,12 +239,14 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::VECTOR2I: {
+			ERR_FAIL_COND(size < 8);
 			const Vector2i vector = data;
 			destination.encode_s32(offset, vector.x);
 			destination.encode_s32(offset + 4, vector.y);
 			break;
 		}
 		case Variant::VECTOR3I: {
+			ERR_FAIL_COND(size < 12);
 			const Vector3i vector = data;
 			destination.encode_s32(offset, vector.x);
 			destination.encode_s32(offset + 4, vector.y);
@@ -245,11 +254,56 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::VECTOR4I: {
+			ERR_FAIL_COND(size < 16);
 			const Vector4i vector = data;
 			destination.encode_s32(offset, vector.x);
 			destination.encode_s32(offset + 4, vector.y);
 			destination.encode_s32(offset + 8, vector.z);
 			destination.encode_s32(offset + 12, vector.w);
+			break;
+		}
+		case Variant::PLANE: {
+			ERR_FAIL_COND(size < 16);
+			const Plane plane = data;
+			destination.encode_float(offset, plane.normal.x);
+			destination.encode_float(offset + 4, plane.normal.y);
+			destination.encode_float(offset + 8, plane.normal.z);
+			destination.encode_float(offset + 12, plane.d);
+			break;
+		}
+		case Variant::QUATERNION: {
+			ERR_FAIL_COND(size < 16);
+			const Quaternion quaternion = data;
+			destination.encode_float(offset, quaternion[0]);
+			destination.encode_float(offset + 4, quaternion[1]);
+			destination.encode_float(offset + 8, quaternion[2]);
+			destination.encode_float(offset + 12, quaternion[3]);
+			break;
+		}
+		case Variant::PROJECTION: {
+			ERR_FAIL_COND(size < 16);
+			const Projection projection = data;
+			switch (matrix_layout) {
+				case ComputeShaderFile::ROW_MAJOR:
+					write(destination, offset, 16, projection[0]);
+					write(destination, offset + 16, 16, projection[1]);
+					write(destination, offset + 32, 16, projection[2]);
+					write(destination, offset + 48, 16, projection[3]);
+					break;
+				case ComputeShaderFile::COLUMN_MAJOR: {
+					const Vector4 col0(projection[0].x, projection[1].x, projection[2].x, projection[3].x);
+					const Vector4 col1(projection[0].y, projection[1].y, projection[2].y, projection[3].y);
+					const Vector4 col2(projection[0].z, projection[1].z, projection[2].z, projection[3].z);
+					const Vector4 col3(projection[0].w, projection[1].w, projection[2].w, projection[3].w);
+					write(destination, offset, 16, col0);
+					write(destination, offset + 16, 16, col1);
+					write(destination, offset + 32, 16, col2);
+					write(destination, offset + 48, 16, col3);
+					break;
+				}
+				default:
+					ERR_FAIL_MSG("Invalid matrix layout!");
+			}
 			break;
 		}
 		case Variant::AABB: {

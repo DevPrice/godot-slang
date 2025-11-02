@@ -112,7 +112,33 @@ public struct AABB {
 
     public func get_end() -> float3 {
 		return position + size;
-	}
+    }
+}
+
+[gd::Type(VariantType.PLANE)]
+public struct Plane {
+    public let data : float4;
+
+    public func get_normal() -> float3 {
+        return data.xyz;
+    }
+
+    public func get_d() -> float {
+        return data.w;
+    }
+}
+
+[gd::Type(VariantType.QUATERNION)]
+public struct Quaternion {
+    public let data : float4;
+
+    public func get_normal()->float3 {
+        return data.xyz;
+    }
+
+    public func get_d()->float {
+        return data.w;
+    }
 }
 
 }

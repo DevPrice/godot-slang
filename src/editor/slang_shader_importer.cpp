@@ -644,6 +644,10 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 		case slang::TypeReflection::Kind::Matrix: {
 			const int64_t rows = type->getRowCount();
 			const int64_t columns = type->getColumnCount();
+			if (rows == 4 && columns == 4) {
+				out_type = Variant::PROJECTION;
+				return true;
+			}
 			if (rows <= 3 && columns <= 3) {
 				out_type = Variant::TRANSFORM2D;
 				return true;
