@@ -502,6 +502,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 }
 
  bool SlangReflectionContext::_get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+	ERR_FAIL_NULL_V(type, false);
 	out_hint = PROPERTY_HINT_NONE;
 	out_hint_string = "";
 	switch (type->getKind()) {
@@ -549,6 +550,8 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			}
 			break;
 		}
+		case slang::TypeReflection::Kind::Array:
+			return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 		case slang::TypeReflection::Kind::Resource: {
 			switch (type->getResourceShape() & ~SLANG_TEXTURE_COMBINED_FLAG) {
 				case SLANG_TEXTURE_2D:
@@ -560,50 +563,8 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 					out_type = Variant::PACKED_BYTE_ARRAY;
 					return true;
 				}
-				case SLANG_STRUCTURED_BUFFER: {
-					out_type = Variant::ARRAY;
-
-					Variant::Type element_type;
-					PropertyHint element_hint;
-					String element_hint_string;
-
-					if (_get_godot_type(type->getElementType(), attributes, element_type, element_hint, element_hint_string)) {
-						switch (element_type) {
-							case Variant::INT:
-								if (type->getElementType()->getScalarType() == slang::TypeReflection::ScalarType::Int64) {
-									out_type = Variant::PACKED_INT64_ARRAY;
-								} else {
-									out_type = Variant::PACKED_INT32_ARRAY;
-								}
-								break;
-							case Variant::FLOAT:
-								if (type->getElementType()->getScalarType() == slang::TypeReflection::ScalarType::Float64) {
-									out_type = Variant::PACKED_FLOAT64_ARRAY;
-								} else {
-									out_type = Variant::PACKED_FLOAT32_ARRAY;
-								}
-								break;
-							case Variant::VECTOR2:
-								out_type = Variant::PACKED_VECTOR2_ARRAY;
-								break;
-							case Variant::VECTOR3:
-								out_type = Variant::PACKED_VECTOR3_ARRAY;
-								break;
-							case Variant::VECTOR4:
-								out_type = Variant::PACKED_VECTOR4_ARRAY;
-								break;
-							case Variant::COLOR:
-								out_type = Variant::PACKED_COLOR_ARRAY;
-								break;
-							default:
-								out_hint = PROPERTY_HINT_ARRAY_TYPE;
-								out_hint_string = Variant::get_type_name(element_type);
-								break;
-						}
-						return true;
-					}
-					return false;
-				}
+				case SLANG_STRUCTURED_BUFFER:
+					return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 				default:
 					break;
 			}
@@ -667,6 +628,52 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	}
 	// TODO: Support the other types
 	UtilityFunctions::push_warning("Slang: Unknown Godot type: ", type->getName(), String(" (%s)") % static_cast<int64_t>(type->getKind()));
+	return false;
+}
+
+bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+	ERR_FAIL_NULL_V(type, false);
+	out_type = Variant::ARRAY;
+
+	Variant::Type element_type;
+	PropertyHint element_hint;
+	String element_hint_string;
+
+	if (_get_godot_type(type, attributes, element_type, element_hint, element_hint_string)) {
+		switch (element_type) {
+			case Variant::INT:
+				if (type->getScalarType() == slang::TypeReflection::ScalarType::Int64) {
+					out_type = Variant::PACKED_INT64_ARRAY;
+				} else {
+					out_type = Variant::PACKED_INT32_ARRAY;
+				}
+				break;
+			case Variant::FLOAT:
+				if (type->getScalarType() == slang::TypeReflection::ScalarType::Float64) {
+					out_type = Variant::PACKED_FLOAT64_ARRAY;
+				} else {
+					out_type = Variant::PACKED_FLOAT32_ARRAY;
+				}
+				break;
+			case Variant::VECTOR2:
+				out_type = Variant::PACKED_VECTOR2_ARRAY;
+				break;
+			case Variant::VECTOR3:
+				out_type = Variant::PACKED_VECTOR3_ARRAY;
+				break;
+			case Variant::VECTOR4:
+				out_type = Variant::PACKED_VECTOR4_ARRAY;
+				break;
+			case Variant::COLOR:
+				out_type = Variant::PACKED_COLOR_ARRAY;
+				break;
+			default:
+				out_hint = PROPERTY_HINT_ARRAY_TYPE;
+				out_hint_string = Variant::get_type_name(element_type);
+				break;
+		}
+		return true;
+	}
 	return false;
 }
 

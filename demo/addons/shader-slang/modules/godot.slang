@@ -88,7 +88,7 @@ public struct IntRect {
     public let position : int2;
     public let size : int2;
 
-    public func contains(int2 point)->bool {
+    public func contains(int2 point) -> bool {
         return point.x >= position.x && point.y >= position.y &&
                point.x < position.x + size.x && point.y < position.y + size.y;
     }
@@ -132,11 +132,11 @@ public struct Plane {
 public struct Quaternion {
     public let data : float4;
 
-    public func get_normal()->float3 {
+    public func get_normal() -> float3 {
         return data.xyz;
     }
 
-    public func get_d()->float {
+    public func get_d() -> float {
         return data.w;
     }
 }
