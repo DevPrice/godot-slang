@@ -49,7 +49,7 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 	}
 	{
 		Dictionary matrix_layout_option{};
-		matrix_layout_option.set("name", "matrix_layout");
+		matrix_layout_option.set("name", "default_matrix_layout");
 		matrix_layout_option.set("default_value", ComputeShaderFile::ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
 		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(ComputeShaderFile::ROW_MAJOR), String::num_int64(ComputeShaderFile::COLUMN_MAJOR) });
@@ -154,9 +154,9 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 	session_desc.compilerOptionEntries = compiler_options.data();
 	session_desc.compilerOptionEntryCount = compiler_options.size();
 
-	const int64_t matrix_layout = options["matrix_layout"];
-	if (matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
-		session_desc.defaultMatrixLayoutMode = static_cast<SlangMatrixLayoutMode>(matrix_layout);
+	const int64_t default_matrix_layout = options["default_matrix_layout"];
+	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
+		session_desc.defaultMatrixLayoutMode = static_cast<SlangMatrixLayoutMode>(default_matrix_layout);
 	}
 
 	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
