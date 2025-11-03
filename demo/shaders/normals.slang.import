@@ -13,4 +13,4 @@ dest_files=["res://.godot/imported/normals.slang-07a6dbcb252e12f0780a9ba3b09877b
 [params]
 
 entry_points=PackedStringArray()
-matrix_layout=1
+default_matrix_layout=1

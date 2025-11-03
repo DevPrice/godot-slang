@@ -13,4 +13,4 @@ dest_files=["res://.godot/imported/blur.slang-43abd47a7dc3b54ec64550db742ab007.r
 [params]
 
 entry_points=PackedStringArray()
-matrix_layout=1
+default_matrix_layout=1

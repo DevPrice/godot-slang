@@ -13,4 +13,4 @@ dest_files=["res://.godot/imported/outline.slang-5a0716822482f5ad5dfd7b1425a0ec0
 [params]
 
 entry_points=PackedStringArray()
-matrix_layout=1
+default_matrix_layout=1
