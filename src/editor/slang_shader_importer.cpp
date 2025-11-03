@@ -52,7 +52,7 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 		matrix_layout_option.set("name", "default_matrix_layout");
 		matrix_layout_option.set("default_value", ComputeShaderFile::ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
-		matrix_layout_option.set("hint_string", String("RowMajor:%s,ColumnMajor:%s") % Array { String::num_int64(ComputeShaderFile::ROW_MAJOR), String::num_int64(ComputeShaderFile::COLUMN_MAJOR) });
+		matrix_layout_option.set("hint_string", String("Row-major:%s,Column-major:%s") % Array { String::num_int64(ComputeShaderFile::ROW_MAJOR), String::num_int64(ComputeShaderFile::COLUMN_MAJOR) });
 		options.push_back(matrix_layout_option);
 	}
 	return options;
@@ -305,11 +305,12 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		param_info.set("user_attributes", param_attributes);
 
 		const bool is_autobind = _is_autobind(param->getVariable());
-		const Dictionary shape = _get_shape(param->getTypeLayout(), !is_autobind);
-		const bool is_valid_shape = !shape.is_empty() &&
-			(shape["type"] != "simple" || static_cast<int64_t>(shape.get("size", -1)) != 0);
-		if (!is_valid_shape) {
-			continue;
+		const Ref<ComputeShaderShape> shape = _get_shape(param->getTypeLayout(), !is_autobind);
+		if (shape.is_null()) continue;
+		if (const ComputeShaderVariantShape* variant_shape = Object::cast_to<ComputeShaderVariantShape>(shape.ptr())) {
+			if (variant_shape->get_size() == 0) {
+				continue;
+			}
 		}
 
 		param_info.set("shape", shape);
@@ -354,30 +355,30 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 	return parameters;
 }
 
-Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
-	Dictionary shape{};
-	if (!type_layout) return shape;
+Ref<ComputeShaderShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
+	ERR_FAIL_NULL_V(type_layout, nullptr);
 
 	switch (type_layout->getKind()) {
 		case slang::TypeReflection::Kind::Scalar:
 		case slang::TypeReflection::Kind::Vector:
-		case slang::TypeReflection::Kind::Matrix:
-			shape.set("type", "simple");
-			shape.set("size", static_cast<int64_t>(type_layout->getSize()));
-			break;
+		case slang::TypeReflection::Kind::Matrix: {
+			Ref<ComputeShaderVariantShape> shape;
+			shape.instantiate();
+			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
+			shape->set_matrix_layout(static_cast<ComputeShaderFile::MatrixLayout>(type_layout->getMatrixLayoutMode()));
+			return shape;
+		}
 		case slang::TypeReflection::Kind::Struct: {
-			shape.set("type", "structured");
-			shape.set("size", static_cast<int64_t>(type_layout->getSize()));
-			const int64_t alignment = type_layout->getAlignment();
-			if (alignment > 0) {
-				shape.set("alignment", alignment);
-			}
+			Ref<ComputeShaderStructuredShape> shape;
+			shape.instantiate();
+			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
+			shape->set_alignment(type_layout->getAlignment());
 			Dictionary property_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
 				const bool is_autobind = _is_autobind(field->getVariable());
-				Dictionary property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
+				const Ref<ComputeShaderShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
@@ -395,39 +396,37 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 					}
 				}
 			}
-			shape.set("properties", property_shapes);
-			break;
+			shape->set_properties(property_shapes);
+			shape->set_user_attributes(get_attributes(type_layout->getType()));
+			return shape;
 		}
+		case slang::TypeReflection::Kind::SamplerState:
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
 			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
-				shape.set("type", "raw_bytes");
-				break;
+				Ref<ComputeShaderResourceShape> shape;
+				shape.instantiate();
+				shape->set_resource_type(ComputeShaderResourceShape::RAW_BYTES);
+				return shape;
 			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
-				shape.set("type", "resource");
-				break;
+				Ref<ComputeShaderResourceShape> shape;
+				shape.instantiate();
+				shape->set_resource_type(ComputeShaderResourceShape::UNKNOWN);
+				return shape;
 			}
 		}
 		case slang::TypeReflection::Kind::Array:
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
-			shape.set("type", "array");
-			shape.set("element_shape", _get_shape(type_layout->getElementTypeLayout(), include_property_info));
-			const int64_t stride = type_layout->getElementTypeLayout()->getStride();
-			if (stride > 0) {
-				shape.set("stride", stride);
-			}
-			const int32_t alignment = type_layout->getElementTypeLayout()->getAlignment();
-			if (alignment > 0) {
-				shape.set("alignment", alignment);
-			}
+			Ref<ComputeShaderArrayShape> shape;
+			shape.instantiate();
+			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), include_property_info));
 			if (type_layout->isArray()) {
-				const int64_t size = type_layout->getSize();
-				if (size > 0) {
-					shape.set("size", size);
-				}
+				shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			}
-			break;
+			shape->set_stride(static_cast<int64_t>(type_layout->getElementTypeLayout()->getStride()));
+			shape->set_alignment(type_layout->getElementTypeLayout()->getAlignment());
+			return shape;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer:
 			return _get_shape(type_layout->getElementTypeLayout(), include_property_info);
@@ -435,14 +434,7 @@ Dictionary SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_
 			break;
 	}
 
-	shape.set("user_attributes", get_attributes(type_layout->getType()));
-
-	const SlangMatrixLayoutMode matrix_layout = type_layout->getMatrixLayoutMode();
-	if (matrix_layout != SLANG_MATRIX_LAYOUT_MODE_UNKNOWN) {
-		shape.set("matrix_layout", type_layout->getMatrixLayoutMode());
-	}
-
-	return shape;
+	return nullptr;
 }
 
 bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const {

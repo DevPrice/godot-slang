@@ -1,6 +1,7 @@
 #include "compute_shader_file.h"
 
-void ComputeShaderFile::_bind_methods(){
+void ComputeShaderFile::_bind_methods() {
+	BIND_ENUM_CONSTANT(UNKNOWN)
 	BIND_ENUM_CONSTANT(ROW_MAJOR)
 	BIND_ENUM_CONSTANT(COLUMN_MAJOR)
 	BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderFile, kernels, ComputeShaderKernel)

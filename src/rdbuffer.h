@@ -4,6 +4,7 @@
 
 #include "binding_macros.h"
 #include "compute_shader_file.h"
+#include "compute_shader_shape.h"
 
 using namespace godot;
 
@@ -23,14 +24,14 @@ public:
     ~RDBuffer() override;
 
     void write(int64_t offset, int64_t size, const Variant& data);
-    void write_shape(int64_t offset, const Dictionary& shape, const Variant& data);
+    void write_shape(int64_t offset, const ComputeShaderShape* shape, const Variant& data);
     void set_size(int64_t size);
     void flush();
     [[nodiscard]] RenderingDevice::UniformType get_uniform_type() const;
 
     static Ref<RDBuffer> ref(const RID& buffer_rid);
     static void write(PackedByteArray& destination, int64_t offset, int64_t size, const Variant& data, ComputeShaderFile::MatrixLayout matrix_layout = ComputeShaderFile::MatrixLayout::ROW_MAJOR);
-    static int64_t write_shape(PackedByteArray& destination, int64_t offset, const Dictionary& shape, const Variant& data, bool resize = false);
+    static int64_t write_shape(PackedByteArray& destination, int64_t offset, const ComputeShaderShape* shape, const Variant& data, bool resize = false);
     static int64_t aligned_size(int64_t size, int64_t alignment);
 
 private:

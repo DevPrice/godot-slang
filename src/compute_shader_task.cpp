@@ -10,6 +10,7 @@
 #include "godot_cpp/classes/window.hpp"
 
 #include "compute_shader_task.h"
+#include "compute_shader_shape.h"
 
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
@@ -176,16 +177,11 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	}
 }
 
-void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& shape) const {
-	{
-		PropertyInfo property_info = PropertyInfo::from_dict(shape["property_info"]);
-		property_info.name = prefix + property_info.name;
-		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
-			p_list->push_back(property_info);
-		}
-	}
+void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ComputeShaderShape>& shape) const {
+	const ComputeShaderStructuredShape* structured_shape = cast_to<ComputeShaderStructuredShape>(shape.ptr());
+	if (!structured_shape) return;
 
-	const Dictionary properties = shape["properties"];
+	const Dictionary properties = structured_shape->get_properties();
 	for (const StringName property_name : properties.keys()) {
 		const Dictionary property = properties[property_name];
 		PropertyInfo property_info = PropertyInfo::from_dict(property["property_info"]);
@@ -206,10 +202,10 @@ bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
 		bool valid;
 		for (; i < parts.size() - 1; ++i) {
 			const Dictionary property = current.get_named(parts[i], valid);
-			const Dictionary shape = property["shape"];
-			if (!valid) return false;
-			current = shape["properties"];
-			if (current.get_type() == Variant::NIL) return false;
+			const Ref<ComputeShaderShape> shape = property["shape"];
+			const auto structured_shape = cast_to<ComputeShaderStructuredShape>(shape.ptr());
+			if (!valid || !structured_shape) return false;
+			current = structured_shape->get_properties();
 		}
 		const Dictionary reflection = current.get_named(parts[i], valid);
 		if (valid && reflection.has("property_info")) {
@@ -333,16 +329,17 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const Dictionary attributes = param["user_attributes"];
 		if (!param.has("uniform_type")) {
 			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
-			Dictionary shape = param["shape"];
-
-			const int64_t offset = param.get("offset", 0);
-			const int64_t size = shape.get("size", 0);
-			if (size > 0) {
-				const int64_t buffer_size = RDBuffer::aligned_size(offset + size, 16);
-				if (_push_constant.size() < buffer_size) {
-					_push_constant.resize(buffer_size);
+			Ref<ComputeShaderShape> shape = param["shape"];
+			if (shape.is_valid()) {
+				const int64_t size = shape->get_size();
+				if (size > 0) {
+					const int64_t offset = param.get("offset", 0);
+					const int64_t buffer_size = RDBuffer::aligned_size(offset + size, 16);
+					if (_push_constant.size() < buffer_size) {
+						_push_constant.resize(buffer_size);
+					}
+					RDBuffer::write_shape(_push_constant, offset, shape.ptr(), value, true);
 				}
-				RDBuffer::write_shape(_push_constant, offset, shape, value);
 			}
 		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			Variant value = _shader_parameters[param_name];
@@ -353,12 +350,10 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
 				value = _get_parameter_value(param_name, uniform_type, attributes);
-				Dictionary shape = param["shape"];
-
+				Ref<ComputeShaderShape> shape = param["shape"];
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
-
 				const int64_t offset = param.get("offset", 0);
-				buffer->write_shape(offset, shape, value);
+				buffer->write_shape(offset, shape.ptr(), value);
 			}
 		}
 	}

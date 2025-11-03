@@ -5,6 +5,8 @@
 #include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
 
+#include "compute_shader_shape.h"
+
 using namespace godot;
 
 class SlangReflectionContext {
@@ -46,7 +48,7 @@ public:
 private:
 	slang::ProgramLayout* program_layout;
 
-	Dictionary _get_shape(slang::TypeLayoutReflection* type_layout, bool include_property_info = true) const;
+	Ref<ComputeShaderShape> _get_shape(slang::TypeLayoutReflection* type_layout, bool include_property_info = true) const;
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;

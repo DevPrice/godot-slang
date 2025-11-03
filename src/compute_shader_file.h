@@ -27,6 +27,7 @@ public:
 
 	// Values must match SlangMatrixLayoutMode
 	enum MatrixLayout {
+		UNKNOWN = 0,
 		ROW_MAJOR = 1,
 		COLUMN_MAJOR = 2,
 	};

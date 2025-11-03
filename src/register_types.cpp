@@ -8,6 +8,7 @@
 #include "compute_shader_effect.h"
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
+#include "compute_shader_shape.h"
 #include "compute_shader_task.h"
 #include "compute_texture.h"
 #include "rdbuffer.h"
@@ -24,6 +25,11 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_INTERNAL_CLASS(RDBuffer);
 		GDREGISTER_CLASS(ComputeShaderKernel);
 		GDREGISTER_CLASS(ComputeShaderTask);
+		GDREGISTER_ABSTRACT_CLASS(ComputeShaderShape);
+		GDREGISTER_CLASS(ComputeShaderVariantShape);
+		GDREGISTER_CLASS(ComputeShaderArrayShape);
+		GDREGISTER_CLASS(ComputeShaderStructuredShape);
+		GDREGISTER_CLASS(ComputeShaderResourceShape);
 		GDREGISTER_VIRTUAL_CLASS(ComputeShaderFile);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
