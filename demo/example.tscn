@@ -46,7 +46,6 @@ access_resolved_depth = false
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ugfer"]
 shader = ExtResource("3_ei00m")
-shader_parameter/test_property = 0.0
 shader_parameter/push_constants/outline_size = 1.0
 shader_parameter/push_constants/outline_color = Color(0, 0, 0, 0.75000006)
 
@@ -88,7 +87,6 @@ needs_normal_roughness = true
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_v40a1"]
 shader = ExtResource("3_ei00m")
-shader_parameter/test_property = 0.0
 shader_parameter/push_constants/outline_size = null
 shader_parameter/push_constants/outline_color = null
 

@@ -3,7 +3,7 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		Represents the shape of a struct type layout used within a [ComputeShaderFile].
+		Represents the shape of a simple variant-backed type layout used within a [ComputeShaderFile].
 	</description>
 	<tutorials>
 	</tutorials>
