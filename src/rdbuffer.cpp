@@ -159,23 +159,24 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 	return result;
 }
 
+#define MIN_SIZE(x) \
+	if (unlikely(size < x)) return;
+
 void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ComputeShaderFile::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND(offset < 0);
 	ERR_FAIL_COND(offset + size > destination.size());
+	ERR_FAIL_COND(size < 4);
 	switch (data.get_type()) {
 		case Variant::NIL:
 			memset(destination.ptrw() + offset, 0, size);
 			break;
 		case Variant::BOOL:
-			ERR_FAIL_COND(size < 4);
 			destination.encode_s32(offset, data ? 1 : 0);
 			break;
 		case Variant::INT:
-			ERR_FAIL_COND(size < 4);
 			destination.encode_s32(offset, data);
 			break;
 		case Variant::FLOAT:
-			ERR_FAIL_COND(size < 4);
 			destination.encode_float(offset, data);
 			break;
 		case Variant::STRING: {
@@ -184,117 +185,127 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			memcpy(destination.ptrw() + offset, array.ptr(), Math::min(array.size(), size));
 		}
 		case Variant::RECT2: {
-			ERR_FAIL_COND(size < 16);
+			MIN_SIZE(8);
 			const Rect2 rect = data;
 			write(destination, offset, 8, rect.position);
+			MIN_SIZE(16);
 			write(destination, offset + 8, 8, rect.size);
 			break;
 		}
 		case Variant::RECT2I: {
-			ERR_FAIL_COND(size < 16);
+			MIN_SIZE(8);
 			const Rect2i rect = data;
 			write(destination, offset, 8, rect.position);
+			MIN_SIZE(16);
 			write(destination, offset + 8, 8, rect.size);
 			break;
 		}
 		case Variant::VECTOR2: {
-			ERR_FAIL_COND(size < 8);
 			const Vector2 vector = data;
 			destination.encode_float(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, vector.y);
-			if (size > 8) {
-				write(destination, offset + 8, size - 8, nullptr);
-			}
 			break;
 		}
 		case Variant::VECTOR3: {
-			ERR_FAIL_COND(size < 12);
 			const Vector3 vector = data;
 			destination.encode_float(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, vector.y);
+			MIN_SIZE(12);
 			destination.encode_float(offset + 8, vector.z);
-			if (size > 12) {
-				write(destination, offset + 12, size - 12, nullptr);
-			}
 			break;
 		}
 		case Variant::VECTOR4: {
-			ERR_FAIL_COND(size < 16);
 			const Vector4 vector = data;
 			destination.encode_float(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, vector.y);
+			MIN_SIZE(12);
 			destination.encode_float(offset + 8, vector.z);
+			MIN_SIZE(16);
 			destination.encode_float(offset + 12, vector.w);
 			break;
 		}
 		case Variant::COLOR: {
-			ERR_FAIL_COND(size < 12);
 			const Color color = data;
 			destination.encode_float(offset, color.r);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, color.g);
+			MIN_SIZE(12);
 			destination.encode_float(offset + 8, color.b);
-			if (size >= 16) {
-				destination.encode_float(offset + 12, color.a);
-			}
+			MIN_SIZE(16);
+			destination.encode_float(offset + 12, color.a);
 			break;
 		}
 		case Variant::VECTOR2I: {
-			ERR_FAIL_COND(size < 8);
 			const Vector2i vector = data;
 			destination.encode_s32(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_s32(offset + 4, vector.y);
 			break;
 		}
 		case Variant::VECTOR3I: {
-			ERR_FAIL_COND(size < 12);
 			const Vector3i vector = data;
 			destination.encode_s32(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_s32(offset + 4, vector.y);
+			MIN_SIZE(12);
 			destination.encode_s32(offset + 8, vector.z);
 			break;
 		}
 		case Variant::VECTOR4I: {
-			ERR_FAIL_COND(size < 16);
 			const Vector4i vector = data;
 			destination.encode_s32(offset, vector.x);
+			MIN_SIZE(8);
 			destination.encode_s32(offset + 4, vector.y);
+			MIN_SIZE(12);
 			destination.encode_s32(offset + 8, vector.z);
+			MIN_SIZE(16);
 			destination.encode_s32(offset + 12, vector.w);
 			break;
 		}
 		case Variant::PLANE: {
-			ERR_FAIL_COND(size < 16);
 			const Plane plane = data;
 			destination.encode_float(offset, plane.normal.x);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, plane.normal.y);
+			MIN_SIZE(12);
 			destination.encode_float(offset + 8, plane.normal.z);
+			MIN_SIZE(16);
 			destination.encode_float(offset + 12, plane.d);
 			break;
 		}
 		case Variant::QUATERNION: {
-			ERR_FAIL_COND(size < 16);
 			const Quaternion quaternion = data;
 			destination.encode_float(offset, quaternion[0]);
+			MIN_SIZE(8);
 			destination.encode_float(offset + 4, quaternion[1]);
+			MIN_SIZE(12);
 			destination.encode_float(offset + 8, quaternion[2]);
+			MIN_SIZE(16);
 			destination.encode_float(offset + 12, quaternion[3]);
 			break;
 		}
 		case Variant::BASIS: {
-			ERR_FAIL_COND(size < 48);
+			MIN_SIZE(16);
 			const Basis basis = data;
 			switch (matrix_layout) {
 				case ComputeShaderFile::ROW_MAJOR:
 					write(destination, offset, 16, basis[0]);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, basis[1]);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, basis[2]);
 					break;
 				case ComputeShaderFile::COLUMN_MAJOR: {
 					const Vector3 col0(basis[0].x, basis[1].x, basis[2].x);
 					const Vector3 col1(basis[0].y, basis[1].y, basis[2].y);
 					const Vector3 col2(basis[0].z, basis[1].z, basis[2].z);
-					write(destination, offset, 16, col0);
+					write(destination, offset, Math::min<int64_t>(16, size), col0);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, col1);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, col2);
 					break;
 				}
@@ -304,13 +315,16 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::PROJECTION: {
-			ERR_FAIL_COND(size < 64);
+			MIN_SIZE(16);
 			const Projection projection = data;
 			switch (matrix_layout) {
 				case ComputeShaderFile::ROW_MAJOR:
 					write(destination, offset, 16, projection[0]);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, projection[1]);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, projection[2]);
+					MIN_SIZE(64);
 					write(destination, offset + 48, 16, projection[3]);
 					break;
 				case ComputeShaderFile::COLUMN_MAJOR: {
@@ -319,8 +333,11 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 					const Vector4 col2(projection[0].z, projection[1].z, projection[2].z, projection[3].z);
 					const Vector4 col3(projection[0].w, projection[1].w, projection[2].w, projection[3].w);
 					write(destination, offset, 16, col0);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, col1);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, col2);
+					MIN_SIZE(64);
 					write(destination, offset + 48, 16, col3);
 					break;
 				}
@@ -330,27 +347,30 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::AABB: {
-			ERR_FAIL_COND(size < 32);
+			MIN_SIZE(16);
 			const AABB aabb = data;
 			write(destination, offset, 16, aabb.position);
+			MIN_SIZE(32);
 			write(destination, offset + 16, 16, aabb.size);
 			break;
 		}
 		case Variant::TRANSFORM2D: {
-			ERR_FAIL_COND(size < 48);
+			MIN_SIZE(16);
 			const Transform2D transform = data;
 			switch (matrix_layout) {
 				case ComputeShaderFile::ROW_MAJOR:
 					write(destination, offset, 16, transform[0]);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, transform[1]);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, transform[2]);
 					break;
 				case ComputeShaderFile::COLUMN_MAJOR: {
 					const Vector3 col0(transform[0].x, transform[1].x, transform[2].x);
 					const Vector3 col1(transform[0].y, transform[1].y, transform[2].y);
 					write(destination, offset, 16, col0);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, col1);
-					write(destination, offset + 32, 16, nullptr);
 					break;
 				}
 				default:
@@ -359,13 +379,16 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			break;
 		}
 		case Variant::TRANSFORM3D: {
-			ERR_FAIL_COND(size < 64);
+			MIN_SIZE(16);
 			const Transform3D transform = data;
 			switch (matrix_layout) {
 				case ComputeShaderFile::ROW_MAJOR:
 					write(destination, offset, 16, transform.basis[0]);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, transform.basis[1]);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, transform.basis[2]);
+					MIN_SIZE(64);
 					write(destination, offset + 48, 16, transform.origin);
 					break;
 				case ComputeShaderFile::COLUMN_MAJOR: {
@@ -373,9 +396,10 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 					const Vector4 col1(transform.basis[0].y, transform.basis[1].y, transform.basis[2].y, transform.origin.y);
 					const Vector4 col2(transform.basis[0].z, transform.basis[1].z, transform.basis[2].z, transform.origin.z);
 					write(destination, offset, 16, col0);
+					MIN_SIZE(32);
 					write(destination, offset + 16, 16, col1);
+					MIN_SIZE(48);
 					write(destination, offset + 32, 16, col2);
-					write(destination, offset + 48, 16, nullptr);
 					break;
 				}
 				default:
