@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="VariantTypeLayoutShape" inherits="ShaderTypeLayoutShape" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Represents the shape of a struct type layout used within a [ComputeShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="matrix_layout" type="int" setter="set_matrix_layout" getter="get_matrix_layout" enum="ComputeShaderFile.MatrixLayout" default="0">
+			The matrix layout used, if this is a matrix.
+		</member>
+		<member name="size" type="int" setter="set_size" getter="get_size" default="0">
+			The total size of this shape, in bytes.
+		</member>
+	</members>
+</class>

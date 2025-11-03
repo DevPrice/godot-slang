@@ -43,6 +43,9 @@
 		</member>
 	</members>
 	<constants>
+		<constant name="UNKNOWN" value="0" enum="MatrixLayout">
+			Unknown matrix layout.
+		</constant>
 		<constant name="ROW_MAJOR" value="1" enum="MatrixLayout">
 			Matrices are stored using row-major order.
 		</constant>

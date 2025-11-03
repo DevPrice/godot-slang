@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="StructTypeLayoutShape" inherits="ShaderTypeLayoutShape" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Represents the shape of a struct type layout used within a [ComputeShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="alignment" type="int" setter="set_alignment" getter="get_alignment" default="0">
+			The alignment size of the struct, in bytes.
+		</member>
+		<member name="properties" type="Dictionary" setter="set_properties" getter="get_properties" default="{}">
+			The properties of the struct.
+		</member>
+		<member name="size" type="int" setter="set_size" getter="get_size" default="0">
+			The total size of the struct, in bytes.
+		</member>
+		<member name="user_attributes" type="Dictionary" setter="set_user_attributes" getter="get_user_attributes" default="{}">
+			The user attributes declared for this struct.
+		</member>
+	</members>
+</class>

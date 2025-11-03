@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ArrayTypeLayoutShape" inherits="ShaderTypeLayoutShape" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Represents the shape of an array type layout used within a [ComputeShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="alignment" type="int" setter="set_alignment" getter="get_alignment" default="0">
+			The alignment size of the array, in bytes.
+		</member>
+		<member name="element_shape" type="ShaderTypeLayoutShape" setter="set_element_shape" getter="get_element_shape">
+			The shape of the element type layout.
+		</member>
+		<member name="size" type="int" setter="set_size" getter="get_size" default="0">
+			The total size of the array, in bytes.
+		</member>
+		<member name="stride" type="int" setter="set_stride" getter="get_stride" default="0">
+			The stride of the array, in bytes. That is, how much space is used for each element.
+		</member>
+	</members>
+</class>

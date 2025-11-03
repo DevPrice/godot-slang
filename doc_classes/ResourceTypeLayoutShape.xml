@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ResourceTypeLayoutShape" inherits="ShaderTypeLayoutShape" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Represents the shape of a resource type layout used within a [ComputeShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="resource_type" type="int" setter="set_resource_type" getter="get_resource_type" enum="ResourceTypeLayoutShape.ComputeShaderResourceType" default="0">
+			The type of this resource.
+		</member>
+	</members>
+	<constants>
+		<constant name="UNKNOWN" value="0" enum="ComputeShaderResourceType">
+			Indicates that the type of resource is unknown, or is not needed to bind this data.
+		</constant>
+		<constant name="RAW_BYTES" value="1" enum="ComputeShaderResourceType">
+			Indicates that the resource is interpreted as raw bytes.
+		</constant>
+	</constants>
+</class>

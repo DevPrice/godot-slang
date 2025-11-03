@@ -8,11 +8,11 @@
 	<tutorials>
 	</tutorials>
 	<members>
+		<member name="default_matrix_layout" type="int" setter="" getter="" default="1">
+			The layout used by matrices within this shader.
+		</member>
 		<member name="entry_points" type="PackedStringArray" setter="" getter="" default="PackedStringArray()">
 			Entry-points to compile (not needed for entry-points marked with a [code][shader("compute")][/code] attribute).
-		</member>
-		<member name="matrix_layout" type="int" setter="" getter="" default="1">
-			The layout used by matrices within this shader.
 		</member>
 	</members>
 </class>
