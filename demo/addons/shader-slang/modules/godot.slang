@@ -143,8 +143,6 @@ public struct Quaternion {
 
 }
 
-using gd;
-
 /**
  Marks an attribute as an autobinding, which means that the user should not set it manually and it will be readonly in the property inspector.
 */
@@ -221,7 +219,7 @@ public struct gd_GlobalParamAttribute {
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_LinearSamplerAttribute {
-    let repeat_mode = SamplerRepeatMode.REPEAT;
+    let repeat_mode = gd::SamplerRepeatMode.REPEAT;
 };
 
 /**
@@ -230,7 +228,7 @@ public struct gd_LinearSamplerAttribute {
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_NearestSamplerAttribute {
-    let repeat_mode = SamplerRepeatMode.REPEAT;
+    let repeat_mode = gd::SamplerRepeatMode.REPEAT;
 };
 
 /**
@@ -323,7 +321,7 @@ public struct gd_compositor_SceneBufferAttribute {
 [gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_TextureAttribute {
-    let format : compositor::DataFormat = compositor::DataFormat.DATA_FORMAT_R16G16B16A16_SNORM;
+    let format : gd::compositor::DataFormat = gd::compositor::DataFormat.DATA_FORMAT_R16G16B16A16_SNORM;
 };
 
 /**
