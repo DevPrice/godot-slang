@@ -177,8 +177,8 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	}
 }
 
-void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ComputeShaderShape>& shape) const {
-	const ComputeShaderStructuredShape* structured_shape = cast_to<ComputeShaderStructuredShape>(shape.ptr());
+void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ShaderTypeLayoutShape>& shape) const {
+	const StructTypeLayoutShape* structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
 	if (!structured_shape) return;
 
 	const Dictionary properties = structured_shape->get_properties();
@@ -202,8 +202,8 @@ bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
 		bool valid;
 		for (; i < parts.size() - 1; ++i) {
 			const Dictionary property = current.get_named(parts[i], valid);
-			const Ref<ComputeShaderShape> shape = property["shape"];
-			const auto structured_shape = cast_to<ComputeShaderStructuredShape>(shape.ptr());
+			const Ref<ShaderTypeLayoutShape> shape = property["shape"];
+			const auto structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
 			if (!valid || !structured_shape) return false;
 			current = structured_shape->get_properties();
 		}
@@ -329,7 +329,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		const Dictionary attributes = param["user_attributes"];
 		if (!param.has("uniform_type")) {
 			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
-			Ref<ComputeShaderShape> shape = param["shape"];
+			Ref<ShaderTypeLayoutShape> shape = param["shape"];
 			if (shape.is_valid()) {
 				const int64_t size = shape->get_size();
 				if (size > 0) {
@@ -350,7 +350,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
 				value = _get_parameter_value(param_name, uniform_type, attributes);
-				Ref<ComputeShaderShape> shape = param["shape"];
+				Ref<ShaderTypeLayoutShape> shape = param["shape"];
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
 				const int64_t offset = param.get("offset", 0);
 				buffer->write_shape(offset, shape.ptr(), value);

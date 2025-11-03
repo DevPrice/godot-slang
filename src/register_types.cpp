@@ -25,11 +25,11 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_INTERNAL_CLASS(RDBuffer);
 		GDREGISTER_CLASS(ComputeShaderKernel);
 		GDREGISTER_CLASS(ComputeShaderTask);
-		GDREGISTER_ABSTRACT_CLASS(ComputeShaderShape);
-		GDREGISTER_CLASS(ComputeShaderVariantShape);
-		GDREGISTER_CLASS(ComputeShaderArrayShape);
-		GDREGISTER_CLASS(ComputeShaderStructuredShape);
-		GDREGISTER_CLASS(ComputeShaderResourceShape);
+		GDREGISTER_ABSTRACT_CLASS(ShaderTypeLayoutShape);
+		GDREGISTER_CLASS(VariantTypeLayoutShape);
+		GDREGISTER_CLASS(ArrayTypeLayoutShape);
+		GDREGISTER_CLASS(StructTypeLayoutShape);
+		GDREGISTER_CLASS(ResourceTypeLayoutShape);
 		GDREGISTER_VIRTUAL_CLASS(ComputeShaderFile);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);

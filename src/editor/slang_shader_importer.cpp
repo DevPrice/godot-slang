@@ -305,9 +305,9 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		param_info.set("user_attributes", param_attributes);
 
 		const bool is_autobind = _is_autobind(param->getVariable());
-		const Ref<ComputeShaderShape> shape = _get_shape(param->getTypeLayout(), !is_autobind);
+		const Ref<ShaderTypeLayoutShape> shape = _get_shape(param->getTypeLayout(), !is_autobind);
 		if (shape.is_null()) continue;
-		if (const ComputeShaderVariantShape* variant_shape = Object::cast_to<ComputeShaderVariantShape>(shape.ptr())) {
+		if (const VariantTypeLayoutShape* variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
 			if (variant_shape->get_size() == 0) {
 				continue;
 			}
@@ -355,21 +355,21 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 	return parameters;
 }
 
-Ref<ComputeShaderShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
+Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
 	ERR_FAIL_NULL_V(type_layout, nullptr);
 
 	switch (type_layout->getKind()) {
 		case slang::TypeReflection::Kind::Scalar:
 		case slang::TypeReflection::Kind::Vector:
 		case slang::TypeReflection::Kind::Matrix: {
-			Ref<ComputeShaderVariantShape> shape;
+			Ref<VariantTypeLayoutShape> shape;
 			shape.instantiate();
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			shape->set_matrix_layout(static_cast<ComputeShaderFile::MatrixLayout>(type_layout->getMatrixLayoutMode()));
 			return shape;
 		}
 		case slang::TypeReflection::Kind::Struct: {
-			Ref<ComputeShaderStructuredShape> shape;
+			Ref<StructTypeLayoutShape> shape;
 			shape.instantiate();
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			shape->set_alignment(type_layout->getAlignment());
@@ -378,7 +378,7 @@ Ref<ComputeShaderShape> SlangReflectionContext::_get_shape(slang::TypeLayoutRefl
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
 				const bool is_autobind = _is_autobind(field->getVariable());
-				const Ref<ComputeShaderShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
+				const Ref<ShaderTypeLayoutShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
@@ -404,21 +404,21 @@ Ref<ComputeShaderShape> SlangReflectionContext::_get_shape(slang::TypeLayoutRefl
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
 			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
-				Ref<ComputeShaderResourceShape> shape;
+				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
-				shape->set_resource_type(ComputeShaderResourceShape::RAW_BYTES);
+				shape->set_resource_type(ResourceTypeLayoutShape::RAW_BYTES);
 				return shape;
 			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
-				Ref<ComputeShaderResourceShape> shape;
+				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
-				shape->set_resource_type(ComputeShaderResourceShape::UNKNOWN);
+				shape->set_resource_type(ResourceTypeLayoutShape::UNKNOWN);
 				return shape;
 			}
 		}
 		case slang::TypeReflection::Kind::Array:
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
-			Ref<ComputeShaderArrayShape> shape;
+			Ref<ArrayTypeLayoutShape> shape;
 			shape.instantiate();
 			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), include_property_info));
 			if (type_layout->isArray()) {

@@ -99,7 +99,7 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 	write(buffer, offset, size, data);
 }
 
-void RDBuffer::write_shape(const int64_t offset, const ComputeShaderShape* shape, const Variant& data) {
+void RDBuffer::write_shape(const int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data) {
 	const int64_t size = write_shape(buffer, offset, shape, data, !get_is_fixed_size());
 	dirty_start = Math::min(offset, dirty_start);
 	dirty_end = Math::max(offset + size, dirty_end);
@@ -421,9 +421,9 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 	}
 }
 
-int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset, const ComputeShaderShape* shape, const Variant& data, const bool resize) {
-	const auto resource_shape = cast_to<ComputeShaderResourceShape>(data);
-	if (data.get_type() == Variant::PACKED_BYTE_ARRAY || (resource_shape && resource_shape->get_resource_type() == ComputeShaderResourceShape::RAW_BYTES)) {
+int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data, const bool resize) {
+	const auto resource_shape = cast_to<ResourceTypeLayoutShape>(data);
+	if (data.get_type() == Variant::PACKED_BYTE_ARRAY || (resource_shape && resource_shape->get_resource_type() == ResourceTypeLayoutShape::RAW_BYTES)) {
 		// TODO: Handle other types
 		const PackedByteArray bytes = data;
 		const int64_t size = bytes.size();
@@ -435,7 +435,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 		write(destination, offset, size, data);
 		return size;
 	}
-	if (const auto variant_shape = cast_to<ComputeShaderVariantShape>(shape)) {
+	if (const auto variant_shape = cast_to<VariantTypeLayoutShape>(shape)) {
 		const int64_t size = variant_shape->get_size();
 		ERR_FAIL_COND_V(size <= 0, 0);
 
@@ -447,7 +447,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 		return size;
 	}
-	if (const auto structured_shape = cast_to<ComputeShaderStructuredShape>(shape)) {
+	if (const auto structured_shape = cast_to<StructTypeLayoutShape>(shape)) {
 		const Dictionary properties = structured_shape->get_properties();
 		const int64_t size = structured_shape->get_size();
 		ERR_FAIL_COND_V(size <= 0, 0);
@@ -460,7 +460,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 			const Dictionary property = properties[property_name];
 
 			const int64_t property_offset = property["offset"];
-			const Ref<ComputeShaderShape> property_shape = property["shape"];
+			const Ref<ShaderTypeLayoutShape> property_shape = property["shape"];
 			if (property_shape.is_null()) continue;
 
 			const Dictionary property_attributes = property["user_attributes"];
@@ -480,7 +480,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 		return size;
 	}
-	if (const auto array_shape = cast_to<ComputeShaderArrayShape>(shape)) {
+	if (const auto array_shape = cast_to<ArrayTypeLayoutShape>(shape)) {
 		const int64_t stride = array_shape->get_stride();
 		ERR_FAIL_COND_V(stride <= 0, 0);
 
@@ -503,7 +503,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 		Variant key;
 		bool is_valid;
 		if (data.iter_init(key, is_valid) && is_valid) {
-			const Ref<ComputeShaderShape> element_shape = array_shape->get_element_shape();
+			const Ref<ShaderTypeLayoutShape> element_shape = array_shape->get_element_shape();
 			do {
 				Variant value = data.iter_get(key, is_valid);
 				if (is_valid) {

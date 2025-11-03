@@ -7,8 +7,8 @@
 
 using namespace godot;
 
-class ComputeShaderShape : public Resource {
-	GDCLASS(ComputeShaderShape, Resource);
+class ShaderTypeLayoutShape : public Resource {
+	GDCLASS(ShaderTypeLayoutShape, Resource);
 
 protected:
 	static void _bind_methods();
@@ -18,8 +18,8 @@ public:
 
 };
 
-class ComputeShaderVariantShape : public ComputeShaderShape {
-	GDCLASS(ComputeShaderVariantShape, ComputeShaderShape);
+class VariantTypeLayoutShape : public ShaderTypeLayoutShape {
+	GDCLASS(VariantTypeLayoutShape, ShaderTypeLayoutShape);
 
 protected:
 	static void _bind_methods();
@@ -35,13 +35,13 @@ private:
 
 };
 
-class ComputeShaderArrayShape : public ComputeShaderShape {
-	GDCLASS(ComputeShaderArrayShape, ComputeShaderShape);
+class ArrayTypeLayoutShape : public ShaderTypeLayoutShape {
+	GDCLASS(ArrayTypeLayoutShape, ShaderTypeLayoutShape);
 
 protected:
 	static void _bind_methods();
 
-	GET_SET_PROPERTY(Ref<ComputeShaderShape>, element_shape)
+	GET_SET_PROPERTY(Ref<ShaderTypeLayoutShape>, element_shape)
 	GET_SET_PROPERTY(int64_t, stride)
 	GET_SET_PROPERTY(int64_t, alignment)
 
@@ -54,8 +54,8 @@ private:
 
 };
 
-class ComputeShaderStructuredShape : public ComputeShaderShape {
-	GDCLASS(ComputeShaderStructuredShape, ComputeShaderShape);
+class StructTypeLayoutShape : public ShaderTypeLayoutShape {
+	GDCLASS(StructTypeLayoutShape, ShaderTypeLayoutShape);
 
 protected:
 	static void _bind_methods();
@@ -73,8 +73,8 @@ private:
 
 };
 
-class ComputeShaderResourceShape : public ComputeShaderShape {
-	GDCLASS(ComputeShaderResourceShape, ComputeShaderShape);
+class ResourceTypeLayoutShape : public ShaderTypeLayoutShape {
+	GDCLASS(ResourceTypeLayoutShape, ShaderTypeLayoutShape);
 
 public:
 	enum ComputeShaderResourceType {
@@ -89,4 +89,4 @@ protected:
 
 };
 
-VARIANT_ENUM_CAST(ComputeShaderResourceShape::ComputeShaderResourceType)
+VARIANT_ENUM_CAST(ResourceTypeLayoutShape::ComputeShaderResourceType)
