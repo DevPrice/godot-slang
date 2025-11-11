@@ -83,6 +83,7 @@ actions += [
         "{}/{}/{}".format(projectdir, platformdir, lib_filename),
         source=sources,
     ),
-    env.Install(addondir, [f"{projectdir}/{plugindir}", "LICENSE.md"]),
+    env.Install(addondir, f"{projectdir}/{plugindir}"),
+    env.Install(f"{projectdir}/{plugindir}", "LICENSE.md"),
 ]
 Default(*actions)
