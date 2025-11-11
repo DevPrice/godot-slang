@@ -41,7 +41,9 @@ Texture2D explicit_binding_texture;
 
 ## Installation
 
-Files for the addon can be downloaded from the [Releases page](https://github.com/DevPrice/godot-slang/releases),
+Available in the [Godot asset library](https://godotengine.org/asset-library/asset/4471), find it in the `AssetsLib` tab within the editor.
+
+Files for the addon can also be downloaded from the [Releases page](https://github.com/DevPrice/godot-slang/releases),
 [GitHub Actions builds](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml) on each commit to `main`,
 or you can build from source as described below.
 
