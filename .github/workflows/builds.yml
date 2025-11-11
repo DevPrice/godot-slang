@@ -96,7 +96,7 @@ jobs:
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
-            ${{ github.workspace }}/addons/dummy-file-to-keep-directory-structure.txt
+            ${{ github.workspace }}/dummy-file-to-keep-directory-structure.txt
             ${{ github.workspace }}/addons
 
   build-editor:
@@ -177,7 +177,7 @@ jobs:
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
-            ${{ github.workspace }}/addons/dummy-file-to-keep-directory-structure.txt
+            ${{ github.workspace }}/dummy-file-to-keep-directory-structure.txt
             ${{ github.workspace }}/addons
 
   # Merges all the build artifacts into a single godot-slang artifact.
