@@ -75,15 +75,20 @@ if env["target"] in ["editor", "template_debug"]:
 
 debug_suffix = "" if env["target"] == "template_release" else f".{env["target"].replace("template_", "")}"
 threads_suffix = ".nothreads" if not env["threads"] else ""
-
 lib_filename = "".join([env.subst('$SHLIBPREFIX'), libname, debug_suffix, threads_suffix, env["SHLIBSUFFIX"]])
+build_plugin_action = env.SharedLibrary(
+    f"{projectdir}/{platformdir}/{lib_filename}",
+    source=sources,
+)
+
+copy_output_action = env.Install(addondir, f"{projectdir}/{plugindir}")
+copy_license_action = env.Install(plugindir, "LICENSE.md")
+
+env.Depends([copy_output_action, copy_license_action], build_plugin_action)
 
 actions += [
-    env.SharedLibrary(
-        "{}/{}/{}".format(projectdir, platformdir, lib_filename),
-        source=sources,
-    ),
-    env.Install(addondir, f"{projectdir}/{plugindir}"),
-    env.Install(plugindir, "LICENSE.md"),
+    build_plugin_action,
+    copy_output_action,
+    copy_license_action,
 ]
 Default(*actions)
