@@ -41,8 +41,8 @@ actions = []
 
 libname = "shader-slang"
 addondir = "addons"
-plugindir = "{}/{}".format(addondir, libname)
-libdir = "{}/bin".format(plugindir)
+plugindir = f"{addondir}/{libname}"
+libdir = f"{plugindir}/bin"
 projectdir = "demo"
 
 platformdir = f"{libdir}/{env['platform']}" if env["arch"] == "universal" else f"{libdir}/{env['platform']}-{env["arch"]}"
@@ -73,7 +73,7 @@ if env["target"] in ["editor", "template_debug"]:
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")
 
-debug_suffix = "" if env["target"] == "template_release" else ".{}".format(env["target"].replace("template_", ""))
+debug_suffix = "" if env["target"] == "template_release" else f".{env["target"].replace("template_", "")}"
 threads_suffix = ".nothreads" if not env["threads"] else ""
 
 lib_filename = "".join([env.subst('$SHLIBPREFIX'), libname, debug_suffix, threads_suffix, env["SHLIBSUFFIX"]])
@@ -84,6 +84,6 @@ actions += [
         source=sources,
     ),
     env.Install(addondir, f"{projectdir}/{plugindir}"),
-    env.Install(f"{projectdir}/{plugindir}", "LICENSE.md"),
+    env.Install(plugindir, "LICENSE.md"),
 ]
 Default(*actions)
