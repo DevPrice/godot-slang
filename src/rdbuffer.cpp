@@ -468,12 +468,21 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 			bool is_valid{};
 			Variant property_value = data.get_named(property_name, is_valid);
 
-			// TODO: If this gets any more complex, it needs to move out of here
-			if (property_value.get_type() == Variant::COLOR && property_attributes.has("gd_Color")) {
-				property_value = static_cast<Color>(property_value).srgb_to_linear();
-			}
-
 			if (is_valid) {
+				// TODO: If this gets any more complex, it needs to move out of here
+				if (property_attributes.has("gd_Color")) {
+					if (property_value.get_type() == Variant::COLOR) {
+						property_value = static_cast<Color>(property_value).srgb_to_linear();
+					}
+					if (property_value.get_type() == Variant::PACKED_COLOR_ARRAY) {
+						PackedColorArray converted = property_value.duplicate();
+						for (Color& color : converted) {
+							color = color.srgb_to_linear();
+						}
+						property_value = converted;
+					}
+				}
+
 				write_shape(destination, offset + property_offset, property_shape.ptr(), property_value, resize);
 			}
 		}
