@@ -21,11 +21,11 @@ After installing this plugin in Godot, you'll see a few new types available in t
 * `ComputeShaderKernel`
   * A resource containing the compiled SPIR-V and reflection information about the shader parameters for a single entry-point.
 * `ComputeShaderTask`
-  * Similar to a "material" in the fragment shader world. You can create this from a list of kernels.
+  * Similar to a "material" in the fragment shader world. Associated with a single compute shader file.
   * Stores shader parameters and exposes methods for dispatching the shader.
-* `ComputeShaderEffect`
-  * This offers a convenient way to use Slang compute shaders in `CompositorEffect`s. For many shaders, you can drag a Slang file onto an instance of this to have it running with no additional application code required.
   * Automatically reloads if the attached compute shader is modified.
+* `ComputeShaderEffect`
+  * This offers a convenient way to use Slang compute shaders in `CompositorEffect`s. For many shaders, you can create an effect from a Slang file and have it running with no additional application code required.
 * `ComputeTexture` (experimental)
   * `Texture2D` resource backed by a compute shader.
 
@@ -51,20 +51,6 @@ After downloading a release, you can install this addon in Godot by:
 * Opening the `AssetsLib` tab
 * Clicking "Import..." at the top right
 * Selecting the `.zip` file that you downloaded above
-
-## Building
-
-Set up your dev environment for [compiling GDExtension with scons](https://docs.godotengine.org/en/stable/engine_details/development/compiling/index.html#building-from-source).
-
-After cloning the repo, initialize submodules:
-
-```shell
-git submodule update --init --recursive
-```
-
-Then, build the GDExtension:
-```shell
-scons target=editor debug_symbols=yes dev_build=yes
 ```
 
 ## Demo
@@ -91,6 +77,20 @@ This plugin also includes a [utility Slang module](demo/addons/shader-slang/modu
 
 For example, the `gd::compositor::ColorTexture` attribute used above, which automatically binds the screen color texture to the parameter when the shader is used in a `ComputeShaderEffect`.
 This library includes many other attributes, Godot-specific utility functions such as `normal_roughness_compatibility`, and declares the `SceneDataBlock` struct, as exposed by the Godot engine to compositor effects.
+
+## Building
+
+Set up your dev environment for [compiling GDExtension with scons](https://docs.godotengine.org/en/stable/engine_details/development/compiling/index.html#building-from-source).
+
+After cloning the repo, initialize submodules:
+
+```shell
+git submodule update --init --recursive
+```
+
+Then, build the GDExtension:
+```shell
+scons target=editor debug_symbols=yes dev_build=yes
 
 ## Work-in-progress
 
