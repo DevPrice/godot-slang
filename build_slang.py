@@ -24,6 +24,12 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
                 "-DSLANG_LIB_TYPE=SHARED",
             ]
 
+            if env["platform"] == "macos":
+                if env["arch"] == "universal":
+                    configure_cmd.append("-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64")
+                else:
+                    configure_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={env["arch"]}")
+
             result = subprocess.run(configure_cmd, cwd=slang_dir, env=cmake_env)
             if result.returncode != 0:
                 print("Error: CMake configuration failed!")
