@@ -12,7 +12,7 @@ macos.double.editor = "./bin/macos/libshader-slang.editor.double.dylib"
 macos.single.debug = "./bin/macos/libshader-slang.debug.dylib"
 macos.double.debug = "./bin/macos/libshader-slang.debug.double.dylib"
 macos.single.release = "./bin/macos/libshader-slang.dylib"
-macos.double.release = "./bin/macos/libshader-slang.debug.double.dylib"
+macos.double.release = "./bin/macos/libshader-slang.double.dylib"
 
 ios.arm64.single.debug = "./bin/ios-arm64/libshader-slang.debug.dylib"
 ios.arm64.double.debug = "./bin/ios-arm64/libshader-slang.debug.double.dylib"
