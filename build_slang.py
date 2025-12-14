@@ -59,7 +59,12 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
 
-    slang_lib_files = [f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"]
+    slang_lib_files = []
+
+    base_lib_name = f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler"
+    slang_lib_files += [env.File(f"{base_lib_name}{env["SHLIBSUFFIX"]}")]
+    if env["platform"] != "windows":
+        slang_lib_files += [file for file in env.Glob(f"{base_lib_name}{env["SHLIBSUFFIX"]}.0.*") if not str(file).endswith(".dwarf")]
 
     slang_outputs = [env.File(slang_lib_files), env.Dir("slang/build/RelWithDebInfo/include/")]
 
