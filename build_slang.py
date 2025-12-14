@@ -3,6 +3,17 @@ import os
 import subprocess
 
 def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDebugInfo"):
+
+    # Linux and MacOS slang links against version-specific names
+    # https://github.com/shader-slang/slang/blob/master/docs/building.md#versioned-libraries
+    def get_slang_version(env):
+        gitversion = subprocess.run(['git describe --tags --match "v*"'], cwd="slang", text=True, capture_output=True, shell=True)
+
+        if gitversion.returncode == 0:
+            return ".0." + gitversion.stdout.strip()[1:]
+
+        return ""
+
     def build_slang(env, target, source):
         slang_dir = "slang"
         build_dir = os.path.join(slang_dir, "build")
@@ -70,7 +81,11 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
-    slang_install_command = env.Install(output_dir, slang_lib_files)
+    if env["platform"] == "windows":
+        slang_install_command = env.Install(output_dir, slang_lib_files)
+    else:
+        slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version(env)}", slang_lib_files)
+
     env.Depends(slang_install_command, slang_build)
 
     return slang_install_command
