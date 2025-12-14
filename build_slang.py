@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import subprocess
+from SCons.Defaults import Copy
 
 def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDebugInfo"):
     def build_slang(env, target, source):
@@ -59,10 +60,8 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
 
-    slang_lib_files = []
-
     base_lib_name = f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler"
-    slang_lib_files += [env.File(f"{base_lib_name}{env["SHLIBSUFFIX"]}")]
+    slang_lib_files = [env.File(f"{base_lib_name}{env["SHLIBSUFFIX"]}")]
     if env["platform"] != "windows":
         slang_lib_files += [file for file in env.Glob(f"{base_lib_name}{env["SHLIBSUFFIX"]}.0.*") if not str(file).endswith(".dwarf")]
 
@@ -75,7 +74,7 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
-    slang_install_command = env.Install(output_dir, slang_lib_files)
+    slang_install_command = env.Install(output_dir, [file for file in slang_lib_files if not os.path.islink(str(file))])
     env.Depends(slang_install_command, slang_build)
 
     return slang_install_command
