@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 import os
 import subprocess
-from SCons.Defaults import Copy
 
 def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDebugInfo"):
 
     # Linux and MacOS slang links against version-specific names
     # https://github.com/shader-slang/slang/blob/master/docs/building.md#versioned-libraries
-    def get_slang_version(env):
+    def get_slang_version():
         gitversion = subprocess.run(['git describe --tags --match "v*"'], cwd="slang", text=True, capture_output=True, shell=True)
 
         if gitversion.returncode == 0:
@@ -88,7 +87,7 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
     if env["platform"] == "windows":
         slang_install_command = env.Install(output_dir, slang_lib_files)
     else:
-        slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version(env)}", slang_lib_files)
+        slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version()}", slang_lib_files)
 
     env.Depends(slang_install_command, slang_build)
 
