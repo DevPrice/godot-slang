@@ -143,6 +143,11 @@ jobs:
           platform: ${{ matrix.target.platform }}
           em-version: 3.1.62
 
+      - name: Fetch Slang tags
+        if: ${{ matrix.target.platform != 'windows' }}
+        run: git fetch --tags
+        working-directory: slang
+
       # Build GDExtension (with caches)
 
       - name: Restore .scons_cache
