@@ -14,7 +14,11 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
+#include "godot_cpp/classes/cubemap.hpp"
+#include "godot_cpp/classes/cubemap_array.hpp"
+#include "godot_cpp/classes/image_texture_layered.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
+#include "godot_cpp/classes/texture3d.hpp"
 
 void SlangShaderImporter::_bind_methods() {
 }
@@ -545,11 +549,31 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 		case slang::TypeReflection::Kind::Array:
 			return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 		case slang::TypeReflection::Kind::Resource: {
-			switch (type->getResourceShape() & ~SLANG_TEXTURE_COMBINED_FLAG) {
+			const SlangResourceShape resource_shape = type->getResourceShape();
+			const unsigned base_shape = resource_shape & SLANG_RESOURCE_BASE_SHAPE_MASK;
+			if (resource_shape & SLANG_TEXTURE_ARRAY_FLAG) {
+				out_type = Variant::OBJECT;
+				out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+				out_hint_string = base_shape == SLANG_TEXTURE_CUBE
+					? CubemapArray::get_class_static()
+					: ImageTextureLayered::get_class_static();
+				return true;
+			}
+			switch (base_shape) {
 				case SLANG_TEXTURE_2D:
 					out_type = Variant::OBJECT;
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
 					out_hint_string = Texture2D::get_class_static();
+					return true;
+				case SLANG_TEXTURE_3D:
+					out_type = Variant::OBJECT;
+					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+					out_hint_string = Texture3D::get_class_static();
+					return true;
+				case SLANG_TEXTURE_CUBE:
+					out_type = Variant::OBJECT;
+					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+					out_hint_string = Cubemap::get_class_static();
 					return true;
 				case SLANG_BYTE_ADDRESS_BUFFER: {
 					out_type = Variant::PACKED_BYTE_ARRAY;
@@ -613,7 +637,9 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = Variant::TRANSFORM3D;
 				return true;
 			}
-			break;
+			// this matrix size doesn't map to a Godot type
+			// TODO: maybe expose this as a PackedFloatArray
+			return false;
 		}
 		default:
 			break;
