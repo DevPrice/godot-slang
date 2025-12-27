@@ -619,8 +619,8 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
 				return true;
 			}
-			const Dictionary class_args = type_attributes["gd_Class"];
-			const StringName class_name = class_args["class_name"];
+			const Dictionary class_args = type_attributes.get("gd_Class", Dictionary());
+			const StringName class_name = class_args.get("class_name", StringName());
 			// TODO: Verify the class_name is a Resource subtype
 			if (!class_name.is_empty()) {
 				out_type = Variant::OBJECT;
