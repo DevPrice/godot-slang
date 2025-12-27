@@ -2,15 +2,25 @@ implementing godot;
 
 #define MAX_VIEWS 2
 
+#if GODOT_MAJOR_VERSION != 4
+#error "This module requires Godot 4.x"
+#endif
+
+#if GODOT_MINOR_VERSION < 6
+#define T_VIEW_MATRIX float4x4
+#else
+#define T_VIEW_MATRIX float3x4
+#endif
+
 namespace gd {
 
 namespace compositor {
 
 public struct SceneData {
 	public float4x4 projection_matrix;
-	public float4x4 inv_projection_matrix;
-	public float4x4 inv_view_matrix;
-	public float4x4 view_matrix;
+    public float4x4 inv_projection_matrix;
+    public T_VIEW_MATRIX inv_view_matrix;
+    public T_VIEW_MATRIX view_matrix;
 
 	// only used for multiview
 	public float4x4 projection_matrix_view[MAX_VIEWS];
@@ -31,6 +41,12 @@ public struct SceneData {
 
 	public float2 shadow_atlas_pixel_size;
 	public float2 directional_shadow_pixel_size;
+
+#if GODOT_MINOR_VERSION >= 6
+    public float radiance_pixel_size;
+	public float radiance_border_size;
+	public float2 reflection_atlas_border_size;
+#endif
 
 	public uint directional_light_count;
 	public float dual_paraboloid_side;

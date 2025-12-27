@@ -16,6 +16,7 @@
 
 #include "godot_cpp/classes/cubemap.hpp"
 #include "godot_cpp/classes/cubemap_array.hpp"
+#include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/image_texture_layered.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
 #include "godot_cpp/classes/texture3d.hpp"
@@ -168,6 +169,20 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 	char const* search_paths = { modules_path.utf8().get_data() };
 	session_desc.searchPaths = &search_paths;
 	session_desc.searchPathCount = 1;
+
+	{
+		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
+		static auto godot_minor_version_key = "GODOT_MINOR_VERSION";
+		const Dictionary version_info = Engine::get_singleton()->get_version_info();
+		const int32_t major_version = version_info.get("major", 0);
+		const int32_t minor_version = version_info.get("minor", 0);
+		const std::array<slang::PreprocessorMacroDesc, 2> macros = {
+			slang::PreprocessorMacroDesc{godot_major_version_key, String::num_int64(major_version).utf8().get_data()},
+			slang::PreprocessorMacroDesc{godot_minor_version_key, String::num_int64(minor_version).utf8().get_data()}
+		};
+		session_desc.preprocessorMacroCount = macros.size();
+		session_desc.preprocessorMacros = macros.data();
+	}
 
 	return global_session->createSession(session_desc, out_session);
 }
