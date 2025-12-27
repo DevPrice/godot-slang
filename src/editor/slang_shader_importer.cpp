@@ -174,11 +174,11 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
 		static auto godot_minor_version_key = "GODOT_MINOR_VERSION";
 		const Dictionary version_info = Engine::get_singleton()->get_version_info();
-		const int32_t major_version = version_info.get("major", 0);
-		const int32_t minor_version = version_info.get("minor", 0);
-		const std::array<slang::PreprocessorMacroDesc, 2> macros = {
-			slang::PreprocessorMacroDesc{godot_major_version_key, String::num_int64(major_version).utf8().get_data()},
-			slang::PreprocessorMacroDesc{godot_minor_version_key, String::num_int64(minor_version).utf8().get_data()}
+		static const CharString major_version_string = String::num_int64(version_info.get("major", 0)).utf8();
+		static const CharString minor_version_string = String::num_int64(version_info.get("minor", 0)).utf8();
+		static const std::array<slang::PreprocessorMacroDesc, 2> macros = {
+			slang::PreprocessorMacroDesc{godot_major_version_key, major_version_string.get_data()},
+			slang::PreprocessorMacroDesc{godot_minor_version_key, minor_version_string.get_data()}
 		};
 		session_desc.preprocessorMacroCount = macros.size();
 		session_desc.preprocessorMacros = macros.data();
