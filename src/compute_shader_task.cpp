@@ -150,8 +150,8 @@ bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
 bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 	if (p_name.begins_with("shader_parameter/")) {
 		const StringName param_name = p_name.substr(17);
-		Dictionary params = get_shader_parameters();
-		const Dictionary reflection = params[param_name];
+		const Dictionary params = get_shader_parameters();
+		const Dictionary reflection = params.get(param_name, Dictionary());
 		if (reflection.has("property_info")) {
 			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
 			r_ret = UtilityFunctions::type_convert(get_shader_parameter(param_name), property_info.type);
@@ -166,8 +166,8 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	Dictionary params = get_shader_parameters();
 	for (const StringName param_name : params.keys()) {
-		const Dictionary param_info = params[param_name];
-		PropertyInfo property_info = PropertyInfo::from_dict(param_info["property_info"]);
+		const Dictionary param_info = params.get(param_name, Dictionary());
+		PropertyInfo property_info = PropertyInfo::from_dict(param_info.get("property_info", Dictionary()));
 		property_info.name = "shader_parameter/" + property_info.name;
 		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);
@@ -183,8 +183,8 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 
 	const Dictionary properties = structured_shape->get_properties();
 	for (const StringName property_name : properties.keys()) {
-		const Dictionary property = properties[property_name];
-		PropertyInfo property_info = PropertyInfo::from_dict(property["property_info"]);
+		const Dictionary property = properties.get(property_name, Dictionary());
+		PropertyInfo property_info = PropertyInfo::from_dict(property.get("property_info", Dictionary()));
 		property_info.name = prefix + property_info.name;
 		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);
@@ -294,7 +294,7 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
 }
 
 Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const {
-	Variant value = _shader_parameters[param_name];
+	Variant value = _shader_parameters.get(param_name, Variant());
 	if (value.get_type() == Variant::NIL) {
 		value = _get_default_uniform(uniform_type, attributes);
 	}
@@ -322,7 +322,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	Array parameter_keys = parameters.keys();
 	for (const Variant& parameter_key : parameter_keys) {
 		const StringName& key = parameter_key;
-		const Dictionary param = parameters[key];
+		const Dictionary param = parameters.get(key, Dictionary());
 		const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
 		const StringName param_name = param.get("name", StringName{});
 		if (param_name.is_empty()) continue;
@@ -342,7 +342,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				}
 			}
 		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
-			Variant value = _shader_parameters[param_name];
+			Variant value = _shader_parameters.get(param_name, Variant());
 			RID value_rid = value;
 			const int32_t binding_space = param.get("binding_space", 0);
 			const int32_t binding_index = param.get("binding_index", 0);
@@ -490,7 +490,7 @@ Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_
 	const Vector2i key(binding, set);
 	if (!_buffers.has(key)) {
 		const Ref buffer = memnew(RDBuffer);
-		_buffers[key] = buffer;
+		_buffers.set(key, buffer);
 		if (kernels.size() > 0) {
 			const Ref<ComputeShaderKernel> kernel = kernels[0];
 			if (kernel.is_valid()) {
@@ -516,7 +516,7 @@ Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_
 
 void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid) {
 	const Vector2i key(binding, set);
-	_buffers[key] = RDBuffer::ref(buffer_rid);
+	_buffers.set(key, RDBuffer::ref(buffer_rid));
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {

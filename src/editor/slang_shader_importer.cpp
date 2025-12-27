@@ -16,6 +16,7 @@
 
 #include "godot_cpp/classes/cubemap.hpp"
 #include "godot_cpp/classes/cubemap_array.hpp"
+#include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/image_texture_layered.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
 #include "godot_cpp/classes/texture3d.hpp"
@@ -168,6 +169,20 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 	char const* search_paths = { modules_path.utf8().get_data() };
 	session_desc.searchPaths = &search_paths;
 	session_desc.searchPathCount = 1;
+
+	{
+		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
+		static auto godot_minor_version_key = "GODOT_MINOR_VERSION";
+		const Dictionary version_info = Engine::get_singleton()->get_version_info();
+		static const CharString major_version_string = String::num_int64(version_info.get("major", 0)).utf8();
+		static const CharString minor_version_string = String::num_int64(version_info.get("minor", 0)).utf8();
+		static const std::array<slang::PreprocessorMacroDesc, 2> macros = {
+			slang::PreprocessorMacroDesc{godot_major_version_key, major_version_string.get_data()},
+			slang::PreprocessorMacroDesc{godot_minor_version_key, minor_version_string.get_data()}
+		};
+		session_desc.preprocessorMacroCount = macros.size();
+		session_desc.preprocessorMacros = macros.data();
+	}
 
 	return global_session->createSession(session_desc, out_session);
 }
@@ -604,8 +619,8 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
 				return true;
 			}
-			const Dictionary class_args = type_attributes["gd_Class"];
-			const StringName class_name = class_args["class_name"];
+			const Dictionary class_args = type_attributes.get("gd_Class", Dictionary());
+			const StringName class_name = class_args.get("class_name", StringName());
 			// TODO: Verify the class_name is a Resource subtype
 			if (!class_name.is_empty()) {
 				out_type = Variant::OBJECT;

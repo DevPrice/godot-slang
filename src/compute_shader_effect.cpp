@@ -115,8 +115,8 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 		if (!param_name.is_empty()) {
 			static StringName key_context("context");
 			static StringName key_name("name");
-			Dictionary param_dict = params[param_name];
-			Dictionary user_attributes = param_dict["user_attributes"];
+			Dictionary param_dict = params.get(param_name, Dictionary());
+			Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
 			if (user_attributes.has("gd_compositor_InternalSize")) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
 			}
@@ -134,14 +134,14 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			}
 			if (user_attributes.has(Attributes::scene_buffer())) {
 				Dictionary args = user_attributes[Attributes::scene_buffer()];
-				const String context = args[key_context];
-				const String name = args[key_name];
+				const String context = args.get(key_context, String());
+				const String name = args.get(key_name, String());
 				task->set_shader_parameter(param_name, render_scene_buffers->get_texture(context, name));
 			}
 			if (user_attributes.has(Attributes::texture())) {
 				Dictionary args = user_attributes[Attributes::texture()];
 				Dictionary texture_name_attribute = user_attributes.get(Attributes::texture_name(), Dictionary());
-				const int32_t format = args["format"];
+				const int32_t format = args.get("format", 0);
 				const String texture_name = texture_name_attribute.get(key_name, param_name);
 				// TODO: Make more of this configurable
 				const RID texture = render_scene_buffers->create_texture(
@@ -158,7 +158,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 				task->set_shader_parameter(param_name, texture);
 			} else if (user_attributes.has(Attributes::texture_name())) {
 				Dictionary args = user_attributes[Attributes::texture_name()];
-				const String texture_name = args[key_name];
+				const String texture_name = args.get(key_name, String());
 				const RID texture = render_scene_buffers->get_texture("__global_context", texture_name);
 				task->set_shader_parameter(param_name, texture);
 			}
