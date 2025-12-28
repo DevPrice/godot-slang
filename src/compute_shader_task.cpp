@@ -527,7 +527,11 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
-	ERR_FAIL_NULL_MSG(static_cast<Ref<RefCounted>>(kernels[kernel_index]), String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
+
+	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
+	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
+
 	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
 	ERR_FAIL_COND(!rendering_server->is_on_render_thread());

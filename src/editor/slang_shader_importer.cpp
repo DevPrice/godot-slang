@@ -117,6 +117,17 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
 		}
 		slang_shader->set_kernels(kernels);
+		if (kernels.is_empty()) {
+			const String err_message = "No entry points found!";
+			UtilityFunctions::push_error(String("[%s] ") % p_source_file, err_message);
+			slang_shader->set_base_error(err_message);
+		}
+		for (const Ref<ComputeShaderKernel> kernel : kernels) {
+			const String compile_error = kernel->get_compile_error().trim_suffix("\n");
+			if (!compile_error.is_empty()) {
+				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ slang_module->getFilePath(), compile_error }));
+			}
+		}
 	} else {
 		UtilityFunctions::push_error(String("[%s] ") % p_source_file, String("Failed to compile Slang shader:\n%s") % slang_error);
 		slang_shader->set_base_error(slang_error);
@@ -175,20 +186,14 @@ Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, 
 	if (slang_module->getDefinedEntryPointCount() == 0 && additional_entry_points.is_empty()) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		// TODO: Emit error for the specific kernel instead
-		ERR_FAIL_COND_V_MSG(
-			slang_module->findAndCheckEntryPoint("main", SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()) != OK,
-			FAILED,
-			String("[%s] Slang: No entry points found!") % Array({ slang_module->getFilePath() }));
-		if (entry_point) {
+		if (SLANG_SUCCEEDED(slang_module->findAndCheckEntryPoint("main", SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()))) {
 			entry_points.push_back(entry_point);
 		} else if (diagnostics_blob) {
-			UtilityFunctions::print(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+			UtilityFunctions::push_error(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 		}
 	} else {
 		for (int32_t entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
 			Slang::ComPtr<slang::IEntryPoint> entry_point;
-			// TODO: Emit error for the specific kernel instead
 			ERR_FAIL_COND_V_MSG(
 				slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK,
 				ERR_BUG,
@@ -199,25 +204,27 @@ Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, 
 			const CharString name_string = entry_point_name.utf8();
 			Slang::ComPtr<slang::IEntryPoint> entry_point;
 			Slang::ComPtr<slang::IBlob> diagnostics_blob;
-			// TODO: Emit error for the specific kernel instead
-			ERR_FAIL_COND_V_MSG(
-				slang_module->findAndCheckEntryPoint(name_string.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()) != OK,
-				FAILED,
-				String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), entry_point_name }));
-			if (entry_point) {
+			if (SLANG_SUCCEEDED(slang_module->findAndCheckEntryPoint(name_string.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()))) {
 				entry_points.push_back(entry_point);
-			} else if (diagnostics_blob) {
-				UtilityFunctions::print(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+			} else {
+				Ref<ComputeShaderKernel> kernel;
+				kernel.instantiate();
+				Ref<RDShaderSPIRV> spirv;
+				spirv.instantiate();
+				if (diagnostics_blob && diagnostics_blob->getBufferSize() > 0) {
+					spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()).trim_suffix("\n"));
+				} else {
+					spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, String("Failed to find entry point '%s'!") % entry_point_name);
+				}
+				kernel->set_kernel_name(entry_point_name);
+				kernel->set_spirv(spirv);
+				out_kernels.push_back(kernel);
 			}
 		}
 	}
 	for (const Slang::ComPtr<slang::IEntryPoint>& entry_point : entry_points) {
 		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
 		if (kernel.is_valid()) {
-			const String compile_error = kernel->get_compile_error();
-			if (!compile_error.is_empty()) {
-				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ slang_module->getFilePath(), compile_error }));
-			}
 			out_kernels.push_back(kernel);
 		}
 	}

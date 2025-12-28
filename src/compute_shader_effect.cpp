@@ -82,11 +82,12 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
 		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
-		if (kernel.is_valid()) {
+		if (kernel.is_valid() && kernel->get_compile_error().is_empty()) {
 			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(Attributes::skip()) || kernel_attributes.has(Attributes::once()))) {
 				continue;
 			}
 			const Vector3i local_size = kernel->get_thread_group_size();
+			ERR_FAIL_COND(local_size.x == 0 || local_size.y == 0 || local_size.z == 0);
 			const Vector3i groups(
 					(size.x - 1) / local_size.x + 1,
 					(size.y - 1) / local_size.y + 1,
