@@ -164,7 +164,8 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 }
 
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
-	Dictionary params = get_shader_parameters();
+	ERR_FAIL_NULL(p_list);
+	const Dictionary params = get_shader_parameters();
 	for (const StringName param_name : params.keys()) {
 		const Dictionary param_info = params.get(param_name, Dictionary());
 		PropertyInfo property_info = PropertyInfo::from_dict(param_info.get("property_info", Dictionary()));
@@ -172,12 +173,14 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);
 		} else {
-			_get_property_list(p_list, "shader_parameter/" + param_name + "/", param_info["shape"]);
+			const Ref<ShaderTypeLayoutShape> shape = param_info.get("shape", nullptr);
+			_get_property_list(p_list, "shader_parameter/" + param_name + "/", shape);
 		}
 	}
 }
 
-void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ShaderTypeLayoutShape>& shape) const {
+void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ShaderTypeLayoutShape>& shape) {
+	ERR_FAIL_NULL(p_list);
 	const StructTypeLayoutShape* structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
 	if (!structured_shape) return;
 
@@ -189,7 +192,8 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
 			p_list->push_back(property_info);
 		} else {
-			_get_property_list(p_list, prefix + property_name + "/", property["shape"]);
+			const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
+			_get_property_list(p_list, prefix + property_name + "/", property_shape);
 		}
 	}
 }
