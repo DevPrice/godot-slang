@@ -12,5 +12,5 @@ dest_files=["res://.godot/imported/grayscale.glsl-f36d5def71a7aff7d5e9e312f97176
 
 [params]
 
-entry_points=PackedStringArray("main")
+entry_points=PackedStringArray()
 default_matrix_layout=1

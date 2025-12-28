@@ -113,7 +113,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	const Ref slang_shader = memnew(ComputeShaderFile);
 	if (slang_module && slang_error.is_empty()) {
 		TypedArray<ComputeShaderKernel> kernels;
-		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels)) {
+		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", PackedStringArray()))) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
 		}
 		slang_shader->set_kernels(kernels);
@@ -137,27 +137,6 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 
 	session_desc.targets = &target_desc;
 	session_desc.targetCount = 1;
-
-	std::vector<slang::CompilerOptionEntry> compiler_options{};
-
-	PackedStringArray entry_points = options["entry_points"];
-	for (const String& entry_point : entry_points) {
-		// TODO: This doesn't actually work
-		constexpr auto compute_stage = "compute";
-		slang::CompilerOptionValue entry_point_value{};
-		entry_point_value.kind = slang::CompilerOptionValueKind::String;
-		entry_point_value.stringValue0 = entry_point.utf8().get_data();
-		const slang::CompilerOptionEntry entry_point_option = {slang::CompilerOptionName::EntryPointName, entry_point_value};
-		compiler_options.push_back(entry_point_option);
-		slang::CompilerOptionValue stage_value{};
-		stage_value.kind = slang::CompilerOptionValueKind::String;
-		stage_value.stringValue0 = compute_stage;
-		const slang::CompilerOptionEntry stage_option = {slang::CompilerOptionName::Stage, stage_value};
-		compiler_options.push_back(stage_option);
-	}
-
-	session_desc.compilerOptionEntries = compiler_options.data();
-	session_desc.compilerOptionEntryCount = compiler_options.size();
 
 	const int64_t default_matrix_layout = options["default_matrix_layout"];
 	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
@@ -184,16 +163,55 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 		session_desc.preprocessorMacros = macros.data();
 	}
 
+	session_desc.allowGLSLSyntax = enable_glsl;
+
 	return global_session->createSession(session_desc, out_session);
 }
 
-Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels) {
-	for (int32_t entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
+Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points) {
+	ERR_FAIL_NULL_V(slang_module, ERR_BUG);
+	std::vector<Slang::ComPtr<slang::IEntryPoint>> entry_points{};
+	entry_points.reserve(slang_module->getDefinedEntryPointCount() + additional_entry_points.size());
+	if (slang_module->getDefinedEntryPointCount() == 0 && additional_entry_points.is_empty()) {
 		Slang::ComPtr<slang::IEntryPoint> entry_point;
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		// TODO: Emit error for the specific kernel instead
 		ERR_FAIL_COND_V_MSG(
-			slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK,
-			ERR_BUG,
-			String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
+			slang_module->findAndCheckEntryPoint("main", SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()) != OK,
+			FAILED,
+			String("[%s] Slang: No entry points found!") % Array({ slang_module->getFilePath() }));
+		if (entry_point) {
+			entry_points.push_back(entry_point);
+		} else if (diagnostics_blob) {
+			UtilityFunctions::print(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		}
+	} else {
+		for (int32_t entry_point_index = 0; entry_point_index < slang_module->getDefinedEntryPointCount(); ++entry_point_index) {
+			Slang::ComPtr<slang::IEntryPoint> entry_point;
+			// TODO: Emit error for the specific kernel instead
+			ERR_FAIL_COND_V_MSG(
+				slang_module->getDefinedEntryPoint(entry_point_index, entry_point.writeRef()) != OK,
+				ERR_BUG,
+				String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), String::num_int64(entry_point_index) }));
+			entry_points.push_back(entry_point);
+		}
+		for (const String& entry_point_name : additional_entry_points) {
+			const CharString name_string = entry_point_name.utf8();
+			Slang::ComPtr<slang::IEntryPoint> entry_point;
+			Slang::ComPtr<slang::IBlob> diagnostics_blob;
+			// TODO: Emit error for the specific kernel instead
+			ERR_FAIL_COND_V_MSG(
+				slang_module->findAndCheckEntryPoint(name_string.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()) != OK,
+				FAILED,
+				String("[%s] Slang: Error getting entry point '%s'") % Array({ slang_module->getFilePath(), entry_point_name }));
+			if (entry_point) {
+				entry_points.push_back(entry_point);
+			} else if (diagnostics_blob) {
+				UtilityFunctions::print(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+			}
+		}
+	}
+	for (const Slang::ComPtr<slang::IEntryPoint>& entry_point : entry_points) {
 		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
 		if (kernel.is_valid()) {
 			const String compile_error = kernel->get_compile_error();
