@@ -165,8 +165,8 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 	}
 
 	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
-	const String modules_path = extension_path.get_base_dir().path_join("modules");
-	char const* search_paths = { modules_path.utf8().get_data() };
+	const CharString modules_path = extension_path.get_base_dir().path_join("modules").utf8();
+	char const* search_paths = { modules_path.get_data() };
 	session_desc.searchPaths = &search_paths;
 	session_desc.searchPathCount = 1;
 
