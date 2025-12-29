@@ -8,28 +8,7 @@
 #include "godot_cpp/classes/render_scene_data.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 
-struct Attributes {
-	static StringName& once() {
-		static StringName attribute("gd_compositor_Once");
-		return attribute;
-	}
-	static StringName& skip() {
-		static StringName attribute("gd_compositor_Skip");
-		return attribute;
-	}
-	static StringName& texture() {
-		static StringName attribute("gd_compositor_Texture");
-		return attribute;
-	}
-	static StringName& texture_name() {
-		static StringName attribute("gd_compositor_TextureName");
-		return attribute;
-	}
-	static StringName& scene_buffer() {
-		static StringName attribute("gd_compositor_SceneBuffer");
-		return attribute;
-	}
-};
+#include "attributes.h"
 
 void ComputeShaderEffect::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("uniforms_bound",  PropertyInfo(Variant::INT, "view")));
@@ -66,7 +45,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		is_first_run = false;
 		queued_kernels.clear();
 		for (const Ref<ComputeShaderKernel> kernel : kernels) {
-			if (kernel->get_user_attributes().has(Attributes::once())) {
+			if (kernel->get_user_attributes().has(CompositorAttributes::once())) {
 				queue_dispatch(kernel->get_kernel_name());
 			}
 		}
@@ -83,7 +62,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
 		if (kernel.is_valid() && kernel->get_compile_error().is_empty()) {
-			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(Attributes::skip()) || kernel_attributes.has(Attributes::once()))) {
+			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(CompositorAttributes::skip()) || kernel_attributes.has(CompositorAttributes::once()))) {
 				continue;
 			}
 			const Vector3i local_size = kernel->get_thread_group_size();
@@ -118,30 +97,30 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			static StringName key_name("name");
 			Dictionary param_dict = params.get(param_name, Dictionary());
 			Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
-			if (user_attributes.has("gd_compositor_InternalSize")) {
+			if (user_attributes.has(CompositorAttributes::internal_size())) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
 			}
-			if (user_attributes.has("gd_compositor_SceneData")) {
+			if (user_attributes.has(CompositorAttributes::scene_data())) {
 				task->set_shader_parameter(param_name, scene_data->get_uniform_buffer());
 			}
-			if (user_attributes.has("gd_compositor_ColorTexture")) {
+			if (user_attributes.has(CompositorAttributes::color_texture())) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_color_layer(view));
 			}
-			if (user_attributes.has("gd_compositor_DepthTexture")) {
+			if (user_attributes.has(CompositorAttributes::depth_texture())) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_depth_layer(view));
 			}
-			if (user_attributes.has("gd_compositor_VelocityTexture")) {
+			if (user_attributes.has(CompositorAttributes::velocity_texture())) {
 				task->set_shader_parameter(param_name, render_scene_buffers->get_velocity_layer(view));
 			}
-			if (user_attributes.has(Attributes::scene_buffer())) {
-				Dictionary args = user_attributes[Attributes::scene_buffer()];
+			if (user_attributes.has(CompositorAttributes::scene_buffer())) {
+				Dictionary args = user_attributes[CompositorAttributes::scene_buffer()];
 				const String context = args.get(key_context, String());
 				const String name = args.get(key_name, String());
 				task->set_shader_parameter(param_name, render_scene_buffers->get_texture(context, name));
 			}
-			if (user_attributes.has(Attributes::texture())) {
-				Dictionary args = user_attributes[Attributes::texture()];
-				Dictionary texture_name_attribute = user_attributes.get(Attributes::texture_name(), Dictionary());
+			if (user_attributes.has(CompositorAttributes::texture())) {
+				Dictionary args = user_attributes[CompositorAttributes::texture()];
+				Dictionary texture_name_attribute = user_attributes.get(CompositorAttributes::texture_name(), Dictionary());
 				const int32_t format = args.get("format", 0);
 				const String texture_name = texture_name_attribute.get(key_name, param_name);
 				// TODO: Make more of this configurable
@@ -157,8 +136,8 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 					false,
 					false);
 				task->set_shader_parameter(param_name, texture);
-			} else if (user_attributes.has(Attributes::texture_name())) {
-				Dictionary args = user_attributes[Attributes::texture_name()];
+			} else if (user_attributes.has(CompositorAttributes::texture_name())) {
+				Dictionary args = user_attributes[CompositorAttributes::texture_name()];
 				const String texture_name = args.get(key_name, String());
 				const RID texture = render_scene_buffers->get_texture("__global_context", texture_name);
 				task->set_shader_parameter(param_name, texture);

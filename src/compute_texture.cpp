@@ -1,5 +1,6 @@
 #include "compute_texture.h"
 
+#include "attributes.h"
 #include "godot_cpp/classes/editor_file_system.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/engine.hpp"
@@ -130,10 +131,10 @@ void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task, cons
         if (!param_name.is_empty()) {
             Dictionary param_dict = params[param_name];
             Dictionary user_attributes = param_dict["user_attributes"];
-            if (user_attributes.has("gd_texture_TextureSize")) {
+            if (user_attributes.has(TextureAttributes::texture_size())) {
                 p_task->set_shader_parameter(param_name, size);
             }
-            if (user_attributes.has("gd_texture_OutputTexture")) {
+            if (user_attributes.has(TextureAttributes::output_texture())) {
                 task->set_shader_parameter(param_name, texture_rd_rid);
             }
         }

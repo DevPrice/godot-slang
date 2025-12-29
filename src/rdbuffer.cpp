@@ -5,6 +5,7 @@
 
 #include "rdbuffer.h"
 
+#include "attributes.h"
 #include "compute_shader_shape.h"
 
 inline bool get_container_size(const Variant &v, int64_t &size) {
@@ -470,7 +471,7 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 			if (is_valid) {
 				// TODO: If this gets any more complex, it needs to move out of here
-				if (property_attributes.has("gd_Color")) {
+				if (property_attributes.has(GodotAttributes::color())) {
 					if (property_value.get_type() == Variant::COLOR) {
 						property_value = static_cast<Color>(property_value).srgb_to_linear();
 					}

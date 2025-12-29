@@ -10,6 +10,8 @@
 #include "godot_cpp/classes/window.hpp"
 
 #include "compute_shader_task.h"
+
+#include "attributes.h"
 #include "compute_shader_shape.h"
 
 void ComputeShaderTask::_bind_methods() {
@@ -302,7 +304,7 @@ Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, co
 	if (value.get_type() == Variant::NIL) {
 		value = _get_default_uniform(uniform_type, attributes);
 	}
-	if (attributes.has("gd_Color")) {
+	if (attributes.has(GodotAttributes::color())) {
 		if (value.get_type() == Variant::COLOR) {
 			const Color color = value;
 			return color.srgb_to_linear();
@@ -441,21 +443,21 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 }
 
 Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
-	if (user_attributes.has("gd_GlobalParam")) {
-		const Dictionary attribute = user_attributes["gd_GlobalParam"];
+	if (user_attributes.has(GodotAttributes::global_param())) {
+		const Dictionary attribute = user_attributes[GodotAttributes::global_param()];
 		const String param_name = attribute["name"];
 		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
 	}
 	switch (type) {
 		case RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER:
 		case RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER:
-			if (user_attributes.has("gd_Time")) {
+			if (user_attributes.has(GodotAttributes::time())) {
 				return Time::get_singleton()->get_ticks_msec() * .001f;
 			}
-			if (user_attributes.has("gd_FrameId")) {
+			if (user_attributes.has(GodotAttributes::frame_id())) {
 				return Engine::get_singleton()->get_frames_drawn();
 			}
-			if (user_attributes.has("gd_MousePosition")) {
+			if (user_attributes.has(GodotAttributes::mouse_position())) {
 				if (const SceneTree* scene_tree = cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
 					if (const Window* window = scene_tree->get_root()) {
 						return Vector2i(window->get_mouse_position());
@@ -464,20 +466,20 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 			}
 			break;
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER:
-			if (user_attributes.has("gd_LinearSampler")) {
-				const Dictionary sampler_attribute = user_attributes["gd_LinearSampler"];
+			if (user_attributes.has(GodotAttributes::linear_sampler())) {
+				const Dictionary sampler_attribute = user_attributes[GodotAttributes::linear_sampler()];
 				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 				return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
-			if (user_attributes.has("gd_NearestSampler")) {
-				const Dictionary sampler_attribute = user_attributes["gd_NearestSampler"];
+			if (user_attributes.has(GodotAttributes::nearest_sampler())) {
+				const Dictionary sampler_attribute = user_attributes[GodotAttributes::nearest_sampler()];
 				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 				return _get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
 			return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
 		case RenderingDevice::UNIFORM_TYPE_TEXTURE: {
-			const RID default_texture = user_attributes.has("gd_DefaultWhite")
+			const RID default_texture = user_attributes.has(GodotAttributes::default_white())
 				? RenderingServer::get_singleton()->get_white_texture()
 				: RenderingServer::get_singleton()->get_test_texture();
 			return RenderingServer::get_singleton()->texture_get_rd_texture(default_texture);

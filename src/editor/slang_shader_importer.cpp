@@ -14,6 +14,7 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
+#include "attributes.h"
 #include "godot_cpp/classes/cubemap.hpp"
 #include "godot_cpp/classes/cubemap_array.hpp"
 #include "godot_cpp/classes/engine.hpp"
@@ -485,7 +486,8 @@ bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const 
 	for (size_t attribute_index = 0; attribute_index < var->getUserAttributeCount(); ++attribute_index) {
 		if (slang::Attribute* attribute = var->getUserAttributeByIndex(attribute_index)) {
 			if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
-				if (attribute_type->findUserAttributeByName("gd_Autobind")) {
+				static CharString autobind_str = String(GodotAttributes::autobind()).utf8();
+				if (attribute_type->findUserAttributeByName(autobind_str.get_data())) {
 					return true;
 				}
 			}
@@ -639,12 +641,12 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				return true;
 			}
 			const Dictionary type_attributes = get_attributes(type);
-			if (type_attributes.has("gd_Type")) {
-				const Dictionary type_attr = type_attributes["gd_Type"];
+			if (type_attributes.has(GodotAttributes::type())) {
+				const Dictionary type_attr = type_attributes[GodotAttributes::type()];
 				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
 				return true;
 			}
-			const Dictionary class_args = type_attributes.get("gd_Class", Dictionary());
+			const Dictionary class_args = type_attributes.get(GodotAttributes::class_name(), Dictionary());
 			const StringName class_name = class_args.get("class_name", StringName());
 			// TODO: Verify the class_name is a Resource subtype
 			if (!class_name.is_empty()) {

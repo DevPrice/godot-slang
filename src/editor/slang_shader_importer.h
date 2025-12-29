@@ -5,6 +5,7 @@
 #include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
 
+#include "attributes.h"
 #include "compute_shader_shape.h"
 
 using namespace godot;
@@ -38,8 +39,8 @@ public:
 	template<typename T>
 	static StringName get_name(T* reflection, const Dictionary& attributes) {
 		ERR_FAIL_NULL_V(reflection, {});
-		if (attributes.has("gd_Name")) {
-			const Dictionary& name_attribute = attributes["gd_Name"];
+		if (attributes.has(GodotAttributes::name())) {
+			const Dictionary& name_attribute = attributes[GodotAttributes::name()];
 			return name_attribute["name"];
 		}
 		return reflection->getName();
