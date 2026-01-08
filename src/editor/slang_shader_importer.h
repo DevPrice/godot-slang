@@ -53,8 +53,8 @@ private:
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
-	bool _get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
-	bool _get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
+	bool _get_godot_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
+	bool _get_godot_array_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
 	Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);

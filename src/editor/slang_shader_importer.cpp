@@ -363,7 +363,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		Variant::Type type;
 		PropertyHint hint;
 		String hint_string;
-		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
+		if (_get_godot_type(param->getTypeLayout(), param_attributes, type, hint, hint_string)) {
 			const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
 			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
@@ -434,7 +434,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					Variant::Type type;
 					PropertyHint hint;
 					String hint_string;
-					if (_get_godot_type(field->getType(), field_attributes, type, hint, hint_string)) {
+					if (_get_godot_type(field->getTypeLayout(), field_attributes, type, hint, hint_string)) {
 						const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
 						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
 						property.set("property_info", Dictionary(property_info));
@@ -539,7 +539,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	return String("argument") + String::num_int64(argument_index);
 }
 
- bool SlangReflectionContext::_get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+ bool SlangReflectionContext::_get_godot_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	ERR_FAIL_NULL_V(type, false);
 	out_hint = PROPERTY_HINT_NONE;
 	out_hint_string = "";
@@ -589,7 +589,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			break;
 		}
 		case slang::TypeReflection::Kind::Array:
-			return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
+			return _get_godot_array_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string);
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShape resource_shape = type->getResourceShape();
 			const unsigned base_shape = resource_shape & SLANG_RESOURCE_BASE_SHAPE_MASK;
@@ -622,14 +622,14 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 					return true;
 				}
 				case SLANG_STRUCTURED_BUFFER:
-					return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
+					return _get_godot_array_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string);
 				default:
 					break;
 			}
 			break;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer: {
-			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
+			if (_get_godot_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string)) {
 				return true;
 			}
 			return false;
@@ -640,7 +640,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = Variant::STRING;
 				return true;
 			}
-			const Dictionary type_attributes = get_attributes(type);
+			const Dictionary type_attributes = get_attributes(type->getType());
 			if (type_attributes.has(GodotAttributes::type())) {
 				const Dictionary type_attr = type_attributes[GodotAttributes::type()];
 				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
@@ -691,7 +691,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	return false;
 }
 
-bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+bool SlangReflectionContext::_get_godot_array_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	ERR_FAIL_NULL_V(type, false);
 	out_type = Variant::ARRAY;
 
@@ -739,36 +739,48 @@ bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, 
 
 Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, const uint32_t argument_index) const {
 	if (slang::TypeReflection* type_reflection = attribute->getArgumentType(argument_index)) {
-		PropertyHint hint{};
-		Variant::Type type{};
-		String hint_string{};
-		_get_godot_type(type_reflection, Dictionary(), type, hint, hint_string);
-		switch (type) {
-			case Variant::BOOL: {
-				int value{};
-				if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
-					return static_cast<bool>(value);
+		switch (type_reflection->getKind()) {
+			case slang::TypeReflection::Kind::Scalar: {
+				switch (type_reflection->getScalarType()) {
+					case slang::TypeReflection::ScalarType::Bool: {
+						int value{};
+						if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
+							return static_cast<bool>(value);
+						}
+						break;
+					}
+					case slang::TypeReflection::ScalarType::Int8:
+					case slang::TypeReflection::ScalarType::Int16:
+					case slang::TypeReflection::ScalarType::Int32:
+					case slang::TypeReflection::ScalarType::Int64:
+					case slang::TypeReflection::ScalarType::UInt8:
+					case slang::TypeReflection::ScalarType::UInt16:
+					case slang::TypeReflection::ScalarType::UInt32:
+					case slang::TypeReflection::ScalarType::UInt64: {
+						int value{};
+						if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
+							return value;
+						}
+						break;
+					}
+					case slang::TypeReflection::ScalarType::Float16:
+					case slang::TypeReflection::ScalarType::Float32:
+					case slang::TypeReflection::ScalarType::Float64: {
+						float value{};
+						if (attribute->getArgumentValueFloat(argument_index, &value) == SLANG_OK) {
+							return value;
+						}
+						break;
+					}
+					default: break;
 				}
-				break;
 			}
-			case Variant::INT: {
-				int value{};
-				if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
-					return value;
-				}
-				break;
-			}
-			case Variant::FLOAT: {
-				float value{};
-				if (attribute->getArgumentValueFloat(argument_index, &value) == SLANG_OK) {
-					return value;
-				}
-				break;
-			}
-			case Variant::STRING: {
-				size_t size{};
-				if (const char* value = attribute->getArgumentValueString(argument_index, &size)) {
-					return String::utf8(value, size);
+			case slang::TypeReflection::Kind::Struct: {
+				if (String(type_reflection->getName()) == "String") {
+					size_t size{};
+					if (const char* value = attribute->getArgumentValueString(argument_index, &size)) {
+						return String::utf8(value, size);
+					}
 				}
 				break;
 			}
