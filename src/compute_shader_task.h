@@ -43,6 +43,7 @@ public:
 	static bool _can_show_property_info(const PropertyInfo& property_info);
 	[[nodiscard]] bool _property_can_revert(const StringName& p_name) const;
 	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
+	bool _property_get_reflection(const StringName& p_name, Dictionary& r_reflection) const;
 
 private:
 	Dictionary _shader_parameters{};
@@ -60,7 +61,7 @@ private:
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
 	[[nodiscard]] RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
-	[[nodiscard]] Variant _get_parameter_value(const StringName& param_name, RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const;
+	[[nodiscard]] Variant _get_parameter_value(const StringName& param_name, RenderingDevice::UniformType uniform_type, const Dictionary& attributes, const Variant& default_value) const;
 	[[nodiscard]] Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
 	Ref<RDBuffer> _get_buffer(int32_t binding, int32_t set);
 	void _set_buffer(int32_t binding, int32_t set, const RID& buffer_rid);

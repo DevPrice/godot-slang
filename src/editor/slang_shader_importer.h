@@ -36,6 +36,8 @@ public:
 		return param_attributes;
 	}
 
+	static Variant get_default_value(slang::VariableReflection* var);
+
 	template<typename T>
 	static StringName get_name(T* reflection, const Dictionary& attributes) {
 		ERR_FAIL_NULL_V(reflection, {});

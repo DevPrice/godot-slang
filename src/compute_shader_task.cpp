@@ -171,14 +171,21 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 	if (p_name.begins_with("shader_parameter/")) {
 		const StringName param_name = p_name.substr(17);
 		const Dictionary params = get_shader_parameters();
-		const Dictionary reflection = params.get(param_name, Dictionary());
-		if (reflection.has("property_info")) {
-			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-			r_ret = UtilityFunctions::type_convert(get_shader_parameter(param_name), property_info.type);
+		Dictionary reflection;
+		if (_property_get_reflection(p_name, reflection)) {
+			const Variant value = get_shader_parameter(param_name);
+			if (value.get_type() == Variant::NIL && reflection.has("default_value")) {
+				r_ret = reflection["default_value"];
+				return true;
+			}
+			if (reflection.has("property_info")) {
+				const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
+				r_ret = UtilityFunctions::type_convert(value, property_info.type);
+				return true;
+			}
+			r_ret = value;
 			return true;
 		}
-		r_ret = get_shader_parameter(param_name);
-		return true;
 	}
 	return false;
 }
@@ -213,22 +220,9 @@ bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_inf
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
 	if (p_name.begins_with("shader_parameter/")) {
-		const PackedStringArray parts = p_name.substr(17).split("/");
-		Variant current = get_shader_parameters();
-		int64_t i = 0;
-		bool valid;
-		for (; i < parts.size() - 1; ++i) {
-			const Dictionary property = current.get_named(parts[i], valid);
-			const Ref<ShaderTypeLayoutShape> shape = property["shape"];
-			const auto structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
-			if (!valid || !structured_shape) return false;
-			current = structured_shape->get_properties();
-		}
-		const Dictionary reflection = current.get_named(parts[i], valid);
-		if (valid && reflection.has("property_info")) {
-			const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-			return UtilityFunctions::type_convert(get(p_name), property_info.type) != UtilityFunctions::type_convert(nullptr, property_info.type);
-		}
+		const StringName param_name = p_name.substr(17);
+		const Variant value = get_shader_parameter(param_name);
+		return value.get_type() != Variant::NIL;
 	}
 	return false;
 }
@@ -237,6 +231,25 @@ bool ComputeShaderTask::_property_get_revert(const StringName& p_name, Variant& 
 	if (p_name.begins_with("shader_parameter/")) {
 		r_property = nullptr;
 		return true;
+	}
+	return false;
+}
+
+bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dictionary& r_reflection) const {
+	if (p_name.begins_with("shader_parameter/")) {
+		const PackedStringArray parts = p_name.substr(17).split("/");
+		Variant current = get_shader_parameters();
+		int64_t i = 0;
+		bool valid;
+		for (; i < parts.size() - 1; ++i) {
+			const Dictionary property = current.get_named(parts[i], valid);
+			const Ref<ShaderTypeLayoutShape> shape = property.get("shape", nullptr);
+			const auto structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
+			if (!valid || !structured_shape) return false;
+			current = structured_shape->get_properties();
+		}
+		r_reflection = current.get_named(parts[i], valid);
+		return valid;
 	}
 	return false;
 }
@@ -310,8 +323,8 @@ RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter,
 	return sampler_rid;
 }
 
-Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes) const {
-	Variant value = _shader_parameters.get(param_name, Variant());
+Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes, const Variant& default_value) const {
+	Variant value = _shader_parameters.get(param_name, default_value);
 	if (value.get_type() == Variant::NIL) {
 		value = _get_default_uniform(uniform_type, attributes);
 	}
@@ -335,9 +348,8 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-	Dictionary parameters = kernel->get_parameters();
-	Array parameter_keys = parameters.keys();
-	for (const Variant& parameter_key : parameter_keys) {
+	const Dictionary parameters = kernel->get_parameters();
+	for (const Variant& parameter_key : parameters.keys()) {
 		const StringName& key = parameter_key;
 		const Dictionary param = parameters.get(key, Dictionary());
 		const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
@@ -345,7 +357,7 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 		if (param_name.is_empty()) continue;
 		const Dictionary attributes = param["user_attributes"];
 		if (!param.has("uniform_type")) {
-			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
+			Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
 			Ref<ShaderTypeLayoutShape> shape = param["shape"];
 			if (shape.is_valid()) {
 				const int64_t size = shape->get_size();
@@ -359,14 +371,13 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 				}
 			}
 		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
-			Variant value = _shader_parameters.get(param_name, Variant());
+			const Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
 			RID value_rid = value;
 			const int32_t binding_space = param.get("binding_space", 0);
 			const int32_t binding_index = param.get("binding_index", 0);
 			if (value_rid.is_valid()) {
 				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
-				value = _get_parameter_value(param_name, uniform_type, attributes);
 				Ref<ShaderTypeLayoutShape> shape = param["shape"];
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
 				const int64_t offset = param.get("offset", 0);
@@ -402,7 +413,7 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
 			const Dictionary attributes = param["user_attributes"];
-			Variant value = _get_parameter_value(param_name, uniform_type, attributes);
+			Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
 			if (const Object* object = value) {
 				if (object->is_class("Texture")) {
 					value = RenderingServer::get_singleton()->texture_get_rd_texture(value);

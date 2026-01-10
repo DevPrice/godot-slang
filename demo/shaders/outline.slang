@@ -22,9 +22,6 @@ let viewport_size : int2;
 [gd::compositor::SceneData]
 let scene_data : ConstantBuffer<gd::compositor::SceneDataBlock>;
 
-static let depth_sensitivity : float = 0.25;
-static let normal_sensitivity : float = 0.1;
-
 struct PushConstants {
     [gd::Export]
     [gd::PropertyHint(gd::PropertyHint.RANGE, "0.1,10.0,0.1,or_greater")]
@@ -32,6 +29,10 @@ struct PushConstants {
     [gd::Export]
     [gd::Color]
     let outline_color : float4;
+    [gd::Export]
+    let depth_sensitivity : float = 0.25;
+    [gd::Export]
+    let normal_sensitivity : float = 0.1;
 }
 
 [vk::push_constant]
@@ -88,8 +89,8 @@ float edge(float2 uv, float2 viewport_size, float4x4 inv_projection, float scale
         normal_sum += normal * normal_kernel[i];
     }
 
-    let depth_edge_val = step(depth_sensitivity * depth_sensitivity, abs(depth_sum));
-    let normal_edge_val = step(normal_sensitivity, length(normal_sum));
+    let depth_edge_val = step(push_constants.depth_sensitivity * push_constants.depth_sensitivity, abs(depth_sum));
+    let normal_edge_val = step(push_constants.normal_sensitivity, length(normal_sum));
 
     return max(depth_edge_val, normal_edge_val);
 }

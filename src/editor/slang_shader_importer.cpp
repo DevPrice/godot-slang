@@ -402,6 +402,11 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 				break;
 		}
 
+		Variant default_value = get_default_value(param->getVariable());
+		if (default_value.get_type() != Variant::NIL) {
+			param_info.set("default_value", default_value);
+		}
+
 		parameters.set(param_name, param_info);
 	}
 	return parameters;
@@ -450,6 +455,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 						}
 						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
 						property.set("property_info", Dictionary(property_info));
+					}
+
+					Variant default_value = get_default_value(field->getVariable());
+					if (default_value.get_type() != Variant::NIL) {
+						property.set("default_value", default_value);
 					}
 				}
 			}
@@ -822,6 +832,41 @@ Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, con
 		UtilityFunctions::push_error("Slang: Got null type pointer for attribute ", attribute->getName());
 	}
 	return Variant{};
+}
+
+Variant SlangReflectionContext::get_default_value(slang::VariableReflection* var) {
+	if (var->hasDefaultValue()) {
+		if (slang::TypeReflection* type = var->getType()) {
+			if (type->getKind() == slang::TypeReflection::Kind::Scalar) {
+				switch (type->getScalarType()) {
+					case slang::TypeReflection::ScalarType::Int8:
+					case slang::TypeReflection::ScalarType::Int16:
+					case slang::TypeReflection::ScalarType::Int32:
+					case slang::TypeReflection::ScalarType::Int64:
+					case slang::TypeReflection::ScalarType::UInt8:
+					case slang::TypeReflection::ScalarType::UInt16:
+					case slang::TypeReflection::ScalarType::UInt32:
+					case slang::TypeReflection::ScalarType::UInt64: {
+						if (int64_t default_value_int; SLANG_SUCCEEDED(var->getDefaultValueInt(&default_value_int))) {
+							return default_value_int;
+						}
+						break;
+					}
+					case slang::TypeReflection::ScalarType::Float16:
+					case slang::TypeReflection::ScalarType::Float32:
+					case slang::TypeReflection::ScalarType::Float64: {
+						if (float default_value_float; SLANG_SUCCEEDED(var->getDefaultValueFloat(&default_value_float))) {
+							return default_value_float;
+						}
+						break;
+					}
+					default: break;
+				}
+			}
+			UtilityFunctions::print("No default for '", String(var->getName()), "' (", (int)type->getKind(), ", ", (int)type->getScalarType(), ")");
+		}
+	}
+	return nullptr;
 }
 
 RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slang::BindingType type) {

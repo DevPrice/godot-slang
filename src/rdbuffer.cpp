@@ -468,6 +468,10 @@ int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset
 
 			bool is_valid{};
 			Variant property_value = data.get_named(property_name, is_valid);
+			if (property_value.get_type() == Variant::Type::NIL && property.has("default_value")) {
+				property_value = property["default_value"];
+				is_valid = true;
+			}
 
 			if (is_valid) {
 				// TODO: If this gets any more complex, it needs to move out of here
