@@ -275,20 +275,12 @@ public struct gd_GlobalParamAttribute {
 };
 
 /**
- Binds a parameter a linear sampler with the provided repeat mode.
+ Binds a parameter a sampler with the provided filter and repeat mode.
  Must be applied to a variable of type `SamplerState` or `Sampler2D`.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_LinearSamplerAttribute {
-    let repeat_mode = gd::SamplerRepeatMode.REPEAT;
-};
-
-/**
- Binds a parameter a nearest-neighbor sampler with the provided repeat mode.
- Must be applied to a variable of type `SamplerState` or `Sampler2D`.
-*/
-[__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_NearestSamplerAttribute {
+public struct gd_SamplerAttribute {
+    let filter = gd::SamplerFilter.LINEAR;
     let repeat_mode = gd::SamplerRepeatMode.REPEAT;
 };
 

@@ -24,11 +24,10 @@ struct GodotAttributes {
     DECLARE_GODOT_ATTRIBUTE(export_custom, ExportCustom)
     DECLARE_GODOT_ATTRIBUTE(frame_id, FrameId)
     DECLARE_GODOT_ATTRIBUTE(global_param, GlobalParam)
-    DECLARE_GODOT_ATTRIBUTE(linear_sampler, LinearSampler)
     DECLARE_GODOT_ATTRIBUTE(mouse_position, MousePosition)
     DECLARE_GODOT_ATTRIBUTE(name, Name)
-    DECLARE_GODOT_ATTRIBUTE(nearest_sampler, NearestSampler)
     DECLARE_GODOT_ATTRIBUTE(property_hint, PropertyHint)
+    DECLARE_GODOT_ATTRIBUTE(sampler, Sampler)
     DECLARE_GODOT_ATTRIBUTE(time, Time)
     DECLARE_GODOT_ATTRIBUTE(type, Type)
 };

@@ -466,15 +466,11 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 			}
 			break;
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER:
-			if (user_attributes.has(GodotAttributes::linear_sampler())) {
-				const Dictionary sampler_attribute = user_attributes[GodotAttributes::linear_sampler()];
+			if (user_attributes.has(GodotAttributes::sampler())) {
+				const Dictionary sampler_attribute = user_attributes[GodotAttributes::sampler()];
+				int64_t filter_mode_int = sampler_attribute.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
 				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-				return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-			}
-			if (user_attributes.has(GodotAttributes::nearest_sampler())) {
-				const Dictionary sampler_attribute = user_attributes[GodotAttributes::nearest_sampler()];
-				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-				return _get_sampler(RenderingDevice::SAMPLER_FILTER_NEAREST, static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+				return _get_sampler(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int), static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 			}
 			return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:

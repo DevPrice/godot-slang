@@ -6,7 +6,7 @@ RWTexture2D<float4> scene_color;
 [gd::compositor::ColorTexture]
 Texture2D<float4> scene_texture;
 
-[gd::LinearSampler(gd::SamplerRepeatMode.REPEAT)]
+[gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
 SamplerState sampler_state;
 
 [gd::compositor::InternalSize]

@@ -7,7 +7,7 @@ using gd::compositor;
 let viewport_size : int2;
 
 [gd::compositor::Texture(DataFormat.R16G16B16A16_SNORM)]
-[gd::LinearSampler(SamplerRepeatMode.CLAMP_TO_EDGE)]
+[gd::Sampler(SamplerFilter.LINEAR, SamplerRepeatMode.CLAMP_TO_EDGE)]
 let capture : Sampler2D<float4>;
 
 [gd::compositor::TextureName("capture")]

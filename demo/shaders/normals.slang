@@ -6,7 +6,7 @@ let out_color : RWTexture2D<float4>;
 [gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]
 let scene_texture : Texture2D<float4>;
 
-[gd::LinearSampler(gd::SamplerRepeatMode.REPEAT)]
+[gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
 let sampler_state : SamplerState;
 
 [gd::compositor::InternalSize]

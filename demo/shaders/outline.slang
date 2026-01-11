@@ -12,7 +12,7 @@ let depth_texture : Texture2D<float4>;
 [gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]
 let normal_roughness_texture : Texture2D<float4>;
 
-[gd::LinearSampler(gd::SamplerRepeatMode.REPEAT)]
+[gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
 let sampler_state : SamplerState;
 
 [gd::compositor::InternalSize]
