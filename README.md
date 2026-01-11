@@ -62,11 +62,16 @@ import godot;
 [gd::compositor::ColorTexture]
 RWTexture2D<float4> scene_color;
 
+// makes the property editable in the inspector
+[gd::Export]
+float3 luminance_weights;
+
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void computeMain(uint3 threadId: SV_DispatchThreadID) {
     float4 color = scene_color[threadId.xy];
-    scene_color[threadId.xy] = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
+    float luminance = dot(color.rgb, luminance_weights);
+    scene_color[threadId.xy] = float4(luminance.xxx, color.a);
 }
 ```
 
@@ -97,22 +102,7 @@ scons target=editor debug_symbols=yes dev_build=yes
 Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functional, generating full reflection data for Godot is still very much a work-in-progress.
 If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
 
-`ComputeShaderTask::set_shader_parameter` supports most parameter types, but is not yet fully implemented. See the table below for the status of specific binding types.
-
-| Binding type                                       | Status                |
-|----------------------------------------------------|-----------------------|
-| Global uniforms                                    | ✅ Mostly working      |
-| Push constants                                     | ✅ Mostly working      |
-| User-defined structs                               | ✅ Mostly working      |
-| `Texture2D`/`RWTexture2D`                          | ✅ Mostly working      |
-| `Sampler2D`                                        | ✅ Mostly working      |
-| `SamplerState`                                     | ✅ Mostly working      |
-| `ConstantBuffer`                                   | ✅ Mostly working      |
-| `StructuredBuffer`/`RWStructuredBuffer`            | ✅ Mostly working      |
-| `ByteAddressBuffer`/`RWByteAddressBuffer`          | ✅ Mostly working      |
-| `AppendStructuredBuffer`/`ConsumeStructuredBuffer` | ✅ Mostly working      |
-| `ParameterBlock`                                   | ❌ Not yet implemented |
-| Interfaces                                         | ❌ Not yet implemented |
+`ComputeShaderTask::set_shader_parameter` supports most parameter types, but is not yet fully implemented. In particular, `ParameterBlock` is not yet supported.
 
 ## License
 
