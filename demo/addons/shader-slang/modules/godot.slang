@@ -167,11 +167,10 @@ public struct gd_NameAttribute {
 };
 
 /**
- Hides a parameter from the property inspector. Use for parameters that should only be set from code.
+ Marks a variable or function as exported, making it visible in the Godot editor.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_HideAttribute {};
+public struct gd_ExportAttribute {};
 
 /**
  Binds a parameter to the current time in seconds.

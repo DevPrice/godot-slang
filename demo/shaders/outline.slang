@@ -25,12 +25,15 @@ static let depth_sensitivity : float = 0.25;
 static let normal_sensitivity : float = 0.1;
 
 struct PushConstants {
+    [gd::Export]
     let outline_size : float = 1.0;
+    [gd::Export]
     [gd::Color]
     let outline_color : float4;
 }
 
 [vk::push_constant]
+[gd::Export]
 let push_constants : PushConstants;
 
 [shader("compute")]

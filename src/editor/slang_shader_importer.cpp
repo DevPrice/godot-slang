@@ -330,7 +330,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 	}
 
-	SlangReflectionContext reflection_context(program_layout);
+	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
 	kernel->set_parameters(reflection_context.get_param_reflection(metadata));
 	kernel->set_buffers(reflection_context.get_buffers_reflection());
@@ -349,8 +349,8 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 
 		param_info.set("user_attributes", param_attributes);
 
-		const bool is_autobind = _is_autobind(param->getVariable());
-		const Ref<ShaderTypeLayoutShape> shape = _get_shape(param->getTypeLayout(), !is_autobind);
+		const bool is_exported = param_attributes.has(GodotAttributes::export_property());
+		const Ref<ShaderTypeLayoutShape> shape = _get_shape(param->getTypeLayout(), is_exported);
 		if (shape.is_null()) continue;
 		if (const VariantTypeLayoutShape* variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
 			if (variant_shape->get_size() == 0) {
@@ -364,7 +364,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		PropertyHint hint;
 		String hint_string;
 		if (_get_godot_type(param->getTypeLayout(), param_attributes, type, hint, hint_string)) {
-			const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
+			const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
 			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
 		}
@@ -422,9 +422,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				Dictionary property{};
-				const bool is_autobind = _is_autobind(field->getVariable());
-				const Ref<ShaderTypeLayoutShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && !is_autobind);
 				const Dictionary field_attributes = get_attributes(field->getVariable());
+				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
+				const Ref<ShaderTypeLayoutShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && is_exported);
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("offset", static_cast<int64_t>(field->getOffset()));
@@ -435,7 +435,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					PropertyHint hint;
 					String hint_string;
 					if (_get_godot_type(field->getTypeLayout(), field_attributes, type, hint, hint_string)) {
-						const uint32_t usage = is_autobind ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
+						const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
 						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
 						property.set("property_info", Dictionary(property_info));
 					}
@@ -568,7 +568,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				break;
 			}
 		case slang::TypeReflection::Kind::Vector: {
-			const bool is_color = attributes.has("gd_Color");
+			const bool is_color = attributes.has(GodotAttributes::color());
 			switch (type->getColumnCount()) {
 				case 2:
 					out_type = Variant::VECTOR2;
