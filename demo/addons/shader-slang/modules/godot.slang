@@ -320,7 +320,7 @@ public struct gd_compositor_SceneBufferAttribute {
 [gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_TextureAttribute {
-    let format : gd::compositor::DataFormat = gd::compositor::DataFormat.DATA_FORMAT_R16G16B16A16_SNORM;
+    let format : gd::compositor::DataFormat = gd::compositor::DataFormat.R16G16B16A16_SNORM;
 };
 
 /**
