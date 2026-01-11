@@ -105,6 +105,11 @@ public enum PropertyHint {
     MAX = 45,
 }
 
+public enum SamplerFilter {
+    NEAREST = 0,
+    LINEAR = 1,
+}
+
 public enum SamplerRepeatMode {
 	REPEAT = 0,
 	MIRRORED_REPEAT = 1,
@@ -144,8 +149,8 @@ public struct IntRect {
 
 [gd::Type(VariantType.RECT2)]
 public struct Rect {
-	let position : float2;
-	let size : float2;
+	public let position : float2;
+	public let size : float2;
 
     public func contains(float2 point) -> bool {
 		return point.x >= position.x && point.y >= position.y &&
