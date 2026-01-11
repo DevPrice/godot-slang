@@ -37,6 +37,14 @@
 				Dispatches a kernel by index with the specified number of thread groups.
 			</description>
 		</method>
+		<method name="dispatch_group">
+			<return type="void" />
+			<param index="0" name="group_name" type="StringName" />
+			<param index="1" name="thread_groups" type="Vector3i" />
+			<description>
+				Dispatches all kernels in the specified [param group_name]. Kernels are associated with a group using the [code]gd::KernelGroup[/code] attribute.
+			</description>
+		</method>
 		<method name="get_shader_parameter" qualifiers="const">
 			<return type="Variant" />
 			<param index="0" name="param" type="StringName" />

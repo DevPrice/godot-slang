@@ -31,6 +31,7 @@ public:
 	void dispatch_all(Vector3i thread_groups);
 	void dispatch(const StringName& kernel_name, Vector3i thread_groups);
 	void dispatch_at(int64_t kernel_index, Vector3i thread_groups);
+	void dispatch_group(const StringName& group_name, Vector3i thread_groups);
 
 	[[nodiscard]] Dictionary get_shader_parameters() const;
 

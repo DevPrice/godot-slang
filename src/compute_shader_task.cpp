@@ -22,6 +22,7 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, dispatch, "kernel_name", "thread_groups")
 	BIND_METHOD(ComputeShaderTask, dispatch_at, "kernel_index", "thread_groups")
 	BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
+	BIND_METHOD(ComputeShaderTask, dispatch_group, "group_name", "thread_groups")
 }
 
 ComputeShaderTask::ComputeShaderTask() {
@@ -121,6 +122,23 @@ void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i t
 
 void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups) {
 	_dispatch(kernel_index, thread_groups);
+}
+
+void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups) {
+	ERR_FAIL_NULL(shader);
+	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	for (int64_t i = 0; i < kernels.size(); i++) {
+		const Ref<ComputeShaderKernel> kernel = kernels[i];
+		if (kernel.is_valid()) {
+			const Dictionary attributes = kernel->get_user_attributes();
+			if (attributes.has(GodotAttributes::kernel_group())) {
+				const Dictionary kernel_group_attr = attributes[GodotAttributes::kernel_group()];
+				if (kernel_group_attr["group_name"] == group_name) {
+					_dispatch(i, thread_groups);
+				}
+			}
+		}
+	}
 }
 
 Dictionary ComputeShaderTask::get_shader_parameters() const {

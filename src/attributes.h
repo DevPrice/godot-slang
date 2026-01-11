@@ -24,6 +24,7 @@ struct GodotAttributes {
     DECLARE_GODOT_ATTRIBUTE(export_custom, ExportCustom)
     DECLARE_GODOT_ATTRIBUTE(frame_id, FrameId)
     DECLARE_GODOT_ATTRIBUTE(global_param, GlobalParam)
+    DECLARE_GODOT_ATTRIBUTE(kernel_group, KernelGroup)
     DECLARE_GODOT_ATTRIBUTE(mouse_position, MousePosition)
     DECLARE_GODOT_ATTRIBUTE(name, Name)
     DECLARE_GODOT_ATTRIBUTE(property_hint, PropertyHint)

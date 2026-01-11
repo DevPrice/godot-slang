@@ -292,6 +292,14 @@ public struct gd_SamplerAttribute {
 public struct gd_ColorAttribute {};
 
 /**
+ Marks a compute kernel as part of a kernel group.
+*/
+[__AttributeUsage(_AttributeTargets.Function)]
+public struct gd_KernelGroupAttribute {
+    let group_name : string;
+};
+
+/**
  Binds a parameter to the size of the output texture.
  Must be applied to a variable of type `int2`.
  Only available for `ComputeTexture`s.
