@@ -57,6 +57,54 @@ enum VariantType {
     VARIANT_MAX
 };
 
+public enum PropertyHint {
+    NONE = 0,
+    RANGE = 1,
+    ENUM = 2,
+    ENUM_SUGGESTION = 3,
+    EXP_EASING = 4,
+    LINK = 5,
+    FLAGS = 6,
+    LAYERS_2D_RENDER = 7,
+    LAYERS_2D_PHYSICS = 8,
+    LAYERS_2D_NAVIGATION = 9,
+    LAYERS_3D_RENDER = 10,
+    LAYERS_3D_PHYSICS = 11,
+    LAYERS_3D_NAVIGATION = 12,
+    LAYERS_AVOIDANCE = 37,
+    FILE = 13,
+    DIR = 14,
+    GLOBAL_FILE = 15,
+    GLOBAL_DIR = 16,
+    RESOURCE_TYPE = 17,
+    MULTILINE_TEXT = 18,
+    EXPRESSION = 19,
+    PLACEHOLDER_TEXT = 20,
+    COLOR_NO_ALPHA = 21,
+    OBJECT_ID = 22,
+    TYPE_STRING = 23,
+    NODE_PATH_TO_EDITED_NODE = 24,
+    OBJECT_TOO_BIG = 25,
+    NODE_PATH_VALID_TYPES = 26,
+    SAVE_FILE = 27,
+    GLOBAL_SAVE_FILE = 28,
+    INT_IS_OBJECTID = 29,
+    INT_IS_POINTER = 30,
+    ARRAY_TYPE = 31,
+    DICTIONARY_TYPE = 38,
+    LOCALE_ID = 32,
+    LOCALIZABLE_STRING = 33,
+    NODE_TYPE = 34,
+    HIDE_QUATERNION_EDIT = 35,
+    PASSWORD = 36,
+    TOOL_BUTTON = 39,
+    ONESHOT = 40,
+    GROUP_ENABLE = 42,
+    INPUT_NAME = 43,
+    FILE_PATH = 44,
+    MAX = 45,
+}
+
 public enum SamplerRepeatMode {
 	REPEAT = 0,
 	MIRRORED_REPEAT = 1,
@@ -171,6 +219,15 @@ public struct gd_NameAttribute {
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_ExportAttribute {};
+
+/**
+ Sets the property hint and hint string for an exported parameter.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_PropertyHintAttribute {
+    let property_hint : gd::PropertyHint;
+    let hint_string : String;
+};
 
 /**
  Binds a parameter to the current time in seconds.

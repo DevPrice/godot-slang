@@ -26,6 +26,7 @@ static let normal_sensitivity : float = 0.1;
 
 struct PushConstants {
     [gd::Export]
+    [gd::PropertyHint(gd::PropertyHint.RANGE, "0.1,10.0,0.1,or_greater")]
     let outline_size : float = 1.0;
     [gd::Export]
     [gd::Color]

@@ -307,7 +307,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
 		const SlangResult result = linked_program->getEntryPointMetadata(
 				0, 0, &metadata, diagnostics_blob.writeRef());
-		if (result != OK) {
+		if (SLANG_FAILED(result)) {
 			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 		} else if (diagnostics_blob) {
 			UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
@@ -365,6 +365,11 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		String hint_string;
 		if (_get_godot_type(param->getTypeLayout(), param_attributes, type, hint, hint_string)) {
 			const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
+			if (param_attributes.has(GodotAttributes::property_hint())) {
+				const Dictionary property_hint_attr = param_attributes[GodotAttributes::property_hint()];
+				hint = static_cast<PropertyHint>(static_cast<uint64_t>(property_hint_attr["property_hint"]));
+				hint_string = property_hint_attr["hint_string"];
+			}
 			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
 			param_info.set("property_info", Dictionary(property_info));
 		}
@@ -436,6 +441,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					String hint_string;
 					if (_get_godot_type(field->getTypeLayout(), field_attributes, type, hint, hint_string)) {
 						const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
+						if (field_attributes.has(GodotAttributes::property_hint())) {
+							const Dictionary property_hint_attr = field_attributes[GodotAttributes::property_hint()];
+							hint = static_cast<PropertyHint>(static_cast<uint64_t>(property_hint_attr["property_hint"]));
+							hint_string = property_hint_attr["hint_string"];
+						}
 						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
 						property.set("property_info", Dictionary(property_info));
 					}
@@ -523,10 +533,8 @@ TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
 
 // TODO: Surely there is a better way to do this
 slang::TypeReflection* SlangReflectionContext::_get_attribute_type(slang::Attribute* attribute) const {
-	if (attribute) {
-		return program_layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
-	}
-	return nullptr;
+	ERR_FAIL_NULL_V(attribute, nullptr);
+	return program_layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
 }
 
 String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index) const {
