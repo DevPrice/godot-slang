@@ -309,7 +309,7 @@ public struct gd_KernelGroupAttribute {
 public struct gd_texture_TextureSizeAttribute {};
 
 /**
- Binds a parameter to the internal size of the render buffer (size before upscaling) with which textures are created by default.
+ Binds a parameter to the output texture.
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for `ComputeTexture`s.
 */
