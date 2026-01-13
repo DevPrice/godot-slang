@@ -36,7 +36,7 @@ jobs:
       run: python3 ./make_rst.py -o "docs/source/classes" -l "en" doc_classes
       continue-on-error: true
     - name: Generate docs
-      run: ./docs/make html
+      run: (cd docs && make html)
     - name: Setup Pages
       uses: actions/configure-pages@v5
     - name: Upload artifact

@@ -23,7 +23,7 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-    "int": ("https://docs.godotengine.org/en/stable/", None)
+    "godot": ("https://docs.godotengine.org/en/stable/", None)
 }
 
 # Warning when the Sphinx Tabs extension is used with unknown
