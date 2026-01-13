@@ -5,6 +5,10 @@
 # Build output
 /addons
 
+# Docs generated
+/docs/build
+/docs/source/classes
+
 # Ignore binaries by default
 *.dll
 *.ilk
