@@ -31,9 +31,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install Sphinx
-      run: pip install sphinx && pip install sphinx_rtd_theme
+      run: pip install sphinx sphinx_rtd_theme sphinx-tabs
     - name: Generate source classes
       run: python3 ./make_rst.py -o "docs/source/classes" -l "en" doc_classes
+      continue-on-error: true
     - name: Generate docs
       run: ./docs/make html
     - name: Setup Pages

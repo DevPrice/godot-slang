@@ -61,6 +61,7 @@
 				The exact behavior depends on the type of the parameter. For most parameters, this simply writes the [param value] bytes directly to the appropriate buffer.
 				For example, if you declare a [code]float3[/code] parameter in your shader, You can bind it via [code]set_shader_parameter(Vector3.ONE)[/code] or [code]set_shader_parameter(Color.RED)[/code]. The value will be written to appropriate offset in the global uniform buffer.
 				For parameters that map directly to a buffer or sampler, you can also bind directly to an [RID].
+				[codeblocks]
 				[gdscript]
 				var buffer_rid := RenderingServer.get_rendering_device().storage_buffer_create(256)
 				compute_shader_task.set_shader_parameter("storage_buffer", buffer_rid)
@@ -70,6 +71,7 @@
 				# you can pass two RIDs in an array for Sampler2D params
 				compute_shader_task.set_shader_parameter("sampler2d", [sampler_rid, texture_rid])
 				[/gdscript]
+				[/codeblocks]
 				For [code]Texture2D[/code] and [code]Sampler2D[/code] parameters, you may pass a [Texture2D] resource for the [param value].
 				For array types and structured buffers, you may pass in an [Array] and it will be written with the correct element stride and alignment.
 				If [param value] is a [PackedByteArray], the bytes will be copied directly without any additional interpretation.
