@@ -1,0 +1,9 @@
+short_name = "godot-slang"
+name = "Godot Slang"
+major = 4
+minor = 6
+patch = 0
+status = "beta"
+module_config = ""
+website = "https://devprice.github.io/godot-slang"
+docs = "latest"
