@@ -16,10 +16,10 @@ sys.path.append(os.path.abspath("_extensions"))
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_tabs.tabs",
-    #"notfound.extension",
-    #"sphinxext.opengraph",
-    #"sphinx_copybutton",
-    #"sphinxcontrib.video",
+    "notfound.extension",
+    "sphinxext.opengraph",
+    "sphinx_copybutton",
+    "sphinxcontrib.video",
 ]
 
 intersphinx_mapping = {
