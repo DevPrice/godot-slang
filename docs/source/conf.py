@@ -14,12 +14,17 @@ needs_sphinx = "8.1"
 # Sphinx extension module names and templates location
 sys.path.append(os.path.abspath("_extensions"))
 extensions = [
-    #"sphinx_tabs.tabs",
-    #"notfound.extension",
-    #"sphinxext.opengraph",
-    #"sphinx_copybutton",
-    #"sphinxcontrib.video",
+    "sphinx.ext.intersphinx",
+    "sphinx_tabs.tabs",
+    "notfound.extension",
+    "sphinxext.opengraph",
+    "sphinx_copybutton",
+    "sphinxcontrib.video",
 ]
+
+intersphinx_mapping = {
+    "godot": ("https://docs.godotengine.org/en/stable/", None)
+}
 
 # Warning when the Sphinx Tabs extension is used with unknown
 # builders (like the dummy builder) - as it doesn't cause errors,

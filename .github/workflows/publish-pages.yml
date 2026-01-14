@@ -3,7 +3,7 @@ name: docs
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
+    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -31,11 +31,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install Sphinx
-      run: pip install sphinx && pip install sphinx_rtd_theme
+      run: pip install -r docs/requirements.txt
     - name: Generate source classes
       run: python3 ./make_rst.py -o "docs/source/classes" -l "en" doc_classes
+      continue-on-error: true
     - name: Generate docs
-      run: ./docs/make html
+      run: (cd docs && make html)
     - name: Setup Pages
       uses: actions/configure-pages@v5
     - name: Upload artifact
