@@ -185,37 +185,30 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	ERR_FAIL_NULL(p_list);
-	const Dictionary params = get_shader_parameters();
-	for (const StringName param_name : params.keys()) {
-		const Dictionary param_info = params.get(param_name, Dictionary());
-		PropertyInfo property_info = PropertyInfo::from_dict(param_info.get("property_info", Dictionary()));
-		property_info.name = "shader_parameter/" + property_info.name;
-		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
-			p_list->push_back(property_info);
-		} else {
-			const Ref<ShaderTypeLayoutShape> shape = param_info.get("shape", nullptr);
-			_get_property_list(p_list, "shader_parameter/" + param_name + "/", shape);
-		}
-	}
+	_get_property_list(p_list, "shader_parameter/", get_shader_parameters());
 }
 
-void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ShaderTypeLayoutShape>& shape) {
+void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties) {
 	ERR_FAIL_NULL(p_list);
-	const StructTypeLayoutShape* structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
-	if (!structured_shape) return;
-
-	const Dictionary properties = structured_shape->get_properties();
 	for (const StringName property_name : properties.keys()) {
 		const Dictionary property = properties.get(property_name, Dictionary());
 		PropertyInfo property_info = PropertyInfo::from_dict(property.get("property_info", Dictionary()));
 		property_info.name = prefix + property_info.name;
-		if (property_info.type != Variant::NIL && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE) && property_info.type != Variant::RID) {
+		if (_can_show_property_info(property_info)) {
 			p_list->push_back(property_info);
 		} else {
 			const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
-			_get_property_list(p_list, prefix + property_name + "/", property_shape);
+			if (const auto structured_shape = cast_to<StructTypeLayoutShape>(property_shape.ptr())) {
+				_get_property_list(p_list, String("%s%s/") % TypedArray<String> { prefix, property_name }, structured_shape->get_properties());
+			}
 		}
 	}
+}
+
+bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_info) {
+	return property_info.type != Variant::NIL
+		&& property_info.type != Variant::RID
+		&& (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE);
 }
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {

@@ -39,7 +39,8 @@ public:
 	bool _get(const StringName& p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo>* p_list) const;
 
-	static void _get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Ref<ShaderTypeLayoutShape>& shape);
+	static void _get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties);
+	static bool _can_show_property_info(const PropertyInfo& property_info);
 	[[nodiscard]] bool _property_can_revert(const StringName& p_name) const;
 	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
 
