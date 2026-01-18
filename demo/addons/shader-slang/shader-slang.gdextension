@@ -33,6 +33,13 @@ windows.x86_64.double.debug = "./bin/windows-x86_64/shader-slang.debug.double.dl
 windows.x86_64.single.release = "./bin/windows-x86_64/shader-slang.dll"
 windows.x86_64.double.release = "./bin/windows-x86_64/shader-slang.double.dll"
 
+windows.arm64.single.editor = "./bin/windows-arm64/shader-slang.editor.dll"
+windows.arm64.double.editor = "./bin/windows-arm64/shader-slang.editor.double.dll"
+windows.arm64.single.debug = "./bin/windows-arm64/shader-slang.debug.dll"
+windows.arm64.double.debug = "./bin/windows-arm64/shader-slang.debug.double.dll"
+windows.arm64.single.release = "./bin/windows-arm64/shader-slang.dll"
+windows.arm64.double.release = "./bin/windows-arm64/shader-slang.double.dll"
+
 linux.x86_64.single.editor = "./bin/linux-x86_64/libshader-slang.editor.so"
 linux.x86_64.double.editor = "./bin/linux-x86_64/libshader-slang.editor.double.so"
 linux.x86_64.single.debug = "./bin/linux-x86_64/libshader-slang.debug.so"
