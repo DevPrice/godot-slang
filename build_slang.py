@@ -40,7 +40,7 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
                     configure_cmd.append("-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64")
                 else:
                     configure_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={env["arch"]}")
-            else:
+            elif env["platform"] == "windows":
                 arch_mapping = {
                     "x86_64": "x64",
                     "arm64": "ARM64",
