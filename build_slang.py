@@ -40,6 +40,13 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
                     configure_cmd.append("-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64")
                 else:
                     configure_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={env["arch"]}")
+            else:
+                arch_mapping = {
+                    "x86_64": "x64",
+                    "arm64": "ARM64",
+                }
+                if env["arch"] in arch_mapping:
+                    configure_cmd.extend(["-A", arch_mapping[env["arch"]]])
 
             result = subprocess.run(configure_cmd, cwd=slang_dir, env=cmake_env)
             if result.returncode != 0:
