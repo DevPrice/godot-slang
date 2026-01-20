@@ -1,5 +1,7 @@
 #include "slang_shader_importer.h"
 
+#include <vector>
+
 #include "slang-com-ptr.h"
 #include "slang.h"
 
@@ -11,16 +13,16 @@
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
 
-#include <compute_shader_file.h>
-#include <compute_shader_kernel.h>
-
-#include "attributes.h"
 #include "godot_cpp/classes/cubemap.hpp"
 #include "godot_cpp/classes/cubemap_array.hpp"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/image_texture_layered.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
 #include "godot_cpp/classes/texture3d.hpp"
+
+#include "attributes.h"
+#include <compute_shader_file.h>
+#include <compute_shader_kernel.h>
 
 void SlangShaderImporter::_bind_methods() {
 }
