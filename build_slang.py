@@ -84,10 +84,10 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
-    if env["platform"] == "windows":
-        slang_install_command = env.Install(output_dir, slang_lib_files)
-    else:
-        slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version()}", slang_lib_files)
+    match env["platform"]:
+        case "linux": slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version()}", slang_lib_files)
+        case "macos": slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{get_slang_version()}{env["SHLIBSUFFIX"]}", slang_lib_files)
+        case _: slang_install_command = env.Install(output_dir, slang_lib_files)
 
     env.Depends(slang_install_command, slang_build)
 
