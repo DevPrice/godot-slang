@@ -42,10 +42,11 @@ struct CompositorAttributes {
     DECLARE_COMPOSITOR_ATTRIBUTE(skip, Skip)
     DECLARE_COMPOSITOR_ATTRIBUTE(create_texture, CreateTexture)
     DECLARE_COMPOSITOR_ATTRIBUTE(texture_name, TextureName)
+    DECLARE_COMPOSITOR_ATTRIBUTE(texture_size, TextureSize)
     DECLARE_COMPOSITOR_ATTRIBUTE(velocity_texture, VelocityTexture)
 };
 
 struct TextureAttributes {
+    DECLARE_TEXTURE_ATTRIBUTE(output_size, OutputSize)
     DECLARE_TEXTURE_ATTRIBUTE(output_texture, OutputTexture)
-    DECLARE_TEXTURE_ATTRIBUTE(texture_size, TextureSize)
 };

@@ -306,7 +306,7 @@ public struct gd_KernelGroupAttribute {
 */
 [gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_texture_TextureSizeAttribute {};
+public struct gd_texture_OutputSizeAttribute {};
 
 /**
  Binds a parameter to the output texture.
@@ -371,6 +371,18 @@ public struct gd_compositor_VelocityTextureAttribute {};
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_CreateTextureAttribute {
     let format : gd::compositor::DataFormat = gd::compositor::DataFormat.R16G16B16A16_SNORM;
+};
+
+/**
+ Specify the size of a texture created via gd::compositor::CreateTexture.
+ If not specified, will default to the internal size of the render buffer (size before upscaling).
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
+ Only available for compositor effects.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_TextureSizeAttribute {
+    let size : int2;
 };
 
 /**

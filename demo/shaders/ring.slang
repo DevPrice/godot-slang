@@ -11,7 +11,7 @@ RWTexture2D<float4> texture;
 float t;
 
 [vk::push_constant]
-[gd::texture::TextureSize]
+[gd::texture::OutputSize]
 int2 screen_size;
 
 [shader("compute")]

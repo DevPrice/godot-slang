@@ -93,7 +93,6 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 	Array param_names = params.keys();
 	for (const StringName param_name : param_names) {
 		if (!param_name.is_empty()) {
-			static StringName key_context("context");
 			static StringName key_name("name");
 			Dictionary param_dict = params.get(param_name, Dictionary());
 			Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
@@ -115,6 +114,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 			String context = "__global_context";
 			if (user_attributes.has(CompositorAttributes::context())) {
 				Dictionary context_args = user_attributes[CompositorAttributes::context()];
+				static StringName key_context("context");
 				context = context_args.get(key_context, String());
 			}
 			if (user_attributes.has(CompositorAttributes::create_texture())) {
@@ -122,6 +122,13 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 				Dictionary texture_name_attribute = user_attributes.get(CompositorAttributes::texture_name(), Dictionary());
 				const int32_t format = args.get("format", 0);
 				const String texture_name = texture_name_attribute.get(key_name, param_name);
+				Vector2i texture_size = render_scene_buffers->get_internal_size();
+				if (user_attributes.has(CompositorAttributes::texture_size())) {
+					Dictionary context_args = user_attributes[CompositorAttributes::texture_size()];
+					static StringName key_size("size");
+					context = context_args.get(key_size, String());
+				}
+
 				// TODO: Make more of this configurable
 				const RID texture = render_scene_buffers->create_texture(
 					context,
@@ -129,7 +136,7 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 					static_cast<RenderingDevice::DataFormat>(format),
 					RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
 					RenderingDevice::TEXTURE_SAMPLES_1,
-					render_scene_buffers->get_internal_size(),
+					texture_size,
 					1,
 					1,
 					false,

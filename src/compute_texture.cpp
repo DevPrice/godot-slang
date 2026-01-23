@@ -131,7 +131,7 @@ void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task, cons
         if (!param_name.is_empty()) {
             Dictionary param_dict = params[param_name];
             Dictionary user_attributes = param_dict["user_attributes"];
-            if (user_attributes.has(TextureAttributes::texture_size())) {
+            if (user_attributes.has(TextureAttributes::output_size())) {
                 p_task->set_shader_parameter(param_name, size);
             }
             if (user_attributes.has(TextureAttributes::output_texture())) {
