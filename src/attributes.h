@@ -37,10 +37,10 @@ struct CompositorAttributes {
     DECLARE_COMPOSITOR_ATTRIBUTE(depth_texture, DepthTexture)
     DECLARE_COMPOSITOR_ATTRIBUTE(once, Once)
     DECLARE_COMPOSITOR_ATTRIBUTE(internal_size, InternalSize)
-    DECLARE_COMPOSITOR_ATTRIBUTE(scene_buffer, SceneBuffer)
+    DECLARE_COMPOSITOR_ATTRIBUTE(context, Context)
     DECLARE_COMPOSITOR_ATTRIBUTE(scene_data, SceneData)
     DECLARE_COMPOSITOR_ATTRIBUTE(skip, Skip)
-    DECLARE_COMPOSITOR_ATTRIBUTE(texture, Texture)
+    DECLARE_COMPOSITOR_ATTRIBUTE(create_texture, CreateTexture)
     DECLARE_COMPOSITOR_ATTRIBUTE(texture_name, TextureName)
     DECLARE_COMPOSITOR_ATTRIBUTE(velocity_texture, VelocityTexture)
 };

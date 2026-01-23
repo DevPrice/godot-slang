@@ -363,26 +363,25 @@ public struct gd_compositor_DepthTextureAttribute {};
 public struct gd_compositor_VelocityTextureAttribute {};
 
 /**
- Binds a parameter to the texture with the provided context and name.
- Must be applied to a variable of type `Texture2D` or `Sampler2D`.
- Only available for compositor effects.
-*/
-[gd::Autobind]
-[__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_compositor_SceneBufferAttribute {
-    let context : string = "render_buffers";
-    let name : string;
-};
-
-/**
  Binds a parameter to a new texture.
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
 [gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
-public struct gd_compositor_TextureAttribute {
+public struct gd_compositor_CreateTextureAttribute {
     let format : gd::compositor::DataFormat = gd::compositor::DataFormat.R16G16B16A16_SNORM;
+};
+
+/**
+ Binds a parameter to the texture in the provided context. Should be used with the TextureName attribute to specify which texture to bind.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
+ Only available for compositor effects.
+*/
+[gd::Autobind]
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_compositor_ContextAttribute {
+    let context : string = "render_buffers";
 };
 
 /**

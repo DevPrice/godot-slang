@@ -3,7 +3,8 @@ import godot;
 [gd::compositor::ColorTexture]
 let out_color : RWTexture2D<float4>;
 
-[gd::compositor::SceneBuffer("forward_clustered", "normal_roughness")]
+[gd::compositor::Context("forward_clustered")]
+[gd::compositor::TextureName("normal_roughness")]
 let scene_texture : Texture2D<float4>;
 
 [gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
