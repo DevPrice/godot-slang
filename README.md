@@ -2,15 +2,16 @@
 
 [![Build GDExtension](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml/badge.svg)](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml)
 
-This project is a work-in-progress to support [Slang](https://shader-slang.org/)-based compute shaders in Godot.
+This project is a work-in-progress to support [Slang](https://shader-slang.org/)-based compute shaders in Godot. The primary goal of this project is to simplify working with compute shaders within Godot.
 
 ## Features
 * Simple and straightforward handling of `.slang` files. You can `load("res://something.slang")` and it works exactly how you would expect.
-* Supports most `.glsl` and `.hlsl` shaders in addition to `.slang`
-* Supports most major Slang features, including modules.
 * Uses a high-level API for binding shader parameters, similar to GDShader (`set_shader_parameter(...)`).
 * Minimizes boilerplate by automatically binding shader parameters for common textures (color, depth, normal/roughness, etc.), current time, shader globals, and more.
+* Allows exposing shader parameters to the editor via a familiar export pattern.
 * First-class support for compositor effects.
+* Supports most major Slang features, including modules.
+* Supports most `.glsl` and `.hlsl` shaders in addition to `.slang`.
 
 ## Usage
 
@@ -29,10 +30,12 @@ After installing this plugin in Godot, you'll see a few new types available in t
 * `ComputeTexture` (experimental)
   * `Texture2D` resource backed by a compute shader.
 
+For more information about these classes, see [the class documentation](https://devprice.github.io/godot-slang/classes/index.html).
+
 After installing, Slang files in your project will be automatically imported as compute shaders.
 Each function in the Slang source annotated with `[shader("compute")]` will be imported as a `ComputeShaderKernel`.
 
-If you'd like, you can ignore the `ComputeShaderTask` and `ComputeShaderEffect` classes, and instead directly bind your shader parameters from code just like you would with `.glsl`.
+If you'd like, you can ignore the `ComputeShaderTask` and `ComputeShaderEffect` classes, and instead directly bind your shader parameters from code just like you would with a standard `.glsl` import.
 If you choose to do this, it can be helpful to explicitly declare Vulkan bindings in your shader:
 ```slang
 [[vk::binding(1,2)]]
@@ -103,6 +106,10 @@ Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functiona
 If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
 
 `ComputeShaderTask::set_shader_parameter` supports most parameter types, but is not yet fully implemented. In particular, `ParameterBlock` is not yet supported.
+
+[Web documentation](https://devprice.github.io/godot-slang/) is currently bare-bones, but in-progress.
+
+If you have questions or comments, please start a [discussion](https://github.com/DevPrice/godot-slang/discussions/).
 
 ## License
 
