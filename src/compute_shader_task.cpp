@@ -455,6 +455,9 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 
 Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
 	if (user_attributes.has(GodotAttributes::global_param())) {
+		if (!RenderingServer::get_singleton()->is_on_render_thread()) {
+			WARN_PRINT_ONCE("Avoid using the [gd::GlobalParam] attribute off of the render thread, it may cause performance issues.");
+		}
 		const Dictionary attribute = user_attributes[GodotAttributes::global_param()];
 		const String param_name = attribute["name"];
 		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
