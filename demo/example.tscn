@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3 uid="uid://dh0oj81pufivs"]
+[gd_scene format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
 [ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_wcwec"]
@@ -135,52 +135,52 @@ albedo_texture_force_srgb = true
 material = SubResource("StandardMaterial3D_mt10o")
 size = Vector2(8, 8)
 
-[node name="Node" type="Node3D"]
+[node name="Node" type="Node3D" unique_id=818183429]
 script = ExtResource("1_kkclv")
 data_mosh_effect = SubResource("ComputeShaderEffect_mt10o")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=347714745]
 environment = SubResource("Environment_8lvy3")
 compositor = SubResource("Compositor_ugfer")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1687204090]
 transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
 shadow_enabled = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=833938072]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
 material_override = SubResource("StandardMaterial3D_wcwec")
 
-[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+[node name="CSGSphere3D" type="CSGSphere3D" parent="." unique_id=511125424]
 material_override = SubResource("StandardMaterial3D_ei00m")
 radial_segments = 32
 rings = 16
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="."]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1207045533]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
 material_override = SubResource("StandardMaterial3D_ugfer")
 sides = 32
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1680334234]
 transform = Transform3D(1, 0, 0, 0, 0.946812, 0.321787, 0, -0.321787, 0.946812, 0, 2, 4)
 script = ExtResource("7_rujmf")
 
-[node name="NormalsViewport" type="SubViewport" parent="."]
+[node name="NormalsViewport" type="SubViewport" parent="." unique_id=830874068]
 transparent_bg = true
 size = Vector2i(1024, 1024)
 
-[node name="ViewportCamera" type="Camera3D" parent="NormalsViewport"]
+[node name="ViewportCamera" type="Camera3D" parent="NormalsViewport" unique_id=912484536]
 transform = Transform3D(1, 0, 0, 0, 0.8931594, 0.44974035, 0, -0.44974035, 0.8931594, -0.20058179, 2, 6)
 cull_mask = 1048573
 compositor = SubResource("Compositor_mt10o")
 fov = 52.3
 
-[node name="SubViewportMesh" type="MeshInstance3D" parent="."]
+[node name="SubViewportMesh" type="MeshInstance3D" parent="." unique_id=1864037808]
 transform = Transform3D(1, 8.7422784e-08, 8.742277e-08, -8.742278e-08, 1, -8.742278e-08, -8.742278e-08, 8.742277e-08, 1, -0.00019919872, -0.00804925, -2.9976554)
 layers = 2
 mesh = SubResource("QuadMesh_kkclv")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=346190608]
 transform = Transform3D(0.99999994, 0, 0, 0, 1, 0, 0, 0, 0.99999994, 0, 2, -7)
 layers = 2
 mesh = SubResource("QuadMesh_hl4on")
