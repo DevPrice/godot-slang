@@ -365,7 +365,7 @@ Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metada
 		Variant::Type type;
 		PropertyHint hint;
 		String hint_string;
-		if (_get_godot_type(param->getTypeLayout(), param_attributes, type, hint, hint_string)) {
+		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
 			const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
 			if (param_attributes.has(GodotAttributes::property_hint())) {
 				const Dictionary property_hint_attr = param_attributes[GodotAttributes::property_hint()];
@@ -441,7 +441,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					Variant::Type type;
 					PropertyHint hint;
 					String hint_string;
-					if (_get_godot_type(field->getTypeLayout(), field_attributes, type, hint, hint_string)) {
+					if (_get_godot_type(field->getType(), field_attributes, type, hint, hint_string)) {
 						const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
 						if (field_attributes.has(GodotAttributes::property_hint())) {
 							const Dictionary property_hint_attr = field_attributes[GodotAttributes::property_hint()];
@@ -549,7 +549,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	return String("argument") + String::num_int64(argument_index);
 }
 
- bool SlangReflectionContext::_get_godot_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+ bool SlangReflectionContext::_get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	ERR_FAIL_NULL_V(type, false);
 	out_hint = PROPERTY_HINT_NONE;
 	out_hint_string = "";
@@ -577,6 +577,20 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			default:
 				break;
 			}
+		case slang::TypeReflection::Kind::Enum: {
+			out_type = Variant::INT;
+			Dictionary enum_values{};
+			out_hint = PROPERTY_HINT_ENUM;
+			for (uint32_t i = 0; i < type->getFieldCount(); i++) {
+				slang::VariableReflection* field = type->getFieldByIndex(i);
+				const String enum_name = get_name(field, get_attributes(field));
+				int64_t enum_value = 0;
+				field->getDefaultValueInt(&enum_value);
+				enum_values.set(enum_name, enum_value);
+			}
+			out_hint_string = _get_enum_hint_string(enum_values);
+			return true;
+		}
 		case slang::TypeReflection::Kind::Vector: {
 			const bool is_color = attributes.has(GodotAttributes::color());
 			switch (type->getColumnCount()) {
@@ -599,7 +613,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			break;
 		}
 		case slang::TypeReflection::Kind::Array:
-			return _get_godot_array_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string);
+			return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShape resource_shape = type->getResourceShape();
 			const unsigned base_shape = resource_shape & SLANG_RESOURCE_BASE_SHAPE_MASK;
@@ -632,14 +646,14 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 					return true;
 				}
 				case SLANG_STRUCTURED_BUFFER:
-					return _get_godot_array_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string);
+					return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 				default:
 					break;
 			}
 			break;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer: {
-			if (_get_godot_type(type->getElementTypeLayout(), attributes, out_type, out_hint, out_hint_string)) {
+			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
 				return true;
 			}
 			return false;
@@ -650,7 +664,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				out_type = Variant::STRING;
 				return true;
 			}
-			const Dictionary type_attributes = get_attributes(type->getType());
+			const Dictionary type_attributes = get_attributes(type);
 			if (type_attributes.has(GodotAttributes::type())) {
 				const Dictionary type_attr = type_attributes[GodotAttributes::type()];
 				out_type = static_cast<Variant::Type>(static_cast<int64_t>(type_attr["type"]));
@@ -701,7 +715,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	return false;
 }
 
-bool SlangReflectionContext::_get_godot_array_type(slang::TypeLayoutReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
+bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	ERR_FAIL_NULL_V(type, false);
 	out_type = Variant::ARRAY;
 
@@ -836,6 +850,15 @@ RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slan
 			UtilityFunctions::push_warning("Unknown binding type: ", base_type);
 			return static_cast<RenderingDevice::UniformType>(-1);
 	}
+}
+
+String SlangReflectionContext::_get_enum_hint_string(const Dictionary& enum_values) {
+	PackedStringArray item_strings{};
+	for (const String enum_name: enum_values.keys()) {
+		const int64_t enum_value = enum_values[enum_name];
+		item_strings.push_back(enum_name + String(":") + String::num_int64(enum_value));
+	}
+	return String(",").join(item_strings);
 }
 
 slang::IGlobalSession* SlangShaderImporter::_get_global_session(const bool enable_glsl) {
