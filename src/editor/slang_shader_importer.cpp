@@ -58,9 +58,9 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 	{
 		Dictionary matrix_layout_option{};
 		matrix_layout_option.set("name", "default_matrix_layout");
-		matrix_layout_option.set("default_value", ComputeShaderFile::ROW_MAJOR);
+		matrix_layout_option.set("default_value", ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
-		matrix_layout_option.set("hint_string", String("Row-major:%s,Column-major:%s") % Array { String::num_int64(ComputeShaderFile::ROW_MAJOR), String::num_int64(ComputeShaderFile::COLUMN_MAJOR) });
+		matrix_layout_option.set("hint_string", String("Row-major:%s,Column-major:%s") % Array { String::num_int64(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR), String::num_int64(ShaderTypeLayoutShape::MatrixLayout::COLUMN_MAJOR) });
 		options.push_back(matrix_layout_option);
 	}
 	return options;
@@ -336,7 +336,14 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
 	kernel->set_parameters(reflection_context.get_param_reflection(metadata));
 	kernel->set_buffers(reflection_context.get_buffers_reflection());
+	kernel->set_params_shape(reflection_context.get_params_shape());
 	return kernel;
+}
+
+Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
+	slang::VariableLayoutReflection* program_var_layout = program_layout->getGlobalParamsVarLayout();
+	slang::TypeLayoutReflection* program_type_layout = program_var_layout->getTypeLayout();
+	return _get_shape(program_type_layout, true);
 }
 
 Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) const {
@@ -422,7 +429,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			Ref<VariantTypeLayoutShape> shape;
 			shape.instantiate();
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
-			shape->set_matrix_layout(static_cast<ComputeShaderFile::MatrixLayout>(type_layout->getMatrixLayoutMode()));
+			shape->set_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(type_layout->getMatrixLayoutMode()));
 			return shape;
 		}
 		case slang::TypeReflection::Kind::Struct: {
@@ -464,7 +471,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				}
 			}
 			shape->set_properties(property_shapes);
-			shape->set_user_attributes(get_attributes(type_layout->getType()));
+			if (slang::TypeReflection* type = type_layout->getType()) {
+				shape->set_user_attributes(get_attributes(type));
+			}
 			return shape;
 		}
 		case slang::TypeReflection::Kind::SamplerState:

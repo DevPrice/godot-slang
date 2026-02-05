@@ -28,7 +28,7 @@ void ResourceTypeLayoutShape::_bind_methods() {
     BIND_GET_SET_ENUM(ResourceTypeLayoutShape, resource_type, "Unknown:0,Raw Bytes:1")
 }
 
-GET_SET_PROPERTY_IMPL(VariantTypeLayoutShape, ComputeShaderFile::MatrixLayout, matrix_layout)
+GET_SET_PROPERTY_IMPL(VariantTypeLayoutShape, ShaderTypeLayoutShape::MatrixLayout, matrix_layout)
 
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, Ref<ShaderTypeLayoutShape>, element_shape)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, stride)

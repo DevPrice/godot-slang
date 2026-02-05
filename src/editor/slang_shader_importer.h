@@ -16,6 +16,7 @@ public:
 
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
+	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
 	Dictionary get_param_reflection(slang::IMetadata* metadata) const;
 	[[nodiscard]] TypedArray<Dictionary> get_buffers_reflection() const;
 
@@ -85,8 +86,7 @@ public:
 
 private:
 	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options, bool enable_glsl = false);
-	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray&
-	                                    additional_entry_points);
+	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points);
 	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 };
