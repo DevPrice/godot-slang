@@ -3,7 +3,6 @@
 #include "godot_cpp/classes/resource.hpp"
 
 #include "binding_macros.h"
-#include "compute_shader_file.h"
 
 using namespace godot;
 
@@ -16,6 +15,12 @@ protected:
 public:
 	[[nodiscard]] virtual int64_t get_size() const { return 0; };
 
+	// Values must match SlangMatrixLayoutMode
+	enum MatrixLayout {
+		UNKNOWN = 0,
+		ROW_MAJOR = 1,
+		COLUMN_MAJOR = 2,
+	};
 };
 
 class VariantTypeLayoutShape : public ShaderTypeLayoutShape {
@@ -24,7 +29,7 @@ class VariantTypeLayoutShape : public ShaderTypeLayoutShape {
 protected:
 	static void _bind_methods();
 
-	GET_SET_PROPERTY(ComputeShaderFile::MatrixLayout, matrix_layout)
+	GET_SET_PROPERTY(MatrixLayout, matrix_layout)
 
 public:
 	[[nodiscard]] int64_t get_size() const override;
@@ -89,4 +94,5 @@ protected:
 
 };
 
+VARIANT_ENUM_CAST(ShaderTypeLayoutShape::MatrixLayout)
 VARIANT_ENUM_CAST(ResourceTypeLayoutShape::ComputeShaderResourceType)

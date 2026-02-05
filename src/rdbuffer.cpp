@@ -165,7 +165,7 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 #define MIN_SIZE(x) \
 	if (unlikely(size < x)) return;
 
-void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ComputeShaderFile::MatrixLayout matrix_layout) {
+void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND(offset < 0);
 	ERR_FAIL_COND(offset + size > destination.size());
 	ERR_FAIL_COND(size < 4);
@@ -294,14 +294,14 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			MIN_SIZE(16);
 			const Basis basis = data;
 			switch (matrix_layout) {
-				case ComputeShaderFile::ROW_MAJOR:
+				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
 					write(destination, offset, 16, basis[0]);
 					MIN_SIZE(32);
 					write(destination, offset + 16, 16, basis[1]);
 					MIN_SIZE(48);
 					write(destination, offset + 32, 16, basis[2]);
 					break;
-				case ComputeShaderFile::COLUMN_MAJOR: {
+				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector3 col0(basis[0].x, basis[1].x, basis[2].x);
 					const Vector3 col1(basis[0].y, basis[1].y, basis[2].y);
 					const Vector3 col2(basis[0].z, basis[1].z, basis[2].z);
@@ -321,7 +321,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			MIN_SIZE(16);
 			const Projection projection = data;
 			switch (matrix_layout) {
-				case ComputeShaderFile::ROW_MAJOR:
+				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
 					write(destination, offset, 16, projection[0]);
 					MIN_SIZE(32);
 					write(destination, offset + 16, 16, projection[1]);
@@ -330,7 +330,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 					MIN_SIZE(64);
 					write(destination, offset + 48, 16, projection[3]);
 					break;
-				case ComputeShaderFile::COLUMN_MAJOR: {
+				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector4 col0(projection[0].x, projection[1].x, projection[2].x, projection[3].x);
 					const Vector4 col1(projection[0].y, projection[1].y, projection[2].y, projection[3].y);
 					const Vector4 col2(projection[0].z, projection[1].z, projection[2].z, projection[3].z);
@@ -361,14 +361,14 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			MIN_SIZE(16);
 			const Transform2D transform = data;
 			switch (matrix_layout) {
-				case ComputeShaderFile::ROW_MAJOR:
+				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
 					write(destination, offset, 16, transform[0]);
 					MIN_SIZE(32);
 					write(destination, offset + 16, 16, transform[1]);
 					MIN_SIZE(48);
 					write(destination, offset + 32, 16, transform[2]);
 					break;
-				case ComputeShaderFile::COLUMN_MAJOR: {
+				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector3 col0(transform[0].x, transform[1].x, transform[2].x);
 					const Vector3 col1(transform[0].y, transform[1].y, transform[2].y);
 					write(destination, offset, 16, col0);
@@ -385,7 +385,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			MIN_SIZE(16);
 			const Transform3D transform = data;
 			switch (matrix_layout) {
-				case ComputeShaderFile::ROW_MAJOR:
+				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
 					write(destination, offset, 16, transform.basis[0]);
 					MIN_SIZE(32);
 					write(destination, offset + 16, 16, transform.basis[1]);
@@ -394,7 +394,7 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 					MIN_SIZE(64);
 					write(destination, offset + 48, 16, transform.origin);
 					break;
-				case ComputeShaderFile::COLUMN_MAJOR: {
+				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector4 col0(transform.basis[0].x, transform.basis[1].x, transform.basis[2].x, transform.origin.x);
 					const Vector4 col1(transform.basis[0].y, transform.basis[1].y, transform.basis[2].y, transform.origin.y);
 					const Vector4 col2(transform.basis[0].z, transform.basis[1].z, transform.basis[2].z, transform.origin.z);

@@ -5,6 +5,7 @@
 
 #include "binding_macros.h"
 #include "compute_shader_kernel.h"
+#include "compute_shader_shape.h"
 
 using namespace godot;
 
@@ -25,11 +26,10 @@ public:
 	[[nodiscard]] Ref<RDShaderSPIRV> get_spirv(const StringName &p_version = StringName(), int64_t kernel_index = 0) const;
 	[[nodiscard]] TypedArray<StringName> get_version_list(int64_t kernel_index = 0) const;
 
-	// Values must match SlangMatrixLayoutMode
 	enum MatrixLayout {
-		UNKNOWN = 0,
-		ROW_MAJOR = 1,
-		COLUMN_MAJOR = 2,
+		UNKNOWN = ShaderTypeLayoutShape::MatrixLayout::UNKNOWN,
+		ROW_MAJOR = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR,
+		COLUMN_MAJOR = ShaderTypeLayoutShape::MatrixLayout::COLUMN_MAJOR,
 	};
 };
 

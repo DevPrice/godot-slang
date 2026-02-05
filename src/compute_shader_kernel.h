@@ -4,6 +4,7 @@
 #include "godot_cpp/classes/resource.hpp"
 
 #include "binding_macros.h"
+#include "compute_shader_shape.h"
 
 using namespace godot;
 
@@ -15,6 +16,7 @@ class ComputeShaderKernel : public Resource {
 	GET_SET_PROPERTY(Vector3i, thread_group_size)
 	GET_SET_PROPERTY(Dictionary, user_attributes)
 	GET_SET_PROPERTY(Dictionary, parameters)
+	GET_SET_PROPERTY(Ref<StructTypeLayoutShape>, params_shape)
 	GET_SET_PROPERTY(TypedArray<Dictionary>, buffers)
 
 protected:
