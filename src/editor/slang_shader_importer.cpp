@@ -505,6 +505,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			return shape;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer:
+		case slang::TypeReflection::Kind::ParameterBlock:
 			return _get_shape(type_layout->getElementTypeLayout(), include_property_info);
 		default:
 			break;
@@ -671,6 +672,7 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			}
 			break;
 		}
+		case slang::TypeReflection::Kind::ParameterBlock:
 		case slang::TypeReflection::Kind::ConstantBuffer: {
 			if (_get_godot_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string)) {
 				return true;
