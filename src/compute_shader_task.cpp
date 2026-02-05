@@ -219,17 +219,14 @@ bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_inf
 }
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
-	if (p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
-		const Variant value = get_shader_parameter(param_name);
-		return value.get_type() != Variant::NIL;
-	}
-	return false;
+	Dictionary reflection;
+	return _property_get_reflection(p_name, reflection);
 }
 
 bool ComputeShaderTask::_property_get_revert(const StringName& p_name, Variant& r_property) const {
-	if (p_name.begins_with("shader_parameter/")) {
-		r_property = nullptr;
+	Dictionary reflection;
+	if (_property_get_reflection(p_name, reflection) && reflection.has("default_value")) {
+		r_property = reflection["default_value"];
 		return true;
 	}
 	return false;
