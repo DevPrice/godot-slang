@@ -19,6 +19,7 @@ public:
 	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
 	Dictionary get_param_reflection(slang::IMetadata* metadata) const;
 	[[nodiscard]] TypedArray<Dictionary> get_buffers_reflection() const;
+	[[nodiscard]] Variant to_json() const;
 
 	template<typename T>
 	Dictionary get_attributes(T* reflection) const {
