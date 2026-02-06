@@ -25,6 +25,7 @@
 #include <compute_shader_kernel.h>
 
 #include "enums.h"
+#include "godot_cpp/classes/json.hpp"
 
 void SlangShaderImporter::_bind_methods() {
 }
@@ -343,9 +344,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 }
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
-	slang::VariableLayoutReflection* program_var_layout = program_layout->getGlobalParamsVarLayout();
-	slang::TypeLayoutReflection* program_type_layout = program_var_layout->getTypeLayout();
-	return _get_shape(program_type_layout, true);
+	return _get_shape(program_layout->getGlobalParamsTypeLayout());
 }
 
 Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) const {
@@ -883,6 +882,16 @@ Variant SlangReflectionContext::get_default_value(slang::VariableReflection* var
 			}
 			UtilityFunctions::print("No default for '", String(var->getName()), "' (", (int)type->getKind(), ", ", (int)type->getScalarType(), ")");
 		}
+	}
+	return nullptr;
+}
+
+Variant SlangReflectionContext::to_json() const {
+	ERR_FAIL_NULL_V(program_layout, nullptr);
+	Slang::ComPtr<slang::IBlob> json_blob;
+	if (SLANG_SUCCEEDED(program_layout->toJson(json_blob.writeRef()))) {
+		const String json_string = String::utf8(static_cast<const char*>(json_blob->getBufferPointer()), json_blob->getBufferSize());
+		return JSON::parse_string(json_string);
 	}
 	return nullptr;
 }
