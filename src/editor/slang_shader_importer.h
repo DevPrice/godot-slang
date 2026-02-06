@@ -61,7 +61,6 @@ private:
 	Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
 	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
-	static String _get_enum_hint_string(const Dictionary& enum_values);
 };
 
 class SlangShaderImporter final : public EditorImportPlugin {

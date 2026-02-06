@@ -24,6 +24,8 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
+#include "enums.h"
+
 void SlangShaderImporter::_bind_methods() {
 }
 
@@ -447,6 +449,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("offset", static_cast<int64_t>(field->getOffset()));
+				property.set("binding_index", field->getBindingIndex() + type_layout->getContainerVarLayout()->getBindingIndex());
+				property.set("binding_space", field->getBindingSpace() + type_layout->getContainerVarLayout()->getBindingSpace());
 				property_shapes.set(get_name(field, field_attributes), property);
 
 				if (include_property_info) {
@@ -479,16 +483,19 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		case slang::TypeReflection::Kind::SamplerState:
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
+			const RenderingDevice::UniformType uniform_type = _to_godot_uniform_type(type_layout->getBindingRangeType(0));
 			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
 				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
 				shape->set_resource_type(ResourceTypeLayoutShape::RAW_BYTES);
+				shape->set_uniform_type(uniform_type);
 				return shape;
 			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
 				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
 				shape->set_resource_type(ResourceTypeLayoutShape::UNKNOWN);
+				shape->set_uniform_type(uniform_type);
 				return shape;
 			}
 		}
@@ -606,9 +613,9 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 				const String enum_name = get_name(field, get_attributes(field));
 				int64_t enum_value = 0;
 				field->getDefaultValueInt(&enum_value);
-				enum_values.set(enum_name, enum_value);
+				enum_values.set(enum_name.capitalize(), enum_value);
 			}
-			out_hint_string = _get_enum_hint_string(enum_values);
+			out_hint_string = Enums::get_enum_hint_string(enum_values);
 			return true;
 		}
 		case slang::TypeReflection::Kind::Vector: {
@@ -899,6 +906,7 @@ RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slan
 		case SLANG_BINDING_TYPE_RAW_BUFFER:
 			return RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER;
 		case SLANG_BINDING_TYPE_PARAMETER_BLOCK:
+		case SLANG_BINDING_TYPE_PUSH_CONSTANT:
 		case SLANG_BINDING_TYPE_INPUT_RENDER_TARGET:
 		case SLANG_BINDING_TYPE_INLINE_UNIFORM_DATA:
 		case SLANG_BINDING_TYPE_RAY_TRACING_ACCELERATION_STRUCTURE:
@@ -906,15 +914,6 @@ RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slan
 			UtilityFunctions::push_warning("Unknown binding type: ", base_type);
 			return static_cast<RenderingDevice::UniformType>(-1);
 	}
-}
-
-String SlangReflectionContext::_get_enum_hint_string(const Dictionary& enum_values) {
-	PackedStringArray item_strings{};
-	for (const String enum_name: enum_values.keys()) {
-		const int64_t enum_value = enum_values[enum_name];
-		item_strings.push_back(enum_name + String(":") + String::num_int64(enum_value));
-	}
-	return String(",").join(item_strings);
 }
 
 slang::IGlobalSession* SlangShaderImporter::_get_global_session(const bool enable_glsl) {

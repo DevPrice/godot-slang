@@ -3,6 +3,7 @@
 #include "godot_cpp/classes/resource.hpp"
 
 #include "binding_macros.h"
+#include "godot_cpp/classes/rendering_device.hpp"
 
 using namespace godot;
 
@@ -59,6 +60,13 @@ private:
 
 };
 
+class StructPropertyShape : public Resource {
+	GDCLASS(StructPropertyShape, Resource);
+
+protected:
+	static void _bind_methods();
+};
+
 class StructTypeLayoutShape : public ShaderTypeLayoutShape {
 	GDCLASS(StructTypeLayoutShape, ShaderTypeLayoutShape);
 
@@ -88,6 +96,7 @@ public:
 	};
 
 	GET_SET_PROPERTY(ComputeShaderResourceType, resource_type)
+	GET_SET_PROPERTY(RenderingDevice::UniformType, uniform_type)
 
 protected:
 	static void _bind_methods();

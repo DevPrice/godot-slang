@@ -1,5 +1,8 @@
 #include "compute_shader_shape.h"
 
+#include "compute_shader_file.h"
+#include "enums.h"
+
 void ShaderTypeLayoutShape::_bind_methods() {
 }
 
@@ -15,6 +18,9 @@ void ArrayTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ArrayTypeLayoutShape, alignment, Variant::INT);
 }
 
+void StructPropertyShape::_bind_methods() {
+}
+
 void StructTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(StructTypeLayoutShape, size, Variant::INT);
     BIND_GET_SET(StructTypeLayoutShape, alignment, Variant::INT);
@@ -25,7 +31,8 @@ void StructTypeLayoutShape::_bind_methods() {
 void ResourceTypeLayoutShape::_bind_methods() {
     BIND_ENUM_CONSTANT(UNKNOWN)
     BIND_ENUM_CONSTANT(RAW_BYTES)
-    BIND_GET_SET_ENUM(ResourceTypeLayoutShape, resource_type, "Unknown:0,Raw Bytes:1")
+    BIND_GET_SET_ENUM(ResourceTypeLayoutShape, resource_type, ENUM_HINT_STRING(ResourceTypeLayoutShape, ComputeShaderResourceType))
+    BIND_GET_SET_ENUM(ResourceTypeLayoutShape, uniform_type, ENUM_HINT_STRING(RenderingDevice, UniformType))
 }
 
 GET_SET_PROPERTY_IMPL(VariantTypeLayoutShape, ShaderTypeLayoutShape::MatrixLayout, matrix_layout)
@@ -39,6 +46,7 @@ GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, properties)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, user_attributes)
 
 GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, ResourceTypeLayoutShape::ComputeShaderResourceType, resource_type)
+GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uniform_type)
 
 int64_t VariantTypeLayoutShape::get_size() const { return size; }
 void VariantTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
