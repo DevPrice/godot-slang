@@ -121,7 +121,6 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		const SlangReflectionContext reflection_context(slang_module->getLayout());
 		slang_shader->set_parameters(reflection_context.get_params_shape());
 		slang_shader->set_legacy_buffers(reflection_context.get_buffers_reflection());
-		slang_shader->set_legacy_parameters(reflection_context.get_param_reflection());
 		TypedArray<ComputeShaderKernel> kernels;
 		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", PackedStringArray()))) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
@@ -346,80 +345,6 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 	return _get_shape(program_layout->getGlobalParamsTypeLayout());
-}
-
-Dictionary SlangReflectionContext::get_param_reflection() const {
-	Dictionary parameters{};
-	int64_t push_constant_offset = 0;
-	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
-		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
-		Dictionary param_info{};
-		Dictionary param_attributes = get_attributes(param->getVariable());
-		const StringName param_name = get_name(param, param_attributes);
-		param_info.set("name", param_name);
-
-		param_info.set("user_attributes", param_attributes);
-
-		const bool is_exported = param_attributes.has(GodotAttributes::export_property());
-		const Ref<ShaderTypeLayoutShape> shape = _get_shape(param->getTypeLayout(), is_exported);
-		if (shape.is_null()) continue;
-		if (const VariantTypeLayoutShape* variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
-			if (variant_shape->get_size() == 0) {
-				continue;
-			}
-		}
-
-		param_info.set("shape", shape);
-
-		Variant::Type type;
-		PropertyHint hint;
-		String hint_string;
-		if (_get_godot_type(param->getType(), param_attributes, type, hint, hint_string)) {
-			const uint32_t usage = is_exported ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
-			if (param_attributes.has(GodotAttributes::property_hint())) {
-				const Dictionary property_hint_attr = param_attributes[GodotAttributes::property_hint()];
-				hint = static_cast<PropertyHint>(static_cast<uint64_t>(property_hint_attr["property_hint"]));
-				hint_string = property_hint_attr["hint_string"];
-			}
-			PropertyInfo property_info{type, param_name, hint, hint_string, usage};
-			param_info.set("property_info", Dictionary(property_info));
-		}
-
-		param_info.set("layout_unit", param->getCategory());
-		switch (param->getCategory()) {
-			case slang::ParameterCategory::DescriptorTableSlot:
-				param_info.set("binding_index", param->getBindingIndex());
-				param_info.set("binding_space", param->getBindingSpace());
-				param_info.set("uniform_type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
-				break;
-			case slang::ParameterCategory::Uniform:
-				param_info.set("binding_index", param->getBindingIndex());
-				param_info.set("binding_space", param->getBindingSpace());
-				param_info.set("uniform_type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
-				param_info.set("offset", static_cast<int64_t>(param->getOffset()));
-				break;
-			case slang::ParameterCategory::PushConstantBuffer: {
-				slang::TypeLayoutReflection* element_type_layout = param->getTypeLayout()->getElementTypeLayout();
-				param_info.set("offset", push_constant_offset);
-				// TODO: Smells like a hack, but I can't figure out where to fetch this otherwise
-				// Getting mixed signals from Slang on whether more than one parameter can be bound to the push constant buffer
-				// Maybe can remove this, under the assumption that the offset is always zero?
-				push_constant_offset += element_type_layout->getSize();
-				break;
-			}
-			default:
-				param_info.set("unhandled_category", param->getCategory());
-				break;
-		}
-
-		Variant default_value = get_default_value(param->getVariable());
-		if (default_value.get_type() != Variant::NIL) {
-			param_info.set("default_value", default_value);
-		}
-
-		parameters.set(param_name, param_info);
-	}
-	return parameters;
 }
 
 Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
