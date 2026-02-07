@@ -91,7 +91,9 @@ void ComputeShaderEffect::_task_changed() {
 void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
 	const Ref<ComputeShaderFile> shader = task->get_shader();
 	ERR_FAIL_NULL(shader);
-	const Dictionary params = shader->get_legacy_parameters();
+	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+	ERR_FAIL_NULL(params_shape);
+	const Dictionary params = params_shape->get_properties();
 	for (const StringName param_name : params.keys()) {
 		static StringName key_name("name");
 		Dictionary param_dict = params.get(param_name, Dictionary());

@@ -6,7 +6,6 @@ void ComputeShaderFile::_bind_methods() {
 	BIND_ENUM_CONSTANT(COLUMN_MAJOR)
 	BIND_GET_SET_RESOURCE_ARRAY(ComputeShaderFile, kernels, ComputeShaderKernel)
 	BIND_GET_SET(ComputeShaderFile, base_error, Variant::STRING)
-	BIND_GET_SET(ComputeShaderFile, legacy_parameters, Variant::DICTIONARY);
 	BIND_GET_SET(ComputeShaderFile, legacy_buffers, Variant::ARRAY);
 	BIND_GET_SET_RESOURCE(ComputeShaderFile, parameters, StructTypeLayoutShape);
 	ClassDB::bind_method(D_METHOD("set_bytecode", "bytecode", "version", "kernel_index"), &ComputeShaderFile::set_bytecode, DEFVAL(StringName("")), DEFVAL(0));
@@ -37,5 +36,4 @@ TypedArray<StringName> ComputeShaderFile::get_version_list(const int64_t kernel_
 GET_SET_PROPERTY_IMPL(ComputeShaderFile, TypedArray<ComputeShaderKernel>, kernels)
 GET_SET_PROPERTY_IMPL(ComputeShaderFile, String, base_error)
 GET_SET_PROPERTY_IMPL(ComputeShaderFile, Ref<StructTypeLayoutShape>, parameters);
-GET_SET_PROPERTY_IMPL(ComputeShaderFile, Dictionary, legacy_parameters);
 GET_SET_PROPERTY_IMPL(ComputeShaderFile, TypedArray<Dictionary>, legacy_buffers);

@@ -128,7 +128,9 @@ void ComputeTexture::render() {
 void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task) const {
     const Ref<ComputeShaderFile> shader = p_task->get_shader();
     ERR_FAIL_NULL(shader);
-    const Dictionary params = shader->get_legacy_parameters();
+    const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+    ERR_FAIL_NULL(params_shape);
+    const Dictionary params = params_shape->get_properties();
     for (const StringName param_name : params.keys()) {
         if (!param_name.is_empty()) {
             Dictionary param_dict = params[param_name];
