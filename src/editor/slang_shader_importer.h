@@ -17,7 +17,7 @@ public:
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
 	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
-	Dictionary get_param_reflection(slang::IMetadata* metadata) const;
+	Dictionary get_param_reflection() const;
 	[[nodiscard]] TypedArray<Dictionary> get_buffers_reflection() const;
 	[[nodiscard]] Variant to_json() const;
 

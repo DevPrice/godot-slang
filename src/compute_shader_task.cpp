@@ -145,17 +145,7 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 	if (shader.is_null()) {
 		return {};
 	}
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
-	Dictionary shader_params;
-	for (const Ref<ComputeShaderKernel> kernel : kernels) {
-		if (kernel.is_valid()) {
-			Dictionary params = kernel->get_parameters();
-			for (const Variant& param_name : params.keys()) {
-				shader_params.set(param_name, params[param_name]);
-			}
-		}
-	}
-	return shader_params;
+	return shader->get_legacy_parameters().duplicate();
 }
 
 bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
@@ -341,11 +331,9 @@ Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, co
 	return value;
 }
 
-void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
+void ComputeShaderTask::_update_buffers() {
 	ERR_FAIL_NULL(shader);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
-	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-	const Dictionary parameters = kernel->get_parameters();
+	const Dictionary parameters = shader->get_legacy_parameters();
 	for (const Variant& parameter_key : parameters.keys()) {
 		const StringName& key = parameter_key;
 		const Dictionary param = parameters.get(key, Dictionary());
@@ -392,11 +380,8 @@ void ComputeShaderTask::_update_buffers(const int64_t kernel_index) {
 
 void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
 	ERR_FAIL_NULL(shader);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	Dictionary uniform_sets{};
-
-	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-	Dictionary parameters = kernel->get_parameters();
+	Dictionary parameters = shader->get_legacy_parameters();
 	Array parameter_keys = parameters.keys();
 	for (const StringName key : parameter_keys) {
 		const Dictionary param = parameters[key];
@@ -510,27 +495,21 @@ Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformTy
 
 Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set) {
 	ERR_FAIL_NULL_V(shader, {});
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	const Vector2i key(binding, set);
 	if (!_buffers.has(key)) {
 		const Ref buffer = memnew(RDBuffer);
 		_buffers.set(key, buffer);
-		if (kernels.size() > 0) {
-			const Ref<ComputeShaderKernel> kernel = kernels[0];
-			if (kernel.is_valid()) {
-				const TypedArray<Dictionary> buffers = kernel->get_buffers();
-				const int64_t buffer_count = buffers.size();
-				for (int64_t i = 0; i < buffer_count; i++) {
-					Dictionary buffer_info = buffers[i];
-					const int64_t info_index = buffer_info["binding_index"];
-					const int64_t info_set = buffer_info["binding_space"];
-					if (info_index == binding && info_set == set) {
-						// TODO: This whole method should be refactored to make sense, but this works for now
-						const int64_t buffer_size = buffer_info["size"];
-						buffer->set_size(buffer_size);
-						buffer->set_is_fixed_size(true);
-					}
-				}
+		const TypedArray<Dictionary> buffers = shader->get_legacy_buffers();
+		const int64_t buffer_count = buffers.size();
+		for (int64_t i = 0; i < buffer_count; i++) {
+			Dictionary buffer_info = buffers[i];
+			const int64_t info_index = buffer_info["binding_index"];
+			const int64_t info_set = buffer_info["binding_space"];
+			if (info_index == binding && info_set == set) {
+				// TODO: This whole method should be refactored to make sense, but this works for now
+				const int64_t buffer_size = buffer_info["size"];
+				buffer->set_size(buffer_size);
+				buffer->set_is_fixed_size(true);
 			}
 		}
 		return buffer;
@@ -558,7 +537,7 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
-	_update_buffers(kernel_index);
+	_update_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);

@@ -72,7 +72,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					(size.y - 1) / local_size.y + 1,
 					1);
 			for (int32_t view = 0; view < view_count; ++view) {
-				_bind_parameters(task, kernel, p_render_data->get_render_scene_data(), render_scene_buffers, view);
+				_bind_parameters(task, p_render_data->get_render_scene_data(), render_scene_buffers, view);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
 				emit_signal("uniforms_bound", view);
 				task->dispatch_at(kernel_index, groups);
@@ -88,10 +88,11 @@ void ComputeShaderEffect::_task_changed() {
 	set_effect_callback_type(get_effect_callback_type());
 }
 
-void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const Ref<ComputeShaderKernel>& kernel, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
-	const Dictionary params = kernel->get_parameters();
-	Array param_names = params.keys();
-	for (const StringName param_name : param_names) {
+void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
+	const Ref<ComputeShaderFile> shader = task->get_shader();
+	ERR_FAIL_NULL(shader);
+	const Dictionary params = shader->get_legacy_parameters();
+	for (const StringName param_name : params.keys()) {
 		if (!param_name.is_empty()) {
 			static StringName key_name("name");
 			Dictionary param_dict = params.get(param_name, Dictionary());

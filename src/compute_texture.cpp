@@ -119,14 +119,16 @@ void ComputeTexture::render() {
                     (get_width() - 1) / local_size.x + 1,
                     (get_height() - 1) / local_size.y + 1,
                     1);
-            _bind_parameters(task, kernel);
+            _bind_parameters(task);
             task->dispatch_at(kernel_index, groups);
         }
     }
 }
 
-void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task, const Ref<ComputeShaderKernel>& p_kernel) const {
-    const Dictionary params = p_kernel->get_parameters();
+void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task) const {
+    const Ref<ComputeShaderFile> shader = p_task->get_shader();
+    ERR_FAIL_NULL(shader);
+    const Dictionary params = shader->get_legacy_parameters();
     for (const StringName param_name : params.keys()) {
         if (!param_name.is_empty()) {
             Dictionary param_dict = params[param_name];
