@@ -22,6 +22,14 @@ public:
 		ROW_MAJOR = 1,
 		COLUMN_MAJOR = 2,
 	};
+
+	// Values must match SlangParameterCategory
+	enum LayoutUnit {
+		NONE = 0,
+		UNIFORM = 8,
+		DESCRIPTOR_TABLE_SLOT = 9,
+		PUSH_CONSTANT_BUFFER = 11,
+	};
 };
 
 class VariantTypeLayoutShape : public ShaderTypeLayoutShape {

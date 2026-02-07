@@ -385,6 +385,7 @@ Dictionary SlangReflectionContext::get_param_reflection() const {
 			param_info.set("property_info", Dictionary(property_info));
 		}
 
+		param_info.set("layout_unit", param->getCategory());
 		switch (param->getCategory()) {
 			case slang::ParameterCategory::DescriptorTableSlot:
 				param_info.set("binding_index", param->getBindingIndex());
@@ -392,7 +393,7 @@ Dictionary SlangReflectionContext::get_param_reflection() const {
 				param_info.set("uniform_type", _to_godot_uniform_type(param->getTypeLayout()->getBindingRangeType(0)));
 				break;
 			case slang::ParameterCategory::Uniform:
-				param_info.set("binding_index", program_layout->getGlobalConstantBufferBinding());
+				param_info.set("binding_index", param->getBindingIndex());
 				param_info.set("binding_space", param->getBindingSpace());
 				param_info.set("uniform_type", RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER);
 				param_info.set("offset", static_cast<int64_t>(param->getOffset()));
@@ -449,8 +450,13 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("offset", static_cast<int64_t>(field->getOffset()));
-				property.set("binding_index", field->getBindingIndex() + type_layout->getContainerVarLayout()->getBindingIndex());
-				property.set("binding_space", field->getBindingSpace() + type_layout->getContainerVarLayout()->getBindingSpace());
+				property.set("binding_index", field->getBindingIndex());
+				property.set("binding_space", field->getBindingSpace());
+				property.set("layout_unit", field->getCategory());
+				if (field->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
+					// TODO: Temp hack for backwards compat
+					property.set("uniform_type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
+				}
 				property_shapes.set(get_name(field, field_attributes), property);
 
 				if (include_property_info) {
