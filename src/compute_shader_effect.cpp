@@ -93,62 +93,60 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 	ERR_FAIL_NULL(shader);
 	const Dictionary params = shader->get_legacy_parameters();
 	for (const StringName param_name : params.keys()) {
-		if (!param_name.is_empty()) {
-			static StringName key_name("name");
-			Dictionary param_dict = params.get(param_name, Dictionary());
-			Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
-			if (user_attributes.has(CompositorAttributes::internal_size())) {
-				task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
+		static StringName key_name("name");
+		Dictionary param_dict = params.get(param_name, Dictionary());
+		Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
+		if (user_attributes.has(CompositorAttributes::internal_size())) {
+			task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
+		}
+		if (user_attributes.has(CompositorAttributes::scene_data())) {
+			task->set_shader_parameter(param_name, scene_data->get_uniform_buffer());
+		}
+		if (user_attributes.has(CompositorAttributes::color_texture())) {
+			task->set_shader_parameter(param_name, render_scene_buffers->get_color_layer(view));
+		}
+		if (user_attributes.has(CompositorAttributes::depth_texture())) {
+			task->set_shader_parameter(param_name, render_scene_buffers->get_depth_layer(view));
+		}
+		if (user_attributes.has(CompositorAttributes::velocity_texture())) {
+			task->set_shader_parameter(param_name, render_scene_buffers->get_velocity_layer(view));
+		}
+		String context = "__global_context";
+		if (user_attributes.has(CompositorAttributes::context())) {
+			Dictionary context_args = user_attributes[CompositorAttributes::context()];
+			static StringName key_context("context");
+			context = context_args.get(key_context, String());
+		}
+		if (user_attributes.has(CompositorAttributes::create_texture())) {
+			Dictionary args = user_attributes[CompositorAttributes::create_texture()];
+			Dictionary texture_name_attribute = user_attributes.get(CompositorAttributes::texture_name(), Dictionary());
+			const int32_t format = args.get("format", 0);
+			const String texture_name = texture_name_attribute.get(key_name, param_name);
+			Vector2i texture_size = render_scene_buffers->get_internal_size();
+			if (user_attributes.has(CompositorAttributes::texture_size())) {
+				Dictionary context_args = user_attributes[CompositorAttributes::texture_size()];
+				static StringName key_size("size");
+				context = context_args.get(key_size, String());
 			}
-			if (user_attributes.has(CompositorAttributes::scene_data())) {
-				task->set_shader_parameter(param_name, scene_data->get_uniform_buffer());
-			}
-			if (user_attributes.has(CompositorAttributes::color_texture())) {
-				task->set_shader_parameter(param_name, render_scene_buffers->get_color_layer(view));
-			}
-			if (user_attributes.has(CompositorAttributes::depth_texture())) {
-				task->set_shader_parameter(param_name, render_scene_buffers->get_depth_layer(view));
-			}
-			if (user_attributes.has(CompositorAttributes::velocity_texture())) {
-				task->set_shader_parameter(param_name, render_scene_buffers->get_velocity_layer(view));
-			}
-			String context = "__global_context";
-			if (user_attributes.has(CompositorAttributes::context())) {
-				Dictionary context_args = user_attributes[CompositorAttributes::context()];
-				static StringName key_context("context");
-				context = context_args.get(key_context, String());
-			}
-			if (user_attributes.has(CompositorAttributes::create_texture())) {
-				Dictionary args = user_attributes[CompositorAttributes::create_texture()];
-				Dictionary texture_name_attribute = user_attributes.get(CompositorAttributes::texture_name(), Dictionary());
-				const int32_t format = args.get("format", 0);
-				const String texture_name = texture_name_attribute.get(key_name, param_name);
-				Vector2i texture_size = render_scene_buffers->get_internal_size();
-				if (user_attributes.has(CompositorAttributes::texture_size())) {
-					Dictionary context_args = user_attributes[CompositorAttributes::texture_size()];
-					static StringName key_size("size");
-					context = context_args.get(key_size, String());
-				}
 
-				// TODO: Make more of this configurable
-				const RID texture = render_scene_buffers->create_texture(
-					context,
-					texture_name,
-					static_cast<RenderingDevice::DataFormat>(format),
-					RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
-					RenderingDevice::TEXTURE_SAMPLES_1,
-					texture_size,
-					1,
-					1,
-					false,
-					false);
-				task->set_shader_parameter(param_name, texture);
-			} else if (user_attributes.has(CompositorAttributes::texture_name())) {
-				Dictionary args = user_attributes[CompositorAttributes::texture_name()];
-				const String texture_name = args.get(key_name, String());
-				const RID texture = render_scene_buffers->get_texture(context, texture_name);
-				task->set_shader_parameter(param_name, texture);
-			}
+			// TODO: Make more of this configurable
+			const RID texture = render_scene_buffers->create_texture(
+				context,
+				texture_name,
+				static_cast<RenderingDevice::DataFormat>(format),
+				RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
+				RenderingDevice::TEXTURE_SAMPLES_1,
+				texture_size,
+				1,
+				1,
+				false,
+				false);
+			task->set_shader_parameter(param_name, texture);
+		} else if (user_attributes.has(CompositorAttributes::texture_name())) {
+			Dictionary args = user_attributes[CompositorAttributes::texture_name()];
+			const String texture_name = args.get(key_name, String());
+			const RID texture = render_scene_buffers->get_texture(context, texture_name);
+			task->set_shader_parameter(param_name, texture);
 		}
 	}
 }

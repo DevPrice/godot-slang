@@ -145,7 +145,11 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 	if (shader.is_null()) {
 		return {};
 	}
-	return shader->get_legacy_parameters().duplicate();
+	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+	if (params_shape.is_null()) {
+		return {};
+	}
+	return params_shape->get_properties().duplicate();
 }
 
 bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
@@ -333,17 +337,20 @@ Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, co
 
 void ComputeShaderTask::_update_buffers() {
 	ERR_FAIL_NULL(shader);
-	const Dictionary parameters = shader->get_legacy_parameters();
-	for (const Variant& parameter_key : parameters.keys()) {
-		const StringName& key = parameter_key;
-		const Dictionary param = parameters.get(key, Dictionary());
-		const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int32_t>(param.get("uniform_type", -1)));
-		const StringName param_name = param.get("name", StringName{});
-		if (param_name.is_empty()) continue;
+	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+	ERR_FAIL_NULL(params_shape);
+	const Dictionary parameters = params_shape->get_properties();
+	for (const StringName param_name : parameters.keys()) {
+		const Dictionary param = parameters[param_name];
+		Ref<ShaderTypeLayoutShape> shape = param["shape"];
+		const auto* resource_shape = cast_to<ResourceTypeLayoutShape>(shape.ptr());
+		const RenderingDevice::UniformType uniform_type = resource_shape
+			? resource_shape->get_uniform_type()
+			: static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(param.get("uniform_type", -1)));
+		const auto layout_unit = static_cast<ShaderTypeLayoutShape::LayoutUnit>(static_cast<int64_t>(param.get("layout_unit", 0)));
 		const Dictionary attributes = param["user_attributes"];
-		if (!param.has("uniform_type")) {
+		if (layout_unit == ShaderTypeLayoutShape::LayoutUnit::PUSH_CONSTANT_BUFFER) {
 			Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
-			Ref<ShaderTypeLayoutShape> shape = param["shape"];
 			if (shape.is_valid()) {
 				const int64_t size = shape->get_size();
 				if (size > 0) {
@@ -355,7 +362,7 @@ void ComputeShaderTask::_update_buffers() {
 					RDBuffer::write_shape(_push_constant, offset, shape.ptr(), value, true);
 				}
 			}
-		} else if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
+		} else if (layout_unit == ShaderTypeLayoutShape::LayoutUnit::UNIFORM || uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 			const Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
 			RID value_rid = value;
 			const int32_t binding_space = param.get("binding_space", 0);
@@ -363,7 +370,6 @@ void ComputeShaderTask::_update_buffers() {
 			if (value_rid.is_valid()) {
 				_set_buffer(binding_index, binding_space, value_rid);
 			} else {
-				Ref<ShaderTypeLayoutShape> shape = param["shape"];
 				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
 				const int64_t offset = param.get("offset", 0);
 				buffer->write_shape(offset, shape.ptr(), value);
@@ -380,18 +386,18 @@ void ComputeShaderTask::_update_buffers() {
 
 void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
 	ERR_FAIL_NULL(shader);
+	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+	ERR_FAIL_NULL(params_shape);
+	const Dictionary parameters = params_shape->get_properties();
 	Dictionary uniform_sets{};
-	Dictionary parameters = shader->get_legacy_parameters();
-	Array parameter_keys = parameters.keys();
-	for (const StringName key : parameter_keys) {
-		const Dictionary param = parameters[key];
+	for (const StringName param_name : parameters.keys()) {
+		const Dictionary param = parameters[param_name];
 		const int64_t binding_space = param.get("binding_space", 0);
 		const int32_t binding_index = param.get("binding_index", 0);
 		const int64_t param_type = param.get("uniform_type", -1);
 		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER)
 			continue;
 
-		const StringName param_name = param.get("name", StringName{});
 		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
 			const Dictionary attributes = param["user_attributes"];
@@ -448,30 +454,29 @@ void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int
 
 Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
 	if (user_attributes.has(GodotAttributes::global_param())) {
+#ifdef TOOLS_ENABLED
 		if (!RenderingServer::get_singleton()->is_on_render_thread()) {
 			WARN_PRINT_ONCE("Avoid using the [gd::GlobalParam] attribute off of the render thread, it may cause performance issues.");
 		}
+#endif
 		const Dictionary attribute = user_attributes[GodotAttributes::global_param()];
 		const String param_name = attribute["name"];
 		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
 	}
+	if (user_attributes.has(GodotAttributes::time())) {
+		return Time::get_singleton()->get_ticks_msec() * .001f;
+	}
+	if (user_attributes.has(GodotAttributes::frame_id())) {
+		return Engine::get_singleton()->get_frames_drawn();
+	}
+	if (user_attributes.has(GodotAttributes::mouse_position())) {
+		if (const SceneTree* scene_tree = cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
+			if (const Window* window = scene_tree->get_root()) {
+				return Vector2i(window->get_mouse_position());
+			}
+		}
+	}
 	switch (type) {
-		case RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER:
-		case RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER:
-			if (user_attributes.has(GodotAttributes::time())) {
-				return Time::get_singleton()->get_ticks_msec() * .001f;
-			}
-			if (user_attributes.has(GodotAttributes::frame_id())) {
-				return Engine::get_singleton()->get_frames_drawn();
-			}
-			if (user_attributes.has(GodotAttributes::mouse_position())) {
-				if (const SceneTree* scene_tree = cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
-					if (const Window* window = scene_tree->get_root()) {
-						return Vector2i(window->get_mouse_position());
-					}
-				}
-			}
-			break;
 		case RenderingDevice::UNIFORM_TYPE_SAMPLER:
 			if (user_attributes.has(GodotAttributes::sampler())) {
 				const Dictionary sampler_attribute = user_attributes[GodotAttributes::sampler()];
