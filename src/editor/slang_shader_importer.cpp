@@ -118,6 +118,10 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 
 	const Ref slang_shader = memnew(ComputeShaderFile);
 	if (slang_module && slang_error.is_empty()) {
+		const SlangReflectionContext reflection_context(slang_module->getLayout());
+		slang_shader->set_parameters(reflection_context.get_params_shape());
+		slang_shader->set_legacy_buffers(reflection_context.get_buffers_reflection());
+		slang_shader->set_legacy_parameters(reflection_context.get_param_reflection());
 		TypedArray<ComputeShaderKernel> kernels;
 		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", PackedStringArray()))) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
@@ -337,9 +341,6 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
-	kernel->set_parameters(reflection_context.get_param_reflection(metadata));
-	kernel->set_buffers(reflection_context.get_buffers_reflection());
-	kernel->set_params_shape(reflection_context.get_params_shape());
 	return kernel;
 }
 
@@ -347,7 +348,7 @@ Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 	return _get_shape(program_layout->getGlobalParamsTypeLayout());
 }
 
-Dictionary SlangReflectionContext::get_param_reflection(slang::IMetadata* metadata) const {
+Dictionary SlangReflectionContext::get_param_reflection() const {
 	Dictionary parameters{};
 	int64_t push_constant_offset = 0;
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
