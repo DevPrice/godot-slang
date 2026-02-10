@@ -7,6 +7,7 @@
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/scene_tree.hpp"
+#include "godot_cpp/classes/texture.hpp"
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 #include "godot_cpp/classes/window.hpp"
@@ -176,7 +177,12 @@ void ComputeShaderCursor::write(const Variant& data) const {
 		const int64_t size = bytes.size();
 		object->write(offset, size, data);
 	} else if (resource_shape) {
-		object->write(offset, resource_shape->get_uniform_type(), data);
+		if (const Object* data_texture = data; data_texture && data_texture->is_class(Texture::get_class_static())) {
+			const RID texture_rid = RenderingServer::get_singleton()->texture_get_rd_texture(data);
+			object->write(offset, resource_shape->get_uniform_type(), texture_rid);
+		} else {
+			object->write(offset, resource_shape->get_uniform_type(), data);
+		}
 	} else if (const auto variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
 		const int64_t size = variant_shape->get_size();
 		ERR_FAIL_COND(size <= 0);

@@ -276,11 +276,10 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 	return _kernel_pipelines.get(kernel_index, RID{});
 }
 
-// TODO: migrate _get_default_uniform logic
-
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
 	ERR_FAIL_NULL(shader);
 	ERR_FAIL_NULL(_shader_object);
+	if (!shader->get_path().ends_with("outline.slang")) return;
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 
