@@ -53,7 +53,6 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Renderin
 void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
 	RDBuffer& buffer = _get_buffer(offset.binding_space, offset.binding_index);
 	if (offset.byte_offset + size > buffer.get_buffer().size()) {
-		UtilityFunctions::print(offset.binding_space, ", ", offset.binding_index, ": ", data);
 		buffer.set_size(offset.byte_offset + size);
 	}
 	buffer.write(offset.byte_offset, size, data, matrix_layout);
@@ -152,7 +151,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
         current.shape = property_shape;
 		current.offset.binding_index = property.get("binding_index", current.offset.binding_index);
 		current.offset.binding_space = property.get("binding_space", current.offset.binding_space);
-        current.offset.byte_offset = property.get("offset", current.offset.byte_offset);
+        current.offset.byte_offset += static_cast<int64_t>(property.get("offset", 0));
     }
     return current;
 }
