@@ -375,9 +375,14 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("offset", static_cast<int64_t>(field->getOffset()));
-				property.set("binding_index", field->getBindingIndex());
-				property.set("binding_space", field->getBindingSpace());
 				property.set("layout_unit", field->getCategory());
+				if (field->getCategory() != slang::ParameterCategory::Uniform) {
+					// TODO: Temp hack for uniform compat
+					property.set("binding_index", field->getBindingIndex());
+					property.set("binding_space", field->getBindingSpace());
+					//property.set("binding_index", program_layout->getGlobalParamsVarLayout()->getBindingIndex());
+					//property.set("binding_space", program_layout->getGlobalParamsVarLayout()->getBindingSpace());
+				}
 				if (field->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
 					// TODO: Temp hack for backwards compat
 					property.set("uniform_type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
@@ -479,7 +484,7 @@ TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
 	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
 		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
 		if (slang::TypeLayoutReflection* type_layout = param->getTypeLayout()) {
-			if (param->getCategory() == slang::DescriptorTableSlot && type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer) {
+			if (param->getCategory() == slang::DescriptorTableSlot && (type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer || type_layout->getKind() == slang::TypeReflection::Kind::ShaderStorageBuffer)) {
 				Dictionary buffer_info{};
 				buffer_info.set("binding_index", param->getBindingIndex());
 				buffer_info.set("binding_space", param->getBindingSpace());

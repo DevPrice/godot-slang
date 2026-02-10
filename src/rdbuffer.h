@@ -23,15 +23,13 @@ public:
     RDBuffer();
     ~RDBuffer() override;
 
-    void write(int64_t offset, int64_t size, const Variant& data);
-    void write_shape(int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data);
+    void write(int64_t offset, int64_t size, const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
     void set_size(int64_t size);
     void flush();
     [[nodiscard]] RenderingDevice::UniformType get_uniform_type() const;
 
     static Ref<RDBuffer> ref(const RID& buffer_rid);
     static void write(PackedByteArray& destination, int64_t offset, int64_t size, const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
-    static int64_t write_shape(PackedByteArray& destination, int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data, bool resize = false);
     static int64_t aligned_size(int64_t size, int64_t alignment);
 
 private:
