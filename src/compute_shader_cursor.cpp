@@ -220,7 +220,7 @@ void ComputeShaderCursor::write(const Variant& data) const {
 				if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
 					if (const RID property_rid = property_value; property_rid.is_valid()) {
 						object->write(field(property_name).offset, static_cast<RenderingDevice::UniformType>(uniform_type), property_rid);
-						return;
+						continue;
 					}
 				}
 			}
