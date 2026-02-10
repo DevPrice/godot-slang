@@ -279,7 +279,6 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
 	ERR_FAIL_NULL(shader);
 	ERR_FAIL_NULL(_shader_object);
-	if (!shader->get_path().ends_with("outline.slang")) return;
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 
@@ -292,12 +291,12 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
+	ComputeShaderCursor(_shader_object.get()).write(_shader_parameters);
 	_shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
 
-	ComputeShaderCursor(_shader_object.get()).write(_shader_parameters);
 	_shader_object->bind_uniforms(compute_list, _get_shader_rid(kernel_index, rendering_device));
 	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
 	rendering_device->compute_list_end();
