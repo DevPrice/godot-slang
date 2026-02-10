@@ -5,7 +5,6 @@
 
 #include "rdbuffer.h"
 
-#include "attributes.h"
 #include "compute_shader_shape.h"
 
 inline bool get_container_size(const Variant &v, int64_t &size) {
@@ -93,17 +92,11 @@ RDBuffer::~RDBuffer() {
 	}
 }
 
-void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data) {
+void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Writing fixed-size buffer before initialize!");
 	dirty_start = Math::min(offset, dirty_start);
 	dirty_end = Math::max(offset + size, dirty_end);
-	write(buffer, offset, size, data);
-}
-
-void RDBuffer::write_shape(const int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data) {
-	const int64_t size = write_shape(buffer, offset, shape, data, !get_is_fixed_size());
-	dirty_start = Math::min(offset, dirty_start);
-	dirty_end = Math::max(offset + size, dirty_end);
+	write(buffer, offset, size, data, matrix_layout);
 }
 
 void RDBuffer::set_size(const int64_t size) {
@@ -420,116 +413,6 @@ void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const i
 			// TODO: Maybe handle some other types
 			ERR_FAIL_MSG(String("Unsupported data type: ") + Variant::get_type_name(data.get_type()));
 	}
-}
-
-int64_t RDBuffer::write_shape(PackedByteArray& destination, const int64_t offset, const ShaderTypeLayoutShape* shape, const Variant& data, const bool resize) {
-	const auto resource_shape = cast_to<ResourceTypeLayoutShape>(data);
-	if (data.get_type() == Variant::PACKED_BYTE_ARRAY || (resource_shape && resource_shape->get_resource_type() == ResourceTypeLayoutShape::RAW_BYTES)) {
-		// TODO: Handle other types
-		const PackedByteArray bytes = data;
-		const int64_t size = bytes.size();
-
-		if (resize && destination.size() < offset + size) {
-			destination.resize(offset + size);
-		}
-
-		write(destination, offset, size, data);
-		return size;
-	}
-	if (const auto variant_shape = cast_to<VariantTypeLayoutShape>(shape)) {
-		const int64_t size = variant_shape->get_size();
-		ERR_FAIL_COND_V(size <= 0, 0);
-
-		if (resize && destination.size() < offset + size) {
-			destination.resize(offset + size);
-		}
-
-		write(destination, offset, size, data, variant_shape->get_matrix_layout());
-
-		return size;
-	}
-	if (const auto structured_shape = cast_to<StructTypeLayoutShape>(shape)) {
-		const Dictionary properties = structured_shape->get_properties();
-		const int64_t size = structured_shape->get_size();
-		ERR_FAIL_COND_V(size <= 0, 0);
-
-		if (resize && destination.size() < offset + size) {
-			destination.resize(offset + size);
-		}
-
-		for (const StringName property_name : properties.keys()) {
-			const Dictionary property = properties[property_name];
-
-			const int64_t property_offset = property["offset"];
-			const Ref<ShaderTypeLayoutShape> property_shape = property["shape"];
-			if (property_shape.is_null()) continue;
-
-			const Dictionary property_attributes = property["user_attributes"];
-
-			bool is_valid{};
-			Variant property_value = data.get_named(property_name, is_valid);
-			if (property_value.get_type() == Variant::Type::NIL && property.has("default_value")) {
-				property_value = property["default_value"];
-				is_valid = true;
-			}
-
-			if (is_valid) {
-				// TODO: If this gets any more complex, it needs to move out of here
-				if (property_attributes.has(GodotAttributes::color())) {
-					if (property_value.get_type() == Variant::COLOR) {
-						property_value = static_cast<Color>(property_value).srgb_to_linear();
-					}
-					if (property_value.get_type() == Variant::PACKED_COLOR_ARRAY) {
-						PackedColorArray converted = property_value.duplicate();
-						for (Color& color : converted) {
-							color = color.srgb_to_linear();
-						}
-						property_value = converted;
-					}
-				}
-
-				write_shape(destination, offset + property_offset, property_shape.ptr(), property_value, resize);
-			}
-		}
-
-		return size;
-	}
-	if (const auto array_shape = cast_to<ArrayTypeLayoutShape>(shape)) {
-		const int64_t stride = array_shape->get_stride();
-		ERR_FAIL_COND_V(stride <= 0, 0);
-
-		int64_t size = array_shape->get_size();
-		if (size == 0) {
-			int64_t container_size;
-			if (get_container_size(data, container_size)) {
-				size = container_size * stride;
-			}
-		}
-
-		if (size > 0) {
-			if (resize && destination.size() < offset + size) {
-				destination.resize(offset + size);
-			}
-		}
-
-		int64_t element_offset = offset;
-
-		Variant key;
-		bool is_valid;
-		if (data.iter_init(key, is_valid) && is_valid) {
-			const Ref<ShaderTypeLayoutShape> element_shape = array_shape->get_element_shape();
-			do {
-				Variant value = data.iter_get(key, is_valid);
-				if (is_valid) {
-					write_shape(destination, element_offset, element_shape.ptr(), value, resize);
-					element_offset += stride;
-				}
-			} while (data.iter_next(key, is_valid) && is_valid);
-		}
-		return element_offset - offset;
-	}
-	UtilityFunctions::push_warning("Unable to write invalid shape: ", shape);
-	return 0;
 }
 
 int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {

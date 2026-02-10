@@ -1,17 +1,14 @@
 #include "godot_cpp/classes/editor_file_system.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/engine.hpp"
-#include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
-#include "godot_cpp/classes/time.hpp"
-#include "godot_cpp/classes/scene_tree.hpp"
-#include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 #include "godot_cpp/classes/window.hpp"
 
 #include "compute_shader_task.h"
 
 #include "attributes.h"
+#include "compute_shader_cursor.h"
 #include "compute_shader_shape.h"
 
 void ComputeShaderTask::_bind_methods() {
@@ -25,25 +22,7 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, dispatch_group, "group_name", "thread_groups")
 }
 
-ComputeShaderTask::ComputeShaderTask() {
-	_linear_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
-	_nearest_sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX);
-}
-
-ComputeShaderTask::~ComputeShaderTask() {
-	_reset();
-	const RenderingServer* rendering_server = RenderingServer::get_singleton();
-	if (RenderingDevice* rd = rendering_server ? rendering_server->get_rendering_device() : nullptr) {
-		for (int64_t i = 0; i < RenderingDevice::SAMPLER_REPEAT_MODE_MAX; ++i) {
-			if (RID rid = _nearest_sampler_cache[i]; rid.is_valid()) {
-				rd->free_rid(rid);
-			}
-			if (RID rid = _linear_sampler_cache[i]; rid.is_valid()) {
-				rd->free_rid(rid);
-			}
-		}
-	}
-}
+ComputeShaderTask::ComputeShaderTask() : _shader_object(nullptr) { }
 
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
@@ -247,24 +226,31 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dicti
 
 void ComputeShaderTask::_reset() {
 	const RenderingServer* rendering_server = RenderingServer::get_singleton();
-	if (RenderingDevice* rd = rendering_server ? rendering_server->get_rendering_device() : nullptr) {
-		for (const Variant& key : _kernel_pipelines.keys()) {
-			const RID rid = _kernel_pipelines[key];
-			if (rid.is_valid()) {
-				rd->free_rid(_kernel_pipelines[key]);
-			}
-		}
-		for (const Variant& key : _kernel_shaders.keys()) {
-			const RID rid = _kernel_shaders[key];
-			if (rid.is_valid()) {
-				rd->free_rid(_kernel_shaders[key]);
-			}
+	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
+	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
+	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
+
+	for (const Variant& key : _kernel_pipelines.keys()) {
+		const RID rid = _kernel_pipelines[key];
+		if (rid.is_valid()) {
+			rendering_device->free_rid(_kernel_pipelines[key]);
 		}
 	}
-	_push_constant.clear();
-	_buffers.clear();
 	_kernel_pipelines.clear();
+
+	for (const Variant& key : _kernel_shaders.keys()) {
+		const RID rid = _kernel_shaders[key];
+		if (rid.is_valid()) {
+			rendering_device->free_rid(_kernel_shaders[key]);
+		}
+	}
 	_kernel_shaders.clear();
+
+	if (shader.is_valid()) {
+		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, shader->get_parameters(), shader->get_legacy_buffers());
+	} else {
+		_shader_object = nullptr;
+	}
 }
 
 void ComputeShaderTask::_shader_changed() {
@@ -277,7 +263,7 @@ RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevi
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	if (!_kernel_shaders.has(kernel_index)) {
 		const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-		_kernel_shaders.set(kernel_index, rd->shader_create_from_spirv(kernel->get_spirv()));
+		_kernel_shaders.set(kernel_index, rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file().trim_suffix(".slang")));
 	}
 	return _kernel_shaders.get(kernel_index, RID{});
 }
@@ -290,245 +276,11 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 	return _kernel_pipelines.get(kernel_index, RID{});
 }
 
-RID ComputeShaderTask::_get_sampler(const RenderingDevice::SamplerFilter filter, const RenderingDevice::SamplerRepeatMode repeat_mode) const {
-	ERR_FAIL_INDEX_V(repeat_mode, RenderingDevice::SAMPLER_REPEAT_MODE_MAX, RID{});
-	TypedArray<RID> sampler_cache = filter == RenderingDevice::SamplerFilter::SAMPLER_FILTER_NEAREST ? _nearest_sampler_cache : _linear_sampler_cache;
-	if (RID cached_value = sampler_cache[repeat_mode]; cached_value.is_valid()) {
-		return cached_value;
-	}
-
-	const RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_V(rendering_server, RID{});
-	RenderingDevice* rd = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_V(rd, RID{});
-
-	const Ref sampler_state = memnew(RDSamplerState);
-	sampler_state->set_min_filter(filter);
-	sampler_state->set_mag_filter(filter);
-	sampler_state->set_mip_filter(filter);
-	sampler_state->set_repeat_u(repeat_mode);
-	sampler_state->set_repeat_v(repeat_mode);
-	sampler_state->set_repeat_w(repeat_mode);
-	const RID sampler_rid = rd->sampler_create(sampler_state);
-	sampler_cache[repeat_mode] = sampler_rid;
-	return sampler_rid;
-}
-
-Variant ComputeShaderTask::_get_parameter_value(const StringName& param_name, const RenderingDevice::UniformType uniform_type, const Dictionary& attributes, const Variant& default_value) const {
-	Variant value = _shader_parameters.get(param_name, default_value);
-	if (value.get_type() == Variant::NIL) {
-		value = _get_default_uniform(uniform_type, attributes);
-	}
-	if (attributes.has(GodotAttributes::color())) {
-		if (value.get_type() == Variant::COLOR) {
-			const Color color = value;
-			return color.srgb_to_linear();
-		}
-		if (value.get_type() == Variant::PACKED_COLOR_ARRAY) {
-			PackedColorArray colors = value.duplicate();
-			for (Color& color: colors) {
-				color = color.srgb_to_linear();
-			}
-			return colors;
-		}
-	}
-	return value;
-}
-
-void ComputeShaderTask::_update_buffers() {
-	ERR_FAIL_NULL(shader);
-	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
-	ERR_FAIL_NULL(params_shape);
-	const Dictionary parameters = params_shape->get_properties();
-	for (const StringName param_name : parameters.keys()) {
-		const Dictionary param = parameters[param_name];
-		Ref<ShaderTypeLayoutShape> shape = param["shape"];
-		const auto* resource_shape = cast_to<ResourceTypeLayoutShape>(shape.ptr());
-		const RenderingDevice::UniformType uniform_type = resource_shape
-			? resource_shape->get_uniform_type()
-			: static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(param.get("uniform_type", -1)));
-		const auto layout_unit = static_cast<ShaderTypeLayoutShape::LayoutUnit>(static_cast<int64_t>(param.get("layout_unit", 0)));
-		const Dictionary attributes = param["user_attributes"];
-		if (layout_unit == ShaderTypeLayoutShape::LayoutUnit::PUSH_CONSTANT_BUFFER) {
-			Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
-			if (shape.is_valid()) {
-				const int64_t size = shape->get_size();
-				if (size > 0) {
-					const int64_t offset = param.get("offset", 0);
-					const int64_t buffer_size = RDBuffer::aligned_size(offset + size, 16);
-					if (_push_constant.size() < buffer_size) {
-						_push_constant.resize(buffer_size);
-					}
-					RDBuffer::write_shape(_push_constant, offset, shape.ptr(), value, true);
-				}
-			}
-		} else if (layout_unit == ShaderTypeLayoutShape::LayoutUnit::UNIFORM || uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
-			const Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
-			RID value_rid = value;
-			const int32_t binding_space = param.get("binding_space", 0);
-			const int32_t binding_index = param.get("binding_index", 0);
-			if (value_rid.is_valid()) {
-				_set_buffer(binding_index, binding_space, value_rid);
-			} else {
-				const Ref<RDBuffer> buffer = _get_buffer(binding_index, binding_space);
-				const int64_t offset = param.get("offset", 0);
-				buffer->write_shape(offset, shape.ptr(), value);
-			}
-		}
-	}
-
-	for (const Ref<RDBuffer> buffer : _buffers.values()) {
-		if (buffer.is_valid()) {
-			buffer->flush();
-		}
-	}
-}
-
-void ComputeShaderTask::_bind_uniform_sets(const int64_t kernel_index, const int64_t compute_list, RenderingDevice* rd) {
-	ERR_FAIL_NULL(shader);
-	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
-	ERR_FAIL_NULL(params_shape);
-	const Dictionary parameters = params_shape->get_properties();
-	Dictionary uniform_sets{};
-	for (const StringName param_name : parameters.keys()) {
-		const Dictionary param = parameters[param_name];
-		const int64_t binding_space = param.get("binding_space", 0);
-		const int32_t binding_index = param.get("binding_index", 0);
-		const int64_t param_type = param.get("uniform_type", -1);
-		if (param_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || param_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER)
-			continue;
-
-		if (!param_name.is_empty() && param_type >= 0 && param_type < RenderingDevice::UniformType::UNIFORM_TYPE_MAX) {
-			const auto uniform_type = static_cast<RenderingDevice::UniformType>(param_type);
-			const Dictionary attributes = param["user_attributes"];
-			Variant value = _get_parameter_value(param_name, uniform_type, attributes, param.get("default_value", Variant()));
-			if (const Object* object = value) {
-				if (object->is_class("Texture")) {
-					value = RenderingServer::get_singleton()->texture_get_rd_texture(value);
-				}
-			}
-			if (value.get_type() != Variant::NIL) {
-				Ref uniform = memnew(RDUniform);
-				uniform->set_binding(binding_index);
-				uniform->set_uniform_type(uniform_type);
-				if (uniform_type == RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && value.get_type() != Variant::ARRAY) {
-					Variant sampler = _get_default_uniform(RenderingDevice::UNIFORM_TYPE_SAMPLER, attributes);
-					if (sampler.get_type() == Variant::NIL) {
-						sampler = _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_REPEAT);
-					}
-					uniform->add_id(sampler);
-					uniform->add_id(value);
-				} else if (value.get_type() == Variant::ARRAY) {
-					Array array = value;
-					for (const Variant& id: array) {
-						uniform->add_id(id);
-					}
-				} else {
-					uniform->add_id(value);
-				}
-				TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(binding_space, TypedArray<RDUniform>{});
-				uniforms.push_back(uniform);
-			}
-		}
-	}
-
-	for (const Vector2i key : _buffers.keys()) {
-		const Ref<RDBuffer> buffer = _buffers[key];
-		if (buffer.is_valid()) {
-			const Ref uniform = memnew(RDUniform);
-			uniform->set_binding(key.x);
-			uniform->set_uniform_type(buffer->get_uniform_type());
-			uniform->add_id(buffer->get_rid());
-			TypedArray<RDUniform> uniforms = uniform_sets.get_or_add(key.y, TypedArray<RDUniform>{});
-			uniforms.push_back(uniform);
-		}
-	}
-
-	const RID shader_rid = _get_shader_rid(kernel_index, rd);
-	for (const uint32_t key : uniform_sets.keys()) {
-		const TypedArray<RDUniform> value = uniform_sets.get(key, TypedArray<RDUniform>{});
-		RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, key, value);
-		rd->compute_list_bind_uniform_set(compute_list, uniform_set, key);
-	}
-}
-
-Variant ComputeShaderTask::_get_default_uniform(const RenderingDevice::UniformType type, Dictionary user_attributes) const {
-	if (user_attributes.has(GodotAttributes::global_param())) {
-#ifdef TOOLS_ENABLED
-		if (!RenderingServer::get_singleton()->is_on_render_thread()) {
-			WARN_PRINT_ONCE("Avoid using the [gd::GlobalParam] attribute off of the render thread, it may cause performance issues.");
-		}
-#endif
-		const Dictionary attribute = user_attributes[GodotAttributes::global_param()];
-		const String param_name = attribute["name"];
-		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
-	}
-	if (user_attributes.has(GodotAttributes::time())) {
-		return Time::get_singleton()->get_ticks_msec() * .001f;
-	}
-	if (user_attributes.has(GodotAttributes::frame_id())) {
-		return Engine::get_singleton()->get_frames_drawn();
-	}
-	if (user_attributes.has(GodotAttributes::mouse_position())) {
-		if (const SceneTree* scene_tree = cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
-			if (const Window* window = scene_tree->get_root()) {
-				return Vector2i(window->get_mouse_position());
-			}
-		}
-	}
-	switch (type) {
-		case RenderingDevice::UNIFORM_TYPE_SAMPLER:
-			if (user_attributes.has(GodotAttributes::sampler())) {
-				const Dictionary sampler_attribute = user_attributes[GodotAttributes::sampler()];
-				int64_t filter_mode_int = sampler_attribute.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
-				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-				return _get_sampler(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int), static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-			}
-			return _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-		case RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
-		case RenderingDevice::UNIFORM_TYPE_TEXTURE: {
-			const RID default_texture = user_attributes.has(GodotAttributes::default_white())
-				? RenderingServer::get_singleton()->get_white_texture()
-				: RenderingServer::get_singleton()->get_test_texture();
-			return RenderingServer::get_singleton()->texture_get_rd_texture(default_texture);
-		}
-		default:
-			break;
-	}
-	return nullptr;
-}
-
-Ref<RDBuffer> ComputeShaderTask::_get_buffer(const int32_t binding, const int32_t set) {
-	ERR_FAIL_NULL_V(shader, {});
-	const Vector2i key(binding, set);
-	if (!_buffers.has(key)) {
-		const Ref buffer = memnew(RDBuffer);
-		_buffers.set(key, buffer);
-		const TypedArray<Dictionary> buffers = shader->get_legacy_buffers();
-		const int64_t buffer_count = buffers.size();
-		for (int64_t i = 0; i < buffer_count; i++) {
-			Dictionary buffer_info = buffers[i];
-			const int64_t info_index = buffer_info["binding_index"];
-			const int64_t info_set = buffer_info["binding_space"];
-			if (info_index == binding && info_set == set) {
-				// TODO: This whole method should be refactored to make sense, but this works for now
-				const int64_t buffer_size = buffer_info["size"];
-				buffer->set_size(buffer_size);
-				buffer->set_is_fixed_size(true);
-			}
-		}
-		return buffer;
-	}
-	return _buffers[key];
-}
-
-void ComputeShaderTask::_set_buffer(const int32_t binding, const int32_t set, const RID& buffer_rid) {
-	const Vector2i key(binding, set);
-	_buffers.set(key, RDBuffer::ref(buffer_rid));
-}
+// TODO: migrate _get_default_uniform logic
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
 	ERR_FAIL_NULL(shader);
+	ERR_FAIL_NULL(_shader_object);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 
@@ -536,20 +288,18 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
 	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
 
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
-	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
 	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
-	_update_buffers();
+	_shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
-	_bind_uniform_sets(kernel_index, compute_list, rendering_device);
-	if (!_push_constant.is_empty()) {
-		rendering_device->compute_list_set_push_constant(compute_list, _push_constant, _push_constant.size());
-	}
+
+	ComputeShaderCursor(_shader_object.get()).write(_shader_parameters);
+	_shader_object->bind_uniforms(compute_list, _get_shader_rid(kernel_index, rendering_device));
 	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
 	rendering_device->compute_list_end();
 }

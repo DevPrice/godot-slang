@@ -4,9 +4,9 @@
 #include "godot_cpp/variant/typed_array.hpp"
 
 #include "binding_macros.h"
+#include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
 #include "compute_shader_shape.h"
-#include "rdbuffer.h"
 
 using namespace godot;
 
@@ -20,7 +20,6 @@ protected:
 
 public:
 	ComputeShaderTask();
-	~ComputeShaderTask() override;
 
 	[[nodiscard]] TypedArray<ComputeShaderKernel> get_kernels() const;
 
@@ -49,10 +48,8 @@ private:
 	Dictionary _shader_parameters{};
 	Dictionary _kernel_shaders{};
 	Dictionary _kernel_pipelines{};
-	Dictionary _buffers{};
-	TypedArray<RID> _linear_sampler_cache{};
-	TypedArray<RID> _nearest_sampler_cache{};
-	PackedByteArray _push_constant{};
+
+	std::unique_ptr<ComputeShaderObject> _shader_object;
 
 	void _reset();
 	void _shader_changed();
@@ -60,12 +57,5 @@ private:
 	RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
-	[[nodiscard]] RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode) const;
-	[[nodiscard]] Variant _get_parameter_value(const StringName& param_name, RenderingDevice::UniformType uniform_type, const Dictionary& attributes, const Variant& default_value) const;
-	[[nodiscard]] Variant _get_default_uniform(RenderingDevice::UniformType type, Dictionary user_attributes) const;
-	Ref<RDBuffer> _get_buffer(int32_t binding, int32_t set);
-	void _set_buffer(int32_t binding, int32_t set, const RID& buffer_rid);
-	void _update_buffers();
-	void _bind_uniform_sets(int64_t kernel_index, int64_t compute_list, RenderingDevice* rd);
 	void _dispatch(int64_t kernel_index, Vector3i thread_groups);
 };

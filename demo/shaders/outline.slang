@@ -35,7 +35,7 @@ struct PushConstants {
     let normal_sensitivity : float = 0.1;
 }
 
-[vk::push_constant]
+// [vk::push_constant]
 [gd::Export]
 let push_constants : PushConstants;
 
@@ -45,7 +45,7 @@ func outline(uint3 threadId: SV_DispatchThreadID) {
     let coord = int2(threadId.xy);
     if (coord.x >= viewport_size.x || coord.y >= viewport_size.y) return;
 
-    let screen_uv = float2(coord + .5f) / viewport_size;
+    let screen_uv = (coord + .5f) / viewport_size;
 
     let edge_strength = edge(screen_uv, viewport_size, scene_data.data.inv_projection_matrix, push_constants.outline_size);
     let base_color = color_texture.Sample(sampler_state, screen_uv);

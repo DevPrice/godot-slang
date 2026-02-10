@@ -26,7 +26,7 @@ void blur_horizontal(uint3 threadId: SV_DispatchThreadID) {
     for (int i = -KERNEL_RADIUS; i <= KERNEL_RADIUS; ++i) {
 		var sample_coord = coord + int2(i, 0);
 		sample_coord = clamp(sample_coord, int2(0, 0), viewport_size - 1);
-		color += scene_texture.SampleLevel(sampler_state, float2(sample_coord) / viewport_size, 0) * kernel[i + KERNEL_RADIUS];
+		color += scene_texture.SampleLevel(sampler_state, (sample_coord + .5) / viewport_size, 0) * kernel[i + KERNEL_RADIUS];
     }
 
     scene_color[coord] = color;
