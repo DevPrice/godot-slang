@@ -374,17 +374,13 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Ref<ShaderTypeLayoutShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && is_exported);
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
-				property.set("offset", static_cast<int64_t>(field->getOffset()));
 				property.set("layout_unit", field->getCategory());
-				if (field->getCategory() != slang::ParameterCategory::Uniform) {
-					// TODO: Temp hack for uniform compat
-					property.set("binding_index", field->getBindingIndex());
-					property.set("binding_space", field->getBindingSpace());
-					//property.set("binding_index", program_layout->getGlobalParamsVarLayout()->getBindingIndex());
-					//property.set("binding_space", program_layout->getGlobalParamsVarLayout()->getBindingSpace());
-				}
+				property.set("offset", field->getOffset());
+				property.set("slot_offset", field->getOffset(slang::ParameterCategory::DescriptorTableSlot));
+				property.set("space_offset", field->getOffset(slang::ParameterCategory::RegisterSpace));
 				if (field->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
 					// TODO: Temp hack for backwards compat
+					// supports writing a buffer RID to a ConstantBuffer<SomeStruct> instead of the struct
 					property.set("uniform_type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
 				}
 				property_shapes.set(get_name(field, field_attributes), property);

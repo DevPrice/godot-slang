@@ -149,8 +149,8 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
         const Dictionary property = properties[field_name];
         const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
         current.shape = property_shape;
-		current.offset.binding_index = property.get("binding_index", current.offset.binding_index);
-		current.offset.binding_space = property.get("binding_space", current.offset.binding_space);
+		current.offset.binding_index += static_cast<int64_t>(property.get("slot_offset", 0));
+		current.offset.binding_space += static_cast<int64_t>(property.get("space_offset", 0));
         current.offset.byte_offset += static_cast<int64_t>(property.get("offset", 0));
     }
     return current;
