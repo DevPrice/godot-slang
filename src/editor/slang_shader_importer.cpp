@@ -365,6 +365,35 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			shape.instantiate();
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			shape->set_alignment(type_layout->getAlignment());
+
+			TypedArray<Dictionary> bindings{};
+
+			if (type_layout->getBindingRangeCount()) {
+				for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
+					Dictionary binding{};
+					const slang::BindingType binding_type = type_layout->getBindingRangeType(i);
+					binding.set("uniform_type", _to_godot_uniform_type(binding_type));
+
+					const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
+					const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
+					binding.set("space_offset", type_layout->getDescriptorSetSpaceOffset(set_index));
+					binding.set("slot_offset", type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
+					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
+					bindings.push_back(binding);
+				}
+				shape->set_bindings(bindings);
+			}
+
+			if (type_layout->getSize()) {
+				Dictionary binding{};
+				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
+				binding.set("space_offset", 0);
+				binding.set("slot_offset", 0);
+				binding.set("slot_count", 1);
+				binding.set("size", type_layout->getSize());
+				bindings.push_back(binding);
+			}
+
 			Dictionary property_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
@@ -372,12 +401,15 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
 				const Ref<ShaderTypeLayoutShape> property_shape = _get_shape(field->getTypeLayout(), include_property_info && is_exported);
+
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("layout_unit", field->getCategory());
 				property.set("offset", field->getOffset());
-				property.set("slot_offset", field->getOffset(slang::ParameterCategory::DescriptorTableSlot));
 				property.set("space_offset", field->getOffset(slang::ParameterCategory::RegisterSpace));
+				property.set("slot_offset", field->getOffset(slang::ParameterCategory::DescriptorTableSlot));
+				property.set("binding_offset", type_layout->getFieldBindingRangeOffset(i));
+
 				if (field->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
 					// TODO: Temp hack for backwards compat
 					// supports writing a buffer RID to a ConstantBuffer<SomeStruct> instead of the struct
