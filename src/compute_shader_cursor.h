@@ -4,23 +4,28 @@
 #include "rdbuffer.h"
 
 struct ComputeShaderOffset {
-    uint32_t binding_space{};
-    uint32_t binding_index{};
+    uint32_t binding_space_offset{};
+    uint32_t binding_index_offset{};
     int64_t byte_offset{};
+
+    ComputeShaderOffset operator+(const ComputeShaderOffset& other) const;
+    ComputeShaderOffset& operator+=(const ComputeShaderOffset& other);
+
+    static ComputeShaderOffset from_field(const Dictionary& field);
 };
 
 class ComputeShaderObject {
 
 private:
     RenderingDevice* rd;
-    Ref<ShaderTypeLayoutShape> shape{};
+    Ref<StructTypeLayoutShape> shape{};
     PackedByteArray push_constants{};
     Dictionary buffers{};
     TypedArray<Array> uniforms{};
 	TypedArray<RID> sampler_cache{};
 
 public:
-    ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<ShaderTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info);
+    ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info);
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 

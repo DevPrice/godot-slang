@@ -12,7 +12,30 @@
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 #include "godot_cpp/classes/window.hpp"
 
-ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<ShaderTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info) : rd(p_rendering_device), shape(p_shape) {
+ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
+	return ComputeShaderOffset{
+		binding_space_offset + other.binding_space_offset,
+		binding_index_offset + other.binding_index_offset,
+		byte_offset + other.byte_offset,
+	};
+}
+
+ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& other) {
+	binding_space_offset += other.binding_space_offset;
+	binding_index_offset += other.binding_index_offset;
+	byte_offset += other.byte_offset;
+	return *this;
+}
+
+ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
+	ComputeShaderOffset result{};
+	result.binding_index_offset += static_cast<int64_t>(field.get("slot_offset", 0));
+	result.binding_space_offset += static_cast<int64_t>(field.get("space_offset", 0));
+	result.byte_offset += static_cast<int64_t>(field.get("offset", 0));
+	return result;
+}
+
+ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info) : rd(p_rendering_device), shape(p_shape) {
 	ERR_FAIL_NULL(rd);
 	sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
 	for (const Dictionary buffer : buffer_info) {
@@ -28,11 +51,11 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 }
 
 void ComputeShaderObject::write(const ComputeShaderOffset offset, const RenderingDevice::UniformType uniform_type, const Variant& data) {
-	RDUniform& uniform = _get_uniform(offset.binding_space, offset.binding_index);
+	RDUniform& uniform = _get_uniform(offset.binding_space_offset, offset.binding_index_offset);
 	uniform.set_uniform_type(uniform_type);
 	uniform.clear_ids();
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-		buffers.erase(Vector2i(offset.binding_space, offset.binding_index));
+		buffers.erase(Vector2i(offset.binding_space_offset, offset.binding_index_offset));
 		uniform.add_id(data);
 	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER && data.get_type() == Variant::NIL) {
 		uniform.add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE));
@@ -51,7 +74,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Renderin
 }
 
 void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
-	RDBuffer& buffer = _get_buffer(offset.binding_space, offset.binding_index);
+	RDBuffer& buffer = _get_buffer(offset.binding_space_offset, offset.binding_index_offset);
 	if (offset.byte_offset + size > buffer.get_buffer().size()) {
 		buffer.set_size(offset.byte_offset + size);
 	}
@@ -149,9 +172,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
         const Dictionary property = properties[field_name];
         const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
         current.shape = property_shape;
-		current.offset.binding_index += static_cast<int64_t>(property.get("slot_offset", 0));
-		current.offset.binding_space += static_cast<int64_t>(property.get("space_offset", 0));
-        current.offset.byte_offset += static_cast<int64_t>(property.get("offset", 0));
+		current.offset += ComputeShaderOffset::from_field(property);
     }
     return current;
 }
