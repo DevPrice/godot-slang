@@ -2,6 +2,7 @@
 
 #include "godot_cpp/classes/resource.hpp"
 #include "godot_cpp/variant/typed_array.hpp"
+#include "memory"
 
 #include "binding_macros.h"
 #include "compute_shader_cursor.h"
