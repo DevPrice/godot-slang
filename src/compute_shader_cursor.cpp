@@ -54,29 +54,27 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
 	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_offset];
+
 	RDUniform& uniform = _get_uniform(binding["space_offset"], binding["slot_offset"]);
 	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 	uniform.set_uniform_type(uniform_type);
 	uniform.clear_ids();
+
+	const Variant data_or_default = data.get_type() == Variant::Type::NIL ? _get_default_value(uniform_type) : data;
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
 		buffers.erase(Vector2i(binding["space_offset"], binding["slot_offset"]));
-		uniform.add_id(data);
-	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER && data.get_type() == Variant::NIL) {
-		uniform.add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE));
-	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && data.get_type() != Variant::ARRAY) {
-		const RID sampler = _get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_REPEAT);
-		uniform.add_id(sampler);
-		uniform.add_id(data);
-	} else if (data.get_type() == Variant::ARRAY) {
-		Array array = data;
-		for (const Variant& id: array) {
-			uniform.add_id(id);
+		uniform.add_id(_get_resource_rid(data_or_default));
+	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && data_or_default.get_type() != Variant::ARRAY) {
+		const Variant sampler = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER);
+		uniform.add_id(_get_resource_rid(sampler));
+		uniform.add_id(_get_resource_rid(data_or_default));
+	} else if (data_or_default.get_type() == Variant::ARRAY) {
+		Array array = data_or_default;
+		for (const Variant& element : array) {
+			uniform.add_id(_get_resource_rid(element));
 		}
-	} else if (const Object* data_texture = data; data_texture && data_texture->is_class(Texture::get_class_static())) {
-		const RID texture_rid = RenderingServer::get_singleton()->texture_get_rd_texture(data);
-		uniform.add_id(texture_rid);
 	} else {
-		uniform.add_id(data);
+		uniform.add_id(_get_resource_rid(data_or_default));
 	}
 }
 
@@ -177,6 +175,31 @@ RID ComputeShaderObject::_get_sampler(const RenderingDevice::SamplerFilter filte
 	return sampler_rid;
 }
 
+Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformType type) {
+	switch (type) {
+		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER:
+			return Ref(memnew(RDSamplerState));
+		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
+			return Array { _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER), _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE) };
+		case RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE:
+		case RenderingDevice::UniformType::UNIFORM_TYPE_IMAGE:
+			return RenderingServer::get_singleton()->get_test_texture();
+		default:
+			return {};
+	}
+}
+
+RID ComputeShaderObject::_get_resource_rid(const Variant& data) {
+	if (const Object* texture = data; texture && texture->is_class(Texture::get_class_static())) {
+		return RenderingServer::get_singleton()->texture_get_rd_texture(data);
+	}
+	if (const auto sampler = Object::cast_to<RDSamplerState>(data)) {
+		// TODO: Support the rest of the properties
+		return _get_sampler(sampler->get_mag_filter(), sampler->get_repeat_u());
+	}
+	return data;
+}
+
 ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     const PackedStringArray parts = path.split("/");
     ComputeShaderCursor current(*this);
@@ -215,6 +238,8 @@ void ComputeShaderCursor::write(const Variant& data) const {
 		const int64_t size = bytes.size();
 		object->write(offset, size, data);
 	} else if (static_cast<RID>(data).is_valid() || resource_shape) {
+		// TODO: If we're writing a texture to a sampler resource, we need to bind the sampler declared via the gd::Sampler attribute, if present
+		// Right now, we'll always use the default sampler in that case
 		object->write_resource(offset, data);
 	} else if (const auto variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
 		const int64_t size = variant_shape->get_size();
@@ -302,6 +327,23 @@ Variant ComputeShaderCursor::_get_default_value(Dictionary property) {
 			}
 			break;
 		default:
+			if (attributes.has(GodotAttributes::sampler())) {
+				const Dictionary sampler_attribute = attributes[GodotAttributes::sampler()];
+				int64_t filter_mode_int = sampler_attribute.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
+				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
+				Ref<RDSamplerState> sampler_state;
+				sampler_state.instantiate();
+				sampler_state->set_min_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+				sampler_state->set_mag_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+				sampler_state->set_mip_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+				sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+				sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+				sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+				return sampler_state;
+			}
+			if (attributes.has(GodotAttributes::default_white())) {
+				return RenderingServer::get_singleton()->get_white_texture();
+			}
 			break;
 	}
 

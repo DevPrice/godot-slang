@@ -38,7 +38,10 @@ public:
 private:
     RDBuffer& _get_buffer(int64_t binding_space, int64_t binding_index);
     RDUniform& _get_uniform(int64_t binding_space, int64_t binding_index);
+    RID _get_resource_rid(const Variant& data);
     RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode);
+
+    [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
 };
 
 class ComputeShaderCursor {
