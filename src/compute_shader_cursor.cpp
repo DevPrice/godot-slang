@@ -85,11 +85,18 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant&
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
 	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_offset];
-	RDBuffer& buffer = _get_buffer(binding["space_offset"], binding["slot_offset"]);
-	if (offset.byte_offset + size > buffer.get_buffer().size()) {
-		buffer.set_size(offset.byte_offset + size);
+	if (binding.has("uniform_type")) {
+		RDBuffer& buffer = _get_buffer(binding["space_offset"], binding["slot_offset"]);
+		if (offset.byte_offset + size > buffer.get_buffer().size()) {
+			buffer.set_size(offset.byte_offset + size);
+		}
+		buffer.write(offset.byte_offset, size, data, matrix_layout);
+	} else {
+		if (offset.byte_offset + size > push_constants.size()) {
+			push_constants.resize(RDBuffer::aligned_size(offset.byte_offset + size, 16)); // TODO: alignment hack
+		}
+		RDBuffer::write(push_constants, offset.byte_offset, size, data, matrix_layout);
 	}
-	buffer.write(offset.byte_offset, size, data, matrix_layout);
 }
 
 void ComputeShaderObject::flush_buffers() {

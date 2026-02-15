@@ -381,7 +381,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
 					Dictionary binding{};
 					const slang::BindingType binding_type = type_layout->getBindingRangeType(i);
-					binding.set("uniform_type", _to_godot_uniform_type(binding_type));
+					if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
+						binding.set("uniform_type", *uniform_type);
+					}
 
 					const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 					const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
@@ -446,19 +448,24 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		case slang::TypeReflection::Kind::SamplerState:
 		case slang::TypeReflection::Kind::Resource: {
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
-			const RenderingDevice::UniformType uniform_type = _to_godot_uniform_type(type_layout->getBindingRangeType(0));
+			// TODO: We probably don't need to know the type in the shape
+			const slang::BindingType binding_type = type_layout->getBindingRangeType(0);
+			const auto uniform_type = _to_godot_uniform_type(binding_type);
+			if (!uniform_type) {
+				UtilityFunctions::push_warning("Unknown binding type: ", static_cast<int64_t>(binding_type));
+			}
 			if (base_resource_shape == SLANG_BYTE_ADDRESS_BUFFER) {
 				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
 				shape->set_resource_type(ResourceTypeLayoutShape::RAW_BYTES);
-				shape->set_uniform_type(uniform_type);
+				shape->set_uniform_type(uniform_type ? *uniform_type : static_cast<RenderingDevice::UniformType>(-1));
 				return shape;
 			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
 				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
 				shape->set_resource_type(ResourceTypeLayoutShape::UNKNOWN);
-				shape->set_uniform_type(uniform_type);
+				shape->set_uniform_type(uniform_type ? *uniform_type : static_cast<RenderingDevice::UniformType>(-1));
 				return shape;
 			}
 		}
@@ -860,7 +867,7 @@ Variant SlangReflectionContext::to_json() const {
 	return nullptr;
 }
 
-RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slang::BindingType type) {
+std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_uniform_type(slang::BindingType type) {
 	const int64_t base_type = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_BASE_MASK;
 	const int64_t type_ext = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_EXT_MASK;
 	switch (base_type) {
@@ -884,8 +891,7 @@ RenderingDevice::UniformType SlangReflectionContext::_to_godot_uniform_type(slan
 		case SLANG_BINDING_TYPE_INLINE_UNIFORM_DATA:
 		case SLANG_BINDING_TYPE_RAY_TRACING_ACCELERATION_STRUCTURE:
 		default:
-			UtilityFunctions::push_warning("Unknown binding type: ", base_type);
-			return static_cast<RenderingDevice::UniformType>(-1);
+			return {};
 	}
 }
 

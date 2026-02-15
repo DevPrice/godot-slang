@@ -35,7 +35,7 @@ struct PushConstants {
     let normal_sensitivity : float = 0.1;
 }
 
-// [vk::push_constant]
+[vk::push_constant]
 [gd::Export]
 let push_constants : PushConstants;
 

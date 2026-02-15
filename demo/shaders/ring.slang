@@ -10,7 +10,7 @@ RWTexture2D<float4> texture;
 [gd::Time]
 float t;
 
-// [vk::push_constant]
+[vk::push_constant]
 [gd::texture::OutputSize]
 int2 screen_size;
 
