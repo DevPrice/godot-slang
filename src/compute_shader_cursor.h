@@ -25,7 +25,7 @@ private:
 	TypedArray<RID> sampler_cache{};
 
 public:
-    ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info);
+    ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape);
     virtual ~ComputeShaderObject();
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }

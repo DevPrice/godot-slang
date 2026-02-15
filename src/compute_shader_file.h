@@ -15,7 +15,6 @@ class ComputeShaderFile : public Resource {
 	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
 	GET_SET_PROPERTY(String, base_error)
 	GET_SET_PROPERTY(Ref<StructTypeLayoutShape>, parameters)
-	GET_SET_PROPERTY(TypedArray<Dictionary>, legacy_buffers)
 
 protected:
 	static void _bind_methods();
