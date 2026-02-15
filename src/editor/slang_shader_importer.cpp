@@ -25,6 +25,7 @@
 #include <compute_shader_kernel.h>
 
 #include "enums.h"
+#include "rdbuffer.h"
 #include "godot_cpp/classes/json.hpp"
 
 void SlangShaderImporter::_bind_methods() {
@@ -120,7 +121,6 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	if (slang_module && slang_error.is_empty()) {
 		const SlangReflectionContext reflection_context(slang_module->getLayout());
 		slang_shader->set_parameters(reflection_context.get_params_shape());
-		slang_shader->set_legacy_buffers(reflection_context.get_buffers_reflection());
 		TypedArray<ComputeShaderKernel> kernels;
 		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", PackedStringArray()))) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
@@ -369,6 +369,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			TypedArray<Dictionary> bindings{};
 			shape->set_bindings(bindings);
 
+			// TODO: Feels hacky
 			int64_t push_constants_size = 0;
 			Dictionary field_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
@@ -437,7 +438,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					binding.set("slot_offset", type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
 					if (binding_type == slang::BindingType::PushConstant) {
-						binding.set("size", push_constants_size);
+						// TODO: Can we fetch the alignment?
+						binding.set("size", RDBuffer::aligned_size(push_constants_size, 16));
 					}
 					bindings.push_back(binding);
 				}
@@ -491,7 +493,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("space_offset", 0);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
-				binding.set("size", type_layout->getSize());
+				binding.set("size", RDBuffer::aligned_size(element_type->getSize(), element_type->getAlignment()));
 				element_shape->get_bindings().push_front(binding);
 			}
 			return element_shape;
@@ -515,31 +517,6 @@ bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const 
 		}
 	}
 	return false;
-}
-
-TypedArray<Dictionary> SlangReflectionContext::get_buffers_reflection() const {
-	TypedArray<Dictionary> buffers{};
-	const int64_t global_buffer_size = program_layout->getGlobalConstantBufferSize();
-	if (global_buffer_size > 0) {
-		Dictionary buffer_info{};
-		buffer_info.set("binding_index", program_layout->getGlobalParamsVarLayout()->getBindingIndex());
-		buffer_info.set("binding_space", program_layout->getGlobalParamsVarLayout()->getBindingSpace());
-		buffer_info.set("size", global_buffer_size);
-		buffers.push_back(buffer_info);
-	}
-	for (size_t param_index = 0; param_index < program_layout->getParameterCount(); ++param_index) {
-		slang::VariableLayoutReflection* param = program_layout->getParameterByIndex(param_index);
-		if (slang::TypeLayoutReflection* type_layout = param->getTypeLayout()) {
-			if (param->getCategory() == slang::DescriptorTableSlot && (type_layout->getKind() == slang::TypeReflection::Kind::ConstantBuffer || type_layout->getKind() == slang::TypeReflection::Kind::ShaderStorageBuffer)) {
-				Dictionary buffer_info{};
-				buffer_info.set("binding_index", param->getBindingIndex());
-				buffer_info.set("binding_space", param->getBindingSpace());
-				buffer_info.set("size", static_cast<int64_t>(type_layout->getElementTypeLayout()->getSize()));
-				buffers.push_back(buffer_info);
-			}
-		}
-	}
-	return buffers;
 }
 
 // TODO: Surely there is a better way to do this

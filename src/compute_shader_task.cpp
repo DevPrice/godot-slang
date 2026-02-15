@@ -247,7 +247,7 @@ void ComputeShaderTask::_reset() {
 	_kernel_shaders.clear();
 
 	if (shader.is_valid()) {
-		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, shader->get_parameters(), shader->get_legacy_buffers());
+		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, shader->get_parameters());
 	} else {
 		_shader_object = nullptr;
 	}

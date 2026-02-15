@@ -34,18 +34,24 @@ ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
 	return result;
 }
 
-ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info) : rd(p_rendering_device), shape(p_shape) {
+ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), shape(p_shape) {
 	ERR_FAIL_NULL(rd);
 	sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
-	for (const Dictionary buffer : buffer_info) {
-		const int64_t binding_index = buffer["binding_index"];
-		const int64_t binding_space = buffer["binding_space"];
-		const int64_t size = buffer["size"];
-		Ref<RDBuffer> buffer_data{};
-		buffer_data.instantiate();
-		buffer_data->set_size(size);
-		buffer_data->set_is_fixed_size(size > 0);
-		buffers.set(Vector2i(binding_space, binding_index), buffer_data);
+	for (const Dictionary binding : p_shape->get_bindings()) {
+		if (binding.has("size")) {
+			const int64_t size = binding["size"];
+			if (binding.has("uniform_type")) {
+				const int64_t binding_index = binding.get("slot_offset", 0);
+				const int64_t binding_space = binding.get("space_offset", 0);
+				Ref<RDBuffer> buffer_data{};
+				buffer_data.instantiate();
+				buffer_data->set_size(size);
+				buffer_data->set_is_fixed_size(size > 0);
+				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
+			} else {
+				push_constants.resize(size);
+			}
+		}
 	}
 }
 
@@ -99,9 +105,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant&
 		}
 		buffer.write(offset.byte_offset, size, data, matrix_layout);
 	} else {
-		if (offset.byte_offset + size > push_constants.size()) {
-			push_constants.resize(RDBuffer::aligned_size(offset.byte_offset + size, 16)); // TODO: alignment hack
-		}
+		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
 		RDBuffer::write(push_constants, offset.byte_offset, size, data, matrix_layout);
 	}
 }
