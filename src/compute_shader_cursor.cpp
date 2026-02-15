@@ -49,6 +49,15 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 	}
 }
 
+ComputeShaderObject::~ComputeShaderObject() {
+	ERR_FAIL_NULL(rd);
+	for (const RID rid: sampler_cache) {
+		if (rid.is_valid()) {
+			rd->free_rid(rid);
+		}
+	}
+}
+
 void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const Variant& data) {
 	ERR_FAIL_NULL(shape);
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
