@@ -10,6 +10,8 @@ using namespace godot;
 class ShaderTypeLayoutShape : public Resource {
 	GDCLASS(ShaderTypeLayoutShape, Resource);
 
+	GET_SET_PROPERTY(TypedArray<Dictionary>, bindings)
+
 protected:
 	static void _bind_methods();
 
@@ -82,7 +84,6 @@ protected:
 	static void _bind_methods();
 
 	GET_SET_PROPERTY(int64_t, alignment)
-	GET_SET_PROPERTY(TypedArray<Dictionary>, bindings)
 	GET_SET_PROPERTY(Dictionary, properties)
 	GET_SET_PROPERTY(Dictionary, user_attributes)
 

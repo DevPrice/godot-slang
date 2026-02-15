@@ -4,7 +4,10 @@
 #include "enums.h"
 
 void ShaderTypeLayoutShape::_bind_methods() {
+    BIND_GET_SET(ShaderTypeLayoutShape, bindings, Variant::ARRAY);
 }
+
+GET_SET_PROPERTY_IMPL(ShaderTypeLayoutShape, TypedArray<Dictionary>, bindings)
 
 void VariantTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(VariantTypeLayoutShape, size, Variant::INT);
@@ -24,7 +27,6 @@ void StructPropertyShape::_bind_methods() {
 void StructTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(StructTypeLayoutShape, size, Variant::INT);
     BIND_GET_SET(StructTypeLayoutShape, alignment, Variant::INT);
-    BIND_GET_SET(StructTypeLayoutShape, bindings, Variant::ARRAY);
     BIND_GET_SET(StructTypeLayoutShape, properties, Variant::DICTIONARY);
     BIND_GET_SET(StructTypeLayoutShape, user_attributes, Variant::DICTIONARY);
 }
@@ -43,7 +45,6 @@ GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, stride)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, alignment)
 
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, int64_t, alignment)
-GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, TypedArray<Dictionary>, bindings)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, properties)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, user_attributes)
 
