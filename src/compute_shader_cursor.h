@@ -26,6 +26,7 @@ private:
 
 public:
     ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape, const TypedArray<Dictionary>& buffer_info);
+    virtual ~ComputeShaderObject();
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
