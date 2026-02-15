@@ -5,6 +5,7 @@
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
+#include "godot_cpp/classes/rendering_device.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/texture.hpp"
@@ -46,10 +47,21 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 				Ref<RDBuffer> buffer_data{};
 				buffer_data.instantiate();
 				buffer_data->set_size(size);
-				buffer_data->set_is_fixed_size(size > 0);
+				buffer_data->set_is_fixed_size(true);
 				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
 			} else {
 				push_constants.resize(size);
+			}
+		} else if (binding.has("uniform_type")) {
+			const int64_t uniform_type = binding["uniform_type"];
+			if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
+				const int64_t binding_index = binding.get("slot_offset", 0);
+				const int64_t binding_space = binding.get("space_offset", 0);
+				Ref<RDBuffer> buffer_data{};
+				buffer_data.instantiate();
+				buffer_data->set_size(256); // TODO: Default sizing behavior?
+				buffer_data->set_is_fixed_size(false);
+				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
 			}
 		}
 	}
@@ -100,7 +112,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant&
 	const Dictionary binding = bindings[offset.binding_offset];
 	if (binding.has("uniform_type")) {
 		RDBuffer& buffer = _get_buffer(binding["space_offset"], binding["slot_offset"]);
-		if (offset.byte_offset + size > buffer.get_buffer().size()) {
+		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
 			buffer.set_size(offset.byte_offset + size);
 		}
 		buffer.write(offset.byte_offset, size, data, matrix_layout);
