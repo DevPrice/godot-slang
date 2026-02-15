@@ -406,10 +406,10 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				property.set("shape", property_shape);
 				property.set("user_attributes", field_attributes);
 				property.set("layout_unit", field->getCategory());
-				property.set("offset", field->getOffset());
-				property.set("space_offset", field->getOffset(slang::ParameterCategory::RegisterSpace));
-				property.set("slot_offset", field->getOffset(slang::ParameterCategory::DescriptorTableSlot));
-				property.set("element_offset", field->getOffset(slang::ParameterCategory::SubElementRegisterSpace));
+				property.set("offset", static_cast<int64_t>(field->getOffset()));
+				property.set("space_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::RegisterSpace)));
+				property.set("slot_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::DescriptorTableSlot)));
+				property.set("element_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::SubElementRegisterSpace)));
 				if (field->getCategory() == slang::ParameterCategory::Uniform) {
 					property.set("binding_offset", 0);
 				} else {
