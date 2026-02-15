@@ -4,6 +4,7 @@
 
 #include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
+#include <optional>
 
 #include "attributes.h"
 #include "compute_shader_shape.h"
@@ -60,7 +61,7 @@ private:
 	bool _get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
 	Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
-	static RenderingDevice::UniformType _to_godot_uniform_type(slang::BindingType type);
+	static std::optional<RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type);
 };
 
 class SlangShaderImporter final : public EditorImportPlugin {
