@@ -41,16 +41,18 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
 			const int64_t size = binding["size"];
+			const int64_t alignment = binding.get("alignment", 1);
 			if (binding.has("uniform_type")) {
 				const int64_t binding_index = binding.get("slot_offset", 0);
 				const int64_t binding_space = binding.get("space_offset", 0);
 				Ref<RDBuffer> buffer_data{};
 				buffer_data.instantiate();
+				buffer_data->set_alignment(alignment);
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
 			} else {
-				push_constants.resize(size);
+				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {
 			const int64_t uniform_type = binding["uniform_type"];
@@ -81,9 +83,10 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
 	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_offset];
+	ERR_FAIL_COND(!binding.has("uniform_type"));
 
-	RDUniform& uniform = _get_uniform(binding["space_offset"], binding["slot_offset"]);
 	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
+	RDUniform& uniform = _get_uniform(binding["space_offset"], binding["slot_offset"]);
 	uniform.set_uniform_type(uniform_type);
 	uniform.clear_ids();
 

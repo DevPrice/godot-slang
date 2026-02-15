@@ -17,16 +17,14 @@
 #include "godot_cpp/classes/cubemap_array.hpp"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/image_texture_layered.hpp"
+#include "godot_cpp/classes/json.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
 #include "godot_cpp/classes/texture3d.hpp"
 
 #include "attributes.h"
+#include "enums.h"
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
-
-#include "enums.h"
-#include "rdbuffer.h"
-#include "godot_cpp/classes/json.hpp"
 
 void SlangShaderImporter::_bind_methods() {
 }
@@ -438,8 +436,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					binding.set("slot_offset", type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
 					if (binding_type == slang::BindingType::PushConstant) {
-						// TODO: Can we fetch the alignment?
-						binding.set("size", RDBuffer::aligned_size(push_constants_size, 16));
+						binding.set("size", push_constants_size);
+						binding.set("alignment", 16); // TODO: Can we fetch the alignment?
 					}
 					bindings.push_back(binding);
 				}
@@ -493,7 +491,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("space_offset", 0);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
-				binding.set("size", RDBuffer::aligned_size(element_type->getSize(), element_type->getAlignment()));
+				binding.set("size", static_cast<int64_t>(element_type->getSize()));
+				binding.set("alignment", element_type->getAlignment());
 				element_shape->get_bindings().push_front(binding);
 			}
 			return element_shape;
