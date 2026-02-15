@@ -367,6 +367,15 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			shape->set_alignment(type_layout->getAlignment());
 
 			TypedArray<Dictionary> bindings{};
+			if (type_layout->getSize()) {
+				Dictionary binding{};
+				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
+				binding.set("space_offset", 0);
+				binding.set("slot_offset", 0);
+				binding.set("slot_count", 1);
+				binding.set("size", type_layout->getSize());
+				bindings.push_back(binding);
+			}
 
 			if (type_layout->getBindingRangeCount()) {
 				for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
@@ -381,18 +390,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
 					bindings.push_back(binding);
 				}
-				shape->set_bindings(bindings);
 			}
-
-			if (type_layout->getSize()) {
-				Dictionary binding{};
-				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
-				binding.set("space_offset", 0);
-				binding.set("slot_offset", 0);
-				binding.set("slot_count", 1);
-				binding.set("size", type_layout->getSize());
-				bindings.push_back(binding);
-			}
+			shape->set_bindings(bindings);
 
 			Dictionary property_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
@@ -408,13 +407,13 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				property.set("offset", field->getOffset());
 				property.set("space_offset", field->getOffset(slang::ParameterCategory::RegisterSpace));
 				property.set("slot_offset", field->getOffset(slang::ParameterCategory::DescriptorTableSlot));
-				property.set("binding_offset", type_layout->getFieldBindingRangeOffset(i));
-
-				if (field->getCategory() == slang::ParameterCategory::DescriptorTableSlot) {
-					// TODO: Temp hack for backwards compat
-					// supports writing a buffer RID to a ConstantBuffer<SomeStruct> instead of the struct
-					property.set("uniform_type", _to_godot_uniform_type(field->getTypeLayout()->getBindingRangeType(0)));
+				property.set("element_offset", field->getOffset(slang::ParameterCategory::SubElementRegisterSpace));
+				if (field->getCategory() == slang::ParameterCategory::Uniform) {
+					property.set("binding_offset", 0);
+				} else {
+					property.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + (type_layout->getSize() > 1));
 				}
+
 				property_shapes.set(get_name(field, field_attributes), property);
 
 				if (include_property_info) {

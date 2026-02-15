@@ -14,14 +14,14 @@
 
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{
-		binding_space_offset + other.binding_space_offset,
+		binding_offset + other.binding_offset,
 		binding_index_offset + other.binding_index_offset,
 		byte_offset + other.byte_offset,
 	};
 }
 
 ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& other) {
-	binding_space_offset += other.binding_space_offset;
+	binding_offset += other.binding_offset;
 	binding_index_offset += other.binding_index_offset;
 	byte_offset += other.byte_offset;
 	return *this;
@@ -29,8 +29,7 @@ ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& 
 
 ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
 	ComputeShaderOffset result{};
-	result.binding_index_offset += static_cast<int64_t>(field.get("slot_offset", 0));
-	result.binding_space_offset += static_cast<int64_t>(field.get("space_offset", 0));
+	result.binding_offset += static_cast<int64_t>(field.get("binding_offset", 0));
 	result.byte_offset += static_cast<int64_t>(field.get("offset", 0));
 	return result;
 }
@@ -50,12 +49,17 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 	}
 }
 
-void ComputeShaderObject::write(const ComputeShaderOffset offset, const RenderingDevice::UniformType uniform_type, const Variant& data) {
-	RDUniform& uniform = _get_uniform(offset.binding_space_offset, offset.binding_index_offset);
+void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const Variant& data) {
+	ERR_FAIL_NULL(shape);
+	const TypedArray<Dictionary> bindings = shape->get_bindings();
+	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
+	const Dictionary binding = bindings[offset.binding_offset];
+	RDUniform& uniform = _get_uniform(binding["space_offset"], binding["slot_offset"]);
+	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 	uniform.set_uniform_type(uniform_type);
 	uniform.clear_ids();
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-		buffers.erase(Vector2i(offset.binding_space_offset, offset.binding_index_offset));
+		buffers.erase(Vector2i(binding["space_offset"], binding["slot_offset"]));
 		uniform.add_id(data);
 	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER && data.get_type() == Variant::NIL) {
 		uniform.add_id(_get_sampler(RenderingDevice::SAMPLER_FILTER_LINEAR, RenderingDevice::SamplerRepeatMode::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE));
@@ -68,13 +72,20 @@ void ComputeShaderObject::write(const ComputeShaderOffset offset, const Renderin
 		for (const Variant& id: array) {
 			uniform.add_id(id);
 		}
+	} else if (const Object* data_texture = data; data_texture && data_texture->is_class(Texture::get_class_static())) {
+		const RID texture_rid = RenderingServer::get_singleton()->texture_get_rd_texture(data);
+		uniform.add_id(texture_rid);
 	} else {
 		uniform.add_id(data);
 	}
 }
 
 void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
-	RDBuffer& buffer = _get_buffer(offset.binding_space_offset, offset.binding_index_offset);
+	ERR_FAIL_NULL(shape);
+	const TypedArray<Dictionary> bindings = shape->get_bindings();
+	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
+	const Dictionary binding = bindings[offset.binding_offset];
+	RDBuffer& buffer = _get_buffer(binding["space_offset"], binding["slot_offset"]);
 	if (offset.byte_offset + size > buffer.get_buffer().size()) {
 		buffer.set_size(offset.byte_offset + size);
 	}
@@ -196,13 +207,8 @@ void ComputeShaderCursor::write(const Variant& data) const {
 		const PackedByteArray bytes = data;
 		const int64_t size = bytes.size();
 		object->write(offset, size, data);
-	} else if (resource_shape) {
-		if (const Object* data_texture = data; data_texture && data_texture->is_class(Texture::get_class_static())) {
-			const RID texture_rid = RenderingServer::get_singleton()->texture_get_rd_texture(data);
-			object->write(offset, resource_shape->get_uniform_type(), texture_rid);
-		} else {
-			object->write(offset, resource_shape->get_uniform_type(), data);
-		}
+	} else if (static_cast<RID>(data).is_valid() || resource_shape) {
+		object->write_resource(offset, data);
 	} else if (const auto variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
 		const int64_t size = variant_shape->get_size();
 		ERR_FAIL_COND(size <= 0);
@@ -231,17 +237,6 @@ void ComputeShaderCursor::write(const Variant& data) const {
 						color = color.srgb_to_linear();
 					}
 					property_value = converted;
-				}
-			}
-
-			// TODO: HACK ALERT
-			if (property.has("uniform_type")) {
-				const int64_t uniform_type = property["uniform_type"];
-				if (uniform_type == RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER) {
-					if (const RID property_rid = property_value; property_rid.is_valid()) {
-						object->write(field(property_name).offset, static_cast<RenderingDevice::UniformType>(uniform_type), property_rid);
-						continue;
-					}
 				}
 			}
 

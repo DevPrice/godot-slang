@@ -4,7 +4,7 @@
 #include "rdbuffer.h"
 
 struct ComputeShaderOffset {
-    uint32_t binding_space_offset{};
+    uint32_t binding_offset{};
     uint32_t binding_index_offset{};
     int64_t byte_offset{};
 
@@ -29,7 +29,7 @@ public:
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
-    void write(ComputeShaderOffset offset, RenderingDevice::UniformType uniform_type, const Variant& data);
+    void write_resource(ComputeShaderOffset offset, const Variant& data);
     void write(ComputeShaderOffset offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
