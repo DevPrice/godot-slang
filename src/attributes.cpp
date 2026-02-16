@@ -1,18 +1,79 @@
+#include <memory>
+
 #include "attributes.h"
 
-#include <memory>
+#include "godot_cpp/classes/engine.hpp"
+#include "godot_cpp/classes/rd_sampler_state.hpp"
+#include "godot_cpp/classes/rendering_server.hpp"
+#include "godot_cpp/classes/scene_tree.hpp"
+#include "godot_cpp/classes/time.hpp"
+#include "godot_cpp/classes/window.hpp"
 
 AttributeRegistry::AttributeRegistry() {
     register_write_handler(GodotAttributes::color(), [](const Dictionary&, Variant& value) {
-        if (value.get_type() == Variant::COLOR) {
+        if (value.get_type() == Variant::Type::COLOR) {
             value = static_cast<Color>(value).srgb_to_linear();
         }
-        if (value.get_type() == Variant::PACKED_COLOR_ARRAY) {
+        if (value.get_type() == Variant::Type::PACKED_COLOR_ARRAY) {
             PackedColorArray converted = value.duplicate();
             for (Color& color : converted) {
                 color = color.srgb_to_linear();
             }
             value = converted;
+        }
+    });
+    register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+            value = RenderingServer::get_singleton()->get_white_texture();
+        }
+    });
+    register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+            value = Engine::get_singleton()->get_frames_drawn();
+        }
+    });
+    register_write_handler(GodotAttributes::global_param(), [](const Dictionary& arguments, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+#ifdef TOOLS_ENABLED
+            if (unlikely(!RenderingServer::get_singleton()->is_on_render_thread())) {
+                static bool first_print = true;
+                if (first_print) {
+                    UtilityFunctions::print("Avoid using the [gd::GlobalParam] attribute off of the render thread, it may cause performance issues.");
+                    first_print = false;
+                }
+            }
+#endif
+            const StringName param_name = arguments["name"];
+            value = RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
+        }
+    });
+    register_write_handler(GodotAttributes::mouse_position(), [](const Dictionary&, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+            if (const SceneTree* scene_tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
+                if (const Window* window = scene_tree->get_root()) {
+                    value = Vector2i(window->get_mouse_position());
+                }
+            }
+        }
+    });
+    register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+            int64_t filter_mode_int = arguments.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
+            int64_t repeat_mode_int = arguments.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
+            Ref<RDSamplerState> sampler_state;
+            sampler_state.instantiate();
+            sampler_state->set_min_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+            sampler_state->set_mag_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+            sampler_state->set_mip_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+            sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+            sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+            sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+            value = sampler_state;
+        }
+    });
+    register_write_handler(GodotAttributes::time(), [](const Dictionary&, Variant& value) {
+        if (value.get_type() == Variant::Type::NIL) {
+            value = Time::get_singleton()->get_ticks_msec() * .001f;
         }
     });
 }
@@ -23,7 +84,6 @@ void AttributeRegistry::register_write_handler(const StringName& attribute_name,
 
 void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& handler) {
     const WriteHandler write_handler = [handler](const Dictionary& arguments, Variant& value) {
-        // ReSharper disable once CppExpressionWithoutSideEffects
         value = handler.call(arguments, value);
     };
     register_write_handler(attribute_name, write_handler);

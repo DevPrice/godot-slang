@@ -52,7 +52,7 @@ public:
 private:
     RDBuffer& _get_buffer(int64_t binding_space, int64_t binding_index);
     RDUniform& _get_uniform(int64_t binding_space, int64_t binding_index);
-    RID _get_resource_rid(const Variant& data) const;
+    [[nodiscard]] RID _get_resource_rid(const Variant& data) const;
 
     [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
 };
@@ -74,8 +74,5 @@ public:
     [[nodiscard]] ComputeShaderCursor field(const StringName& path) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
     void write(const Variant& data) const;
-
-private:
-    [[nodiscard]] static Variant _get_default_value(Dictionary property);
 
 };

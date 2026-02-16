@@ -7,11 +7,8 @@
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_device.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
-#include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/texture.hpp"
-#include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
-#include "godot_cpp/classes/window.hpp"
 
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{
@@ -284,15 +281,16 @@ void ComputeShaderCursor::write(const Variant& data) const {
 
 			bool is_valid{};
 			Variant property_value = data.get_named(property_name, is_valid);
-			if (property_value.get_type() == Variant::Type::NIL) {
-				property_value = _get_default_value(property);
-			}
 
 			for (const auto& attribute_name : property_attributes.keys()) {
 				Dictionary attribute_arguments = property_attributes[attribute_name];
 				if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
 					(*write_handler)(attribute_arguments, property_value);
 				}
+			}
+
+			if (property_value.get_type() == Variant::Type::NIL) {
+				property_value = property.get("default_value", {});
 			}
 
 			field(property_name).write(property_value);
@@ -315,77 +313,4 @@ void ComputeShaderCursor::write(const Variant& data) const {
 	} else {
 		UtilityFunctions::push_warning("Unable to write invalid shape: ", shape);
 	}
-}
-
-Variant ComputeShaderCursor::_get_default_value(Dictionary property) {
-	const Dictionary attributes = property["user_attributes"];
-	if (attributes.has(GodotAttributes::global_param())) {
-#ifdef TOOLS_ENABLED
-		if (!RenderingServer::get_singleton()->is_on_render_thread()) {
-			WARN_PRINT_ONCE("Avoid using the [gd::GlobalParam] attribute off of the render thread, it may cause performance issues.");
-		}
-#endif
-		const Dictionary attribute = attributes[GodotAttributes::global_param()];
-		const String param_name = attribute["name"];
-		return RenderingServer::get_singleton()->global_shader_parameter_get(param_name);
-	}
-
-	// ReSharper disable once CppTooWideScope
-	const int64_t layout_unit = property.get("layout_unit", 0);
-	switch (layout_unit) {
-		case ShaderTypeLayoutShape::LayoutUnit::UNIFORM:
-		case ShaderTypeLayoutShape::LayoutUnit::PUSH_CONSTANT_BUFFER:
-			if (attributes.has(GodotAttributes::time())) {
-				return Time::get_singleton()->get_ticks_msec() * .001f;
-			}
-			if (attributes.has(GodotAttributes::frame_id())) {
-				return Engine::get_singleton()->get_frames_drawn();
-			}
-			if (attributes.has(GodotAttributes::mouse_position())) {
-				if (const SceneTree* scene_tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
-					if (const Window* window = scene_tree->get_root()) {
-						return Vector2i(window->get_mouse_position());
-					}
-				}
-			}
-			break;
-		default:
-			if (attributes.has(GodotAttributes::sampler())) {
-				const Dictionary sampler_attribute = attributes[GodotAttributes::sampler()];
-				int64_t filter_mode_int = sampler_attribute.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
-				int64_t repeat_mode_int = sampler_attribute.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-				Ref<RDSamplerState> sampler_state;
-				sampler_state.instantiate();
-				sampler_state->set_min_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-				sampler_state->set_mag_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-				sampler_state->set_mip_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-				sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-				sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-				sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-				return sampler_state;
-			}
-			if (attributes.has(GodotAttributes::default_white())) {
-				return RenderingServer::get_singleton()->get_white_texture();
-			}
-			break;
-	}
-
-	if (const ResourceTypeLayoutShape* resource_shape = Object::cast_to<ResourceTypeLayoutShape>(property.get("shape", nullptr))) {
-		switch (resource_shape->get_uniform_type()) {
-			case RenderingDevice::UNIFORM_TYPE_SAMPLER:
-				// TODO
-				break;
-			case RenderingDevice::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
-			case RenderingDevice::UNIFORM_TYPE_TEXTURE: {
-				const RID default_texture = attributes.has(GodotAttributes::default_white())
-					? RenderingServer::get_singleton()->get_white_texture()
-					: RenderingServer::get_singleton()->get_test_texture();
-				return RenderingServer::get_singleton()->texture_get_rd_texture(default_texture);
-			}
-			default:
-				break;
-		}
-	}
-
-	return property.get("default_value", Variant{});
 }
