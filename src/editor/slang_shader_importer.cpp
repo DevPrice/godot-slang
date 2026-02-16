@@ -345,7 +345,7 @@ Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 	return _get_shape(program_layout->getGlobalParamsTypeLayout());
 }
 
-Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const bool include_property_info) const {
+Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const int64_t implicit_offset, const bool include_property_info) const {
 	ERR_FAIL_NULL_V(type_layout, nullptr);
 
 	switch (type_layout->getKind()) {
@@ -375,7 +375,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				Dictionary field_info{};
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
-				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(field->getTypeLayout(), include_property_info && is_exported);
+
+				const int64_t implicit_inner_offset = field->getCategory() == slang::ParameterCategory::Mixed
+					? implicit_offset + type_layout->getFieldBindingRangeOffset(i)
+					: 0;
+				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(field->getTypeLayout(), implicit_inner_offset, include_property_info && is_exported);
 
 				field_info.set("shape", field_shape);
 				field_info.set("user_attributes", field_attributes);
@@ -384,10 +388,10 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.set("space_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::RegisterSpace)));
 				field_info.set("slot_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::DescriptorTableSlot)));
 				field_info.set("element_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::SubElementRegisterSpace)));
-				if (field->getCategory() == slang::ParameterCategory::Uniform) {
+				if (field->getCategory() == slang::ParameterCategory::Uniform || field->getCategory() == slang::ParameterCategory::Mixed) {
 					field_info.set("binding_offset", 0);
 				} else {
-					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + (type_layout->getSize() > 1));
+					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + implicit_offset);
 				}
 
 				field_shapes.set(get_name(field, field_attributes), field_info);
@@ -473,7 +477,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
 			Ref<ArrayTypeLayoutShape> shape;
 			shape.instantiate();
-			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), include_property_info));
+			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), 0, include_property_info));
 			if (type_layout->isArray()) {
 				shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			}
@@ -483,8 +487,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer:
 		case slang::TypeReflection::Kind::ParameterBlock: {
-			slang::TypeLayoutReflection* element_type = type_layout->getElementTypeLayout();
-			const Ref<ShaderTypeLayoutShape> element_shape = _get_shape(element_type, include_property_info);
+			slang::VariableLayoutReflection* element_var = type_layout->getElementVarLayout();
+			slang::TypeLayoutReflection* element_type = element_var->getTypeLayout();
+			const Ref<ShaderTypeLayoutShape> element_shape = _get_shape(element_type, element_type->getSize() > 0, include_property_info);
 			if (element_type->getSize() && element_shape.is_valid()) {
 				Dictionary binding{};
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);

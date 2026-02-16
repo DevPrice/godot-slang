@@ -30,8 +30,8 @@ ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& 
 
 ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
 	ComputeShaderOffset result{};
-	result.binding_offset += static_cast<int64_t>(field.get("binding_offset", 0));
-	result.byte_offset += static_cast<int64_t>(field.get("offset", 0));
+	result.binding_offset = static_cast<int64_t>(field.get("binding_offset", 0));
+	result.byte_offset = static_cast<int64_t>(field.get("offset", 0));
 	return result;
 }
 
@@ -78,7 +78,7 @@ ComputeShaderObject::~ComputeShaderObject() {
 	}
 }
 
-void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const Variant& data) {
+void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, const Variant& data) {
 	ERR_FAIL_NULL(shape);
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
 	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());
@@ -108,7 +108,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset offset, const
 	}
 }
 
-void ComputeShaderObject::write(const ComputeShaderOffset offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
+void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
 	ERR_FAIL_NULL(shape);
 	const TypedArray<Dictionary> bindings = shape->get_bindings();
 	ERR_FAIL_INDEX(offset.binding_offset, bindings.size());

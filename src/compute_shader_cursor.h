@@ -30,8 +30,8 @@ public:
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
-    void write_resource(ComputeShaderOffset offset, const Variant& data);
-    void write(ComputeShaderOffset offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
+    void write_resource(const ComputeShaderOffset& offset, const Variant& data);
+    void write(const ComputeShaderOffset& offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
     void bind_uniforms(int64_t compute_list, const RID& shader_rid) const;
