@@ -161,6 +161,9 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND(offset < 0);
 	ERR_FAIL_COND(offset + size > destination.size());
+	if (size < 4) {
+		destination = destination;
+	}
 	ERR_FAIL_COND(size < 4);
 	switch (data.get_type()) {
 		case Variant::NIL:

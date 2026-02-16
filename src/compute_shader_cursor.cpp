@@ -255,62 +255,30 @@ ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
     return result;
 }
 
-void ComputeShaderCursor::write(const Variant& data) const {
+void ComputeShaderCursor::write_bytes(const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) const {
     ERR_FAIL_NULL(object);
-    ERR_FAIL_NULL(shape);
-	const auto resource_shape = Object::cast_to<ResourceTypeLayoutShape>(shape.ptr());
-	if (data.get_type() == Variant::PACKED_BYTE_ARRAY || (resource_shape && resource_shape->get_resource_type() == ResourceTypeLayoutShape::RAW_BYTES)) {
-		// TODO: Handle other types
-		const PackedByteArray bytes = data;
-		const int64_t size = bytes.size();
-		object->write(offset, size, data);
-	} else if (static_cast<RID>(data).is_valid() || resource_shape) {
-		// TODO: If we're writing a texture to a sampler resource, we need to bind the sampler declared via the gd::Sampler attribute, if present
-		// Right now, we'll always use the default sampler in that case
-		object->write_resource(offset, data);
-	} else if (const auto variant_shape = Object::cast_to<VariantTypeLayoutShape>(shape.ptr())) {
-		const int64_t size = variant_shape->get_size();
-		ERR_FAIL_COND(size <= 0);
-		object->write(offset, data, size, variant_shape->get_matrix_layout());
-	} else if (const auto structured_shape = Object::cast_to<StructTypeLayoutShape>(shape.ptr())) {
-		const Dictionary properties = structured_shape->get_properties();
+	object->write(offset, data, size, matrix_layout);
+}
 
-		for (const StringName property_name : properties.keys()) {
-			const Dictionary property = properties[property_name];
-			const Dictionary property_attributes = property["user_attributes"];
+void ComputeShaderCursor::write_resource(const Variant& data) const {
+    ERR_FAIL_NULL(object);
+	object->write_resource(offset, data);
+}
 
-			bool is_valid{};
-			Variant property_value = data.get_named(property_name, is_valid);
-
-			for (const auto& attribute_name : property_attributes.keys()) {
-				Dictionary attribute_arguments = property_attributes[attribute_name];
-				if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-					(*write_handler)(attribute_arguments, property_value);
-				}
-			}
-
-			if (property_value.get_type() == Variant::Type::NIL) {
-				property_value = property.get("default_value", {});
-			}
-
-			field(property_name).write(property_value);
+void ComputeShaderCursor::write(const Variant& data) const {
+	switch (data.get_type()) {
+		case Variant::Type::PACKED_BYTE_ARRAY: {
+			const PackedByteArray& bytes = data;
+			const int64_t size = bytes.size();
+			write_bytes(size, data);
+			break;
 		}
-	} else if (const auto array_shape = Object::cast_to<ArrayTypeLayoutShape>(shape.ptr())) {
-		const int64_t stride = array_shape->get_stride();
-		ERR_FAIL_COND(stride <= 0);
-
-		Variant key;
-		bool is_valid;
-		if (data.iter_init(key, is_valid) && is_valid) {
-			int64_t i = 0;
-			do {
-				Variant value = data.iter_get(key, is_valid);
-				if (is_valid) {
-					element(i++).write(value);
-				}
-			} while (data.iter_next(key, is_valid) && is_valid);
-		}
-	} else {
-		UtilityFunctions::push_warning("Unable to write invalid shape: ", shape);
+		case Variant::Type::RID:
+			write_resource(data);
+			break;
+		default:
+			ERR_FAIL_NULL(shape);
+			shape->write_into(*this, data);
+			break;
 	}
 }

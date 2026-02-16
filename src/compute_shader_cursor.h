@@ -73,6 +73,9 @@ public:
 
     [[nodiscard]] ComputeShaderCursor field(const StringName& path) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
+
+    void write_bytes(const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) const;
+    void write_resource(const Variant& data) const;
     void write(const Variant& data) const;
 
 };

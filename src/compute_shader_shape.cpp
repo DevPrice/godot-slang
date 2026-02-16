@@ -1,7 +1,9 @@
 #include "compute_shader_shape.h"
 
+#include "attributes.h"
 #include "compute_shader_file.h"
 #include "enums.h"
+#include "compute_shader_cursor.h"
 
 void ShaderTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ShaderTypeLayoutShape, bindings, Variant::ARRAY);
@@ -51,11 +53,71 @@ GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, user_attributes)
 GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, ResourceTypeLayoutShape::ComputeShaderResourceType, resource_type)
 GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uniform_type)
 
+void ResourceTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
+    if (get_resource_type() == RAW_BYTES) {
+        // TODO: Handle other types
+        const PackedByteArray bytes = data;
+        const int64_t size = bytes.size();
+        cursor.write_bytes(size, data);
+    } else {
+        // TODO: If we're writing a texture to a sampler resource, we need to bind the sampler declared via the gd::Sampler attribute, if present
+        // Right now, we'll always use the default sampler in that case
+        cursor.write_resource(data);
+    }
+}
+
 int64_t VariantTypeLayoutShape::get_size() const { return size; }
 void VariantTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
+
+void VariantTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
+	ERR_FAIL_COND(get_size() <= 0);
+    cursor.write_bytes(data, get_size(), get_matrix_layout());
+}
 
 int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
+void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
+    const int64_t stride = get_stride();
+    ERR_FAIL_COND(stride <= 0);
+
+    Variant key;
+    bool is_valid;
+    if (data.iter_init(key, is_valid) && is_valid) {
+        int64_t i = 0;
+        do {
+            Variant value = data.iter_get(key, is_valid);
+            if (is_valid) {
+                cursor.element(i++).write(value);
+            }
+        } while (data.iter_next(key, is_valid) && is_valid);
+    }
+}
+
 int64_t StructTypeLayoutShape::get_size() const { return size; }
 void StructTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
+
+void StructTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
+    const Dictionary properties = get_properties();
+
+    for (const StringName property_name : properties.keys()) {
+        const Dictionary property = properties[property_name];
+        const Dictionary property_attributes = property["user_attributes"];
+
+        bool is_valid{};
+        Variant property_value = data.get_named(property_name, is_valid);
+
+        for (const auto& attribute_name : property_attributes.keys()) {
+            Dictionary attribute_arguments = property_attributes[attribute_name];
+            if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+                (*write_handler)(attribute_arguments, property_value);
+            }
+        }
+
+        if (property_value.get_type() == Variant::Type::NIL) {
+            property_value = property.get("default_value", {});
+        }
+
+        cursor.field(property_name).write(property_value);
+    }
+}

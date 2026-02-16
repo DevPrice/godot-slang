@@ -5,6 +5,8 @@
 #include "binding_macros.h"
 #include "godot_cpp/classes/rendering_device.hpp"
 
+class ComputeShaderCursor;
+
 using namespace godot;
 
 class ShaderTypeLayoutShape : public Resource {
@@ -16,7 +18,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	[[nodiscard]] virtual int64_t get_size() const { return 0; };
+	[[nodiscard]] virtual int64_t get_size() const { return 0; }
+	virtual void write_into(const ComputeShaderCursor& cursor, const Variant& data) const = 0;
 
 	// Values must match SlangMatrixLayoutMode
 	enum MatrixLayout {
@@ -45,6 +48,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
+	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
 
 private:
 	int64_t size{};
@@ -64,6 +68,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
+	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
 
 private:
 	int64_t size{};
@@ -90,6 +95,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
+	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
 
 private:
 	int64_t size{};
@@ -107,6 +113,9 @@ public:
 
 	GET_SET_PROPERTY(ComputeShaderResourceType, resource_type)
 	GET_SET_PROPERTY(RenderingDevice::UniformType, uniform_type)
+
+public:
+	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
 
 protected:
 	static void _bind_methods();
