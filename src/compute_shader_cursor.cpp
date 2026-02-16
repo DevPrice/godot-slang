@@ -35,9 +35,40 @@ ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
 	return result;
 }
 
-ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), shape(p_shape) {
+SamplerCache::SamplerCache(RenderingDevice* p_rendering_device) : rd(p_rendering_device) {
+	cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
 	ERR_FAIL_NULL(rd);
-	sampler_cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
+}
+
+SamplerCache::~SamplerCache() {
+	ERR_FAIL_NULL(rd);
+	for (const RID rid : cache) {
+		if (rid.is_valid()) {
+			rd->free_rid(rid);
+		}
+	}
+}
+
+RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
+	ERR_FAIL_NULL_V(sampler_state, {});
+	// TODO: Support the rest of the properties
+	const RenderingDevice::SamplerFilter filter = sampler_state->get_mag_filter();
+	const RenderingDevice::SamplerRepeatMode repeat_mode = sampler_state->get_repeat_u();
+
+	ERR_FAIL_INDEX_V(filter, 2, RID{});
+	ERR_FAIL_INDEX_V(repeat_mode, RenderingDevice::SAMPLER_REPEAT_MODE_MAX, RID{});
+	const int64_t sampler_index = filter * 2 + repeat_mode;
+	if (RID cached_value = cache[sampler_index]; cached_value.is_valid()) {
+		return cached_value;
+	}
+
+	RID sampler_rid = rd->sampler_create(sampler_state);
+	cache[sampler_index] = sampler_rid;
+	return sampler_rid;
+}
+
+ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
+	ERR_FAIL_NULL(rd);
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
 			const int64_t size = binding["size"];
@@ -65,15 +96,6 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, co
 				buffer_data->set_is_fixed_size(false);
 				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
 			}
-		}
-	}
-}
-
-ComputeShaderObject::~ComputeShaderObject() {
-	ERR_FAIL_NULL(rd);
-	for (const RID rid: sampler_cache) {
-		if (rid.is_valid()) {
-			rd->free_rid(rid);
 		}
 	}
 }
@@ -183,26 +205,6 @@ RDUniform& ComputeShaderObject::_get_uniform(const int64_t binding_space, const 
 	return *uniform.ptr();
 }
 
-RID ComputeShaderObject::_get_sampler(const RenderingDevice::SamplerFilter filter, const RenderingDevice::SamplerRepeatMode repeat_mode) {
-	ERR_FAIL_INDEX_V(filter, 2, RID{});
-	ERR_FAIL_INDEX_V(repeat_mode, RenderingDevice::SAMPLER_REPEAT_MODE_MAX, RID{});
-	const int64_t sampler_index = filter * 2 + repeat_mode;
-	if (RID cached_value = sampler_cache[sampler_index]; cached_value.is_valid()) {
-		return cached_value;
-	}
-
-	const Ref sampler_state = memnew(RDSamplerState);
-	sampler_state->set_min_filter(filter);
-	sampler_state->set_mag_filter(filter);
-	sampler_state->set_mip_filter(filter);
-	sampler_state->set_repeat_u(repeat_mode);
-	sampler_state->set_repeat_v(repeat_mode);
-	sampler_state->set_repeat_w(repeat_mode);
-	const RID sampler_rid = rd->sampler_create(sampler_state);
-	sampler_cache[sampler_index] = sampler_rid;
-	return sampler_rid;
-}
-
 Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformType type) {
 	switch (type) {
 		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER:
@@ -217,13 +219,13 @@ Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformTy
 	}
 }
 
-RID ComputeShaderObject::_get_resource_rid(const Variant& data) {
+RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 	if (const Object* texture = data; texture && texture->is_class(Texture::get_class_static())) {
 		return RenderingServer::get_singleton()->texture_get_rd_texture(data);
 	}
 	if (const auto sampler = Object::cast_to<RDSamplerState>(data)) {
-		// TODO: Support the rest of the properties
-		return _get_sampler(sampler->get_mag_filter(), sampler->get_repeat_u());
+		ERR_FAIL_NULL_V(sampler_cache, {});
+		return sampler_cache->get_sampler(sampler);
 	}
 	return data;
 }

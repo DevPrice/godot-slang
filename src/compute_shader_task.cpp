@@ -246,8 +246,11 @@ void ComputeShaderTask::_reset() {
 	}
 	_kernel_shaders.clear();
 
+	if (!_sampler_cache) {
+		_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
+	}
 	if (shader.is_valid()) {
-		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, shader->get_parameters());
+		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, _sampler_cache.get(), shader->get_parameters());
 	} else {
 		_shader_object = nullptr;
 	}

@@ -50,6 +50,7 @@ private:
 	Dictionary _kernel_shaders{};
 	Dictionary _kernel_pipelines{};
 
+	std::unique_ptr<SamplerCache> _sampler_cache;
 	std::unique_ptr<ComputeShaderObject> _shader_object;
 
 	void _reset();

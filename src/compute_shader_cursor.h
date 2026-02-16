@@ -14,19 +14,32 @@ struct ComputeShaderOffset {
     static ComputeShaderOffset from_field(const Dictionary& field);
 };
 
+class SamplerCache {
+
+private:
+    RenderingDevice* rd;
+    TypedArray<RID> cache{};
+
+public:
+    explicit SamplerCache(RenderingDevice* p_rendering_device);
+    virtual ~SamplerCache();
+
+    RID get_sampler(const Ref<RDSamplerState>& sampler_state);
+};
+
 class ComputeShaderObject {
 
 private:
     RenderingDevice* rd;
+    SamplerCache* sampler_cache;
     Ref<StructTypeLayoutShape> shape{};
     PackedByteArray push_constants{};
     Dictionary buffers{};
     TypedArray<Array> uniforms{};
-	TypedArray<RID> sampler_cache{};
 
 public:
-    ComputeShaderObject(RenderingDevice* p_rendering_device, const Ref<StructTypeLayoutShape>& p_shape);
-    virtual ~ComputeShaderObject();
+    ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape);
+    virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
@@ -39,8 +52,7 @@ public:
 private:
     RDBuffer& _get_buffer(int64_t binding_space, int64_t binding_index);
     RDUniform& _get_uniform(int64_t binding_space, int64_t binding_index);
-    RID _get_resource_rid(const Variant& data);
-    RID _get_sampler(RenderingDevice::SamplerFilter filter, RenderingDevice::SamplerRepeatMode repeat_mode);
+    RID _get_resource_rid(const Variant& data) const;
 
     [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
 };
