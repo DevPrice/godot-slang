@@ -288,17 +288,10 @@ void ComputeShaderCursor::write(const Variant& data) const {
 				property_value = _get_default_value(property);
 			}
 
-			// TODO: If this gets any more complex, it needs to move out of here
-			if (property_attributes.has(GodotAttributes::color())) {
-				if (property_value.get_type() == Variant::COLOR) {
-					property_value = static_cast<Color>(property_value).srgb_to_linear();
-				}
-				if (property_value.get_type() == Variant::PACKED_COLOR_ARRAY) {
-					PackedColorArray converted = property_value.duplicate();
-					for (Color& color : converted) {
-						color = color.srgb_to_linear();
-					}
-					property_value = converted;
+			for (const auto& attribute_name : property_attributes.keys()) {
+				Dictionary attribute_arguments = property_attributes[attribute_name];
+				if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+					(*write_handler)(attribute_arguments, property_value);
 				}
 			}
 

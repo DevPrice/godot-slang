@@ -1,6 +1,10 @@
 #pragma once
 
-#include "godot_cpp/variant/variant.hpp"
+#include <functional>
+#include <string>
+#include <unordered_map>
+
+#include "godot_cpp/templates/hash_map.hpp"
 
 using namespace godot;
 
@@ -49,4 +53,34 @@ struct CompositorAttributes {
 struct TextureAttributes {
     DECLARE_TEXTURE_ATTRIBUTE(output_size, OutputSize)
     DECLARE_TEXTURE_ATTRIBUTE(output_texture, OutputTexture)
+};
+
+template <>
+struct std::hash<StringName>
+{
+    std::size_t operator()(const StringName& k) const noexcept {
+        return k.hash();
+    }
+};
+
+class AttributeRegistry {
+
+public:
+    using WriteHandler = std::function<void(const Dictionary&, Variant&)>;
+
+private:
+    std::unordered_map<StringName, WriteHandler> write_handlers;
+
+public:
+    AttributeRegistry();
+    AttributeRegistry(AttributeRegistry&) = delete;
+    AttributeRegistry(AttributeRegistry&&) = delete;
+    AttributeRegistry& operator=(const AttributeRegistry&) = delete;
+    AttributeRegistry& operator=(AttributeRegistry&&) = delete;
+
+    void register_write_handler(const StringName& attribute_name, const WriteHandler& handler);
+    void register_write_handler(const StringName& attribute_name, const Callable& handler);
+    WriteHandler* get_write_handler(const StringName& attribute_name);
+
+    static AttributeRegistry* get_instance();
 };
