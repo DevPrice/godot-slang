@@ -2,6 +2,7 @@
 
 #include "attributes.h"
 #include "rdbuffer.h"
+#include "variant_serializer.h"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
@@ -140,7 +141,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant
 		buffer.write(offset.byte_offset, size, data, matrix_layout);
 	} else {
 		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
-		RDBuffer::write(push_constants, offset.byte_offset, size, data, matrix_layout);
+		VariantSerializer(push_constants.ptrw() + offset.byte_offset, size).serialize(data, matrix_layout);
 	}
 }
 
