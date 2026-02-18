@@ -62,11 +62,11 @@ private:
         return sizeof(T);
     }
 
-    void align(size_t alignment);
-
-public:
     explicit VariantSerializer(uint8_t* p_destination, const size_t p_max_size) : destination(p_destination), max_size(p_max_size) { }
 
     size_t write(const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
+    void align(size_t alignment);
+
+public:
     static Buffer serialize(const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
 };

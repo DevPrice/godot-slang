@@ -272,15 +272,55 @@ size_t VariantSerializer::write(const Variant& data, const ShaderTypeLayoutShape
 
 VariantSerializer::Buffer VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	switch (data.get_type()) {
-		case Variant::STRING: {
-			const String string = data;
+		case Variant::STRING:
+		case Variant::NODE_PATH: {
+			const String& string = data;
+			return string.to_utf8_buffer();
+		}
+		case Variant::STRING_NAME: {
+			const StringName& string = data;
 			return string.to_utf8_buffer();
 		}
 		case Variant::PACKED_BYTE_ARRAY: {
 			const PackedByteArray& array = data;
 			return array;
 		}
-		// TODO: Handle more Packed*Array types
+		case Variant::PACKED_INT32_ARRAY: {
+			const PackedInt32Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_INT64_ARRAY: {
+			const PackedInt64Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_FLOAT32_ARRAY: {
+			const PackedFloat32Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_FLOAT64_ARRAY: {
+			const PackedFloat64Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_STRING_ARRAY: {
+			const PackedStringArray& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_VECTOR2_ARRAY: {
+			const PackedVector2Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_VECTOR3_ARRAY: {
+			const PackedVector3Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_VECTOR4_ARRAY: {
+			const PackedVector4Array& array = data;
+			return array.to_byte_array();
+		}
+		case Variant::PACKED_COLOR_ARRAY: {
+			const PackedColorArray& array = data;
+			return array.to_byte_array();
+		}
 		default:
 			break;
 	}
