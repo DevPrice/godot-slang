@@ -1,6 +1,5 @@
 #include "compute_shader_shape.h"
 
-#include "attributes.h"
 #include "compute_shader_file.h"
 #include "enums.h"
 #include "compute_shader_cursor.h"
@@ -99,25 +98,10 @@ void StructTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
 void StructTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     const Dictionary properties = get_properties();
-
     for (const StringName property_name : properties.keys()) {
         const Dictionary property = properties[property_name];
-        const Dictionary property_attributes = property["user_attributes"];
-
         bool is_valid{};
         Variant property_value = data.get_named(property_name, is_valid);
-
-        for (const auto& attribute_name : property_attributes.keys()) {
-            Dictionary attribute_arguments = property_attributes[attribute_name];
-            if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-                (*write_handler)(attribute_arguments, property_value);
-            }
-        }
-
-        if (property_value.get_type() == Variant::Type::NIL) {
-            property_value = property.get("default_value", {});
-        }
-
         cursor.field(property_name).write(property_value);
     }
 }

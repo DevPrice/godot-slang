@@ -1,5 +1,6 @@
 #pragma once
 
+#include "attributes.h"
 #include "compute_shader_shape.h"
 #include "rdbuffer.h"
 
@@ -63,6 +64,9 @@ private:
     ComputeShaderOffset offset{};
     ComputeShaderObject* object;
     Ref<ShaderTypeLayoutShape> shape{};
+
+    Dictionary attributes;
+    Variant default_value{};
 
 public:
     explicit ComputeShaderCursor(ComputeShaderObject* p_object) : object(p_object) {

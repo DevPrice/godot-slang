@@ -79,7 +79,7 @@ AttributeRegistry::AttributeRegistry() {
 }
 
 void AttributeRegistry::register_write_handler(const StringName& attribute_name, const WriteHandler& handler) {
-    write_handlers.emplace(attribute_name, handler);
+    write_handlers.insert_or_assign(attribute_name, handler);
 }
 
 void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& handler) {

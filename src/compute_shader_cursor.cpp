@@ -239,10 +239,12 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
         const Dictionary properties = struct_shape->get_properties();
         ERR_FAIL_COND_V(!properties.has(field_name), ComputeShaderCursor(nullptr));
 
-        const Dictionary property = properties[field_name];
+    	const Dictionary property = properties[field_name];
         const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
         current.shape = property_shape;
 		current.offset += ComputeShaderOffset::from_field(property);
+    	current.attributes = property.get("user_attributes", {});
+    	current.default_value = property.get("default_value", {});
     }
     return current;
 }
@@ -268,19 +270,26 @@ void ComputeShaderCursor::write_resource(const Variant& data) const {
 }
 
 void ComputeShaderCursor::write(const Variant& data) const {
-	switch (data.get_type()) {
+	Variant updated_data = data;
+	for (const Variant& attribute_name: attributes.keys()) {
+		Dictionary attribute_arguments = attributes[attribute_name];
+		if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+			(*write_handler)(attribute_arguments, updated_data);
+		}
+	}
+	switch (updated_data.get_type()) {
 		case Variant::Type::PACKED_BYTE_ARRAY: {
-			const PackedByteArray& bytes = data;
+			const PackedByteArray& bytes = updated_data;
 			const int64_t size = bytes.size();
-			write_bytes(size, data);
+			write_bytes(size, updated_data);
 			break;
 		}
 		case Variant::Type::RID:
-			write_resource(data);
+			write_resource(updated_data);
 			break;
 		default:
 			ERR_FAIL_NULL(shape);
-			shape->write_into(*this, data);
+			shape->write_into(*this, updated_data);
 			break;
 	}
 }
