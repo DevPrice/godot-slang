@@ -274,7 +274,7 @@ void ComputeShaderCursor::write(const Variant& data) const {
 		case Variant::Type::PACKED_BYTE_ARRAY: {
 			const PackedByteArray& bytes = data;
 			const int64_t size = bytes.size();
-			write_bytes(size, data);
+			write_bytes(data, size);
 			break;
 		}
 		case Variant::Type::RID:
