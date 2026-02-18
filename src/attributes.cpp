@@ -2,6 +2,7 @@
 
 #include "attributes.h"
 
+#include "compute_texture.h"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
@@ -57,18 +58,20 @@ AttributeRegistry::AttributeRegistry() {
         }
     });
     register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, Variant& value) {
+        int64_t filter_mode_int = arguments.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
+        int64_t repeat_mode_int = arguments.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
+        Ref<RDSamplerState> sampler_state;
+        sampler_state.instantiate();
+        sampler_state->set_min_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+        sampler_state->set_mag_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+        sampler_state->set_mip_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
+        sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+        sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
+        sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
         if (value.get_type() == Variant::Type::NIL) {
-            int64_t filter_mode_int = arguments.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
-            int64_t repeat_mode_int = arguments.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
-            Ref<RDSamplerState> sampler_state;
-            sampler_state.instantiate();
-            sampler_state->set_min_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-            sampler_state->set_mag_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-            sampler_state->set_mip_filter(static_cast<RenderingDevice::SamplerFilter>(filter_mode_int));
-            sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-            sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-            sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
             value = sampler_state;
+        } else if (const auto texture = Object::cast_to<Texture>(value)) {
+            value = Array { sampler_state, texture };
         }
     });
     register_write_handler(GodotAttributes::time(), [](const Dictionary&, Variant& value) {

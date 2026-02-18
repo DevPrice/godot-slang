@@ -82,4 +82,7 @@ public:
     void write_resource(const Variant& data) const;
     void write(const Variant& data) const;
 
+private:
+    Variant _apply_write_handlers(Variant data) const;
+
 };

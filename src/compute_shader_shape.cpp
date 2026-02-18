@@ -59,8 +59,6 @@ void ResourceTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, cons
         const PackedByteArray bytes = buffer.as_packed_byte_array();
         cursor.write_bytes(bytes, bytes.size());
     } else {
-        // TODO: If we're writing a texture to a sampler resource, we need to bind the sampler declared via the gd::Sampler attribute, if present
-        // Right now, we'll always use the default sampler in that case
         cursor.write_resource(data);
     }
 }

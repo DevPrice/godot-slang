@@ -260,36 +260,39 @@ ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
 }
 
 void ComputeShaderCursor::write_bytes(const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) const {
-    ERR_FAIL_NULL(object);
-	object->write(offset, data, size, matrix_layout);
+	ERR_FAIL_NULL(object);
+	object->write(offset, _apply_write_handlers(data), size, matrix_layout);
 }
 
 void ComputeShaderCursor::write_resource(const Variant& data) const {
-    ERR_FAIL_NULL(object);
-	object->write_resource(offset, data);
+	ERR_FAIL_NULL(object);
+	object->write_resource(offset, _apply_write_handlers(data));
 }
 
 void ComputeShaderCursor::write(const Variant& data) const {
-	Variant updated_data = data;
-	for (const Variant& attribute_name: attributes.keys()) {
-		Dictionary attribute_arguments = attributes[attribute_name];
-		if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-			(*write_handler)(attribute_arguments, updated_data);
-		}
-	}
-	switch (updated_data.get_type()) {
+	switch (data.get_type()) {
 		case Variant::Type::PACKED_BYTE_ARRAY: {
-			const PackedByteArray& bytes = updated_data;
+			const PackedByteArray& bytes = data;
 			const int64_t size = bytes.size();
-			write_bytes(size, updated_data);
+			write_bytes(size, data);
 			break;
 		}
 		case Variant::Type::RID:
-			write_resource(updated_data);
+			write_resource(data);
 			break;
 		default:
 			ERR_FAIL_NULL(shape);
-			shape->write_into(*this, updated_data);
+			shape->write_into(*this, data);
 			break;
 	}
+}
+
+Variant ComputeShaderCursor::_apply_write_handlers(Variant data) const {
+	for (const Variant& attribute_name: attributes.keys()) {
+		Dictionary attribute_arguments = attributes[attribute_name];
+		if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+			(*write_handler)(attribute_arguments, data);
+		}
+	}
+	return data;
 }
