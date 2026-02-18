@@ -3,13 +3,9 @@
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-VariantSerializer::Buffer::Buffer() {
-	buffer = InlineBuffer{};
-}
+VariantSerializer::Buffer::Buffer() : buffer(InlineBuffer{}) { }
 
-VariantSerializer::Buffer::Buffer(const PackedByteArray& p_array) {
-	buffer = p_array;
-}
+VariantSerializer::Buffer::Buffer(const PackedByteArray& p_array) : buffer(p_array) { }
 
 void VariantSerializer::Buffer::set_inline_size(size_t size) {
 	return std::visit(overloaded {
