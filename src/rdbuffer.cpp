@@ -11,12 +11,8 @@
 void RDBuffer::_bind_methods() {
 }
 
-RDBuffer::RDBuffer() {
-	alignment = 16;
-}
-
 RDBuffer::~RDBuffer() {
-	if (!is_ref && rid.is_valid()) {
+	if (rid.is_valid()) {
 		if (const RenderingServer* rendering_server = RenderingServer::get_singleton()) {
 			if (RenderingDevice* rd = rendering_server->get_rendering_device()) {
 				rd->free_rid(rid);
@@ -34,7 +30,6 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 }
 
 void RDBuffer::set_size(const int64_t size) {
-	ERR_FAIL_COND_MSG(is_ref, "Attempted to change size of ref buffer!");
 	ERR_FAIL_COND_MSG(get_is_fixed_size(), "Attempted to change size of fixed size buffer!");
 	const int64_t alignment = get_alignment();
 	if (alignment > 0) {
@@ -79,14 +74,6 @@ void RDBuffer::flush() {
 
 RenderingDevice::UniformType RDBuffer::get_uniform_type() const {
 	return get_is_fixed_size() ? RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER : RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER;
-}
-
-Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
-	Ref result = memnew(RDBuffer);
-	result->set_rid(buffer_rid);
-	result->set_is_fixed_size(true);
-	result->is_ref = true;
-	return result;
 }
 
 int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {

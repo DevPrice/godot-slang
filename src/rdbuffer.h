@@ -20,7 +20,7 @@ protected:
     static void _bind_methods();
 
 public:
-    RDBuffer();
+    RDBuffer() = default;
     ~RDBuffer() override;
 
     void write(int64_t offset, int64_t size, const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
@@ -28,7 +28,6 @@ public:
     void flush();
     [[nodiscard]] RenderingDevice::UniformType get_uniform_type() const;
 
-    static Ref<RDBuffer> ref(const RID& buffer_rid);
     static int64_t aligned_size(int64_t size, int64_t alignment);
 
 private:
