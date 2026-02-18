@@ -4,6 +4,7 @@
 #include "compute_shader_file.h"
 #include "enums.h"
 #include "compute_shader_cursor.h"
+#include "variant_serializer.h"
 
 void ShaderTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ShaderTypeLayoutShape, bindings, Variant::ARRAY);
@@ -55,10 +56,9 @@ GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uni
 
 void ResourceTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     if (get_resource_type() == RAW_BYTES) {
-        // TODO: Handle other types
-        const PackedByteArray bytes = data;
-        const int64_t size = bytes.size();
-        cursor.write_bytes(size, data);
+        const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data);
+        const PackedByteArray bytes = buffer.as_packed_byte_array();
+        cursor.write_bytes(bytes, bytes.size());
     } else {
         // TODO: If we're writing a texture to a sampler resource, we need to bind the sampler declared via the gd::Sampler attribute, if present
         // Right now, we'll always use the default sampler in that case

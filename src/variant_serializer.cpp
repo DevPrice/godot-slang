@@ -44,6 +44,18 @@ int64_t VariantSerializer::Buffer::compare(const uint8_t* other, const size_t ma
 	return memcmp(this, other, Math::min(size(), max_size));
 }
 
+PackedByteArray VariantSerializer::Buffer::as_packed_byte_array() const {
+	return std::visit(overloaded {
+		[](const InlineBuffer& arg) {
+			PackedByteArray result{};
+			result.resize(arg.size);
+			memcpy(result.ptrw(), arg.data.data(), arg.size);
+			return result;
+		},
+		[](const PackedByteArray& arg) { return arg; }
+	}, buffer);
+}
+
 void VariantSerializer::align(const size_t alignment) {
 	const size_t misalignment = offset & alignment;
 	if (misalignment > 0) {
