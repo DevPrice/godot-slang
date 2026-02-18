@@ -141,7 +141,8 @@ void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant
 		buffer.write(offset.byte_offset, size, data, matrix_layout);
 	} else {
 		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
-		VariantSerializer(push_constants.ptrw() + offset.byte_offset, size).serialize(data, matrix_layout);
+		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, matrix_layout);
+		buffer.copy(push_constants.ptrw() + offset.byte_offset, size);
 	}
 }
 

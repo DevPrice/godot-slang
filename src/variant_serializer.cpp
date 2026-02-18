@@ -1,5 +1,45 @@
 #include "variant_serializer.h"
 
+VariantSerializer::Buffer::Buffer() {
+	buffer = InlineBuffer{};
+}
+
+VariantSerializer::Buffer::Buffer(const PackedByteArray& p_array) {
+	buffer = p_array;
+}
+
+void VariantSerializer::Buffer::set_inline_size(size_t size) {
+	return std::visit(overloaded {
+		[size](InlineBuffer& arg) { arg.size = size; },
+		[](PackedByteArray&) { }
+	}, buffer);
+}
+
+uint8_t* VariantSerializer::Buffer::data() {
+	return std::visit(overloaded {
+		[](InlineBuffer& arg) { return arg.data.data(); },
+		[](PackedByteArray& arg) { return arg.ptrw(); }
+	}, buffer);
+}
+
+const uint8_t* VariantSerializer::Buffer::data() const {
+	return std::visit(overloaded {
+		[](const InlineBuffer& arg) { return arg.data.data(); },
+		[](const PackedByteArray& arg) { return arg.ptr(); }
+	}, buffer);
+}
+
+size_t VariantSerializer::Buffer::size() const {
+	return std::visit(overloaded {
+		[](const InlineBuffer& arg) { return arg.size; },
+		[](const PackedByteArray& arg) { return static_cast<size_t>(arg.size()); }
+	}, buffer);
+}
+
+void VariantSerializer::Buffer::copy(uint8_t* destination, const size_t max_size) const {
+	memcpy(destination, data(), std::min(size(), max_size));
+}
+
 void VariantSerializer::align(const size_t alignment) {
 	const size_t misalignment = offset & alignment;
 	if (misalignment > 0) {
@@ -7,7 +47,7 @@ void VariantSerializer::align(const size_t alignment) {
 	}
 }
 
-size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+size_t VariantSerializer::write(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_NULL_V(destination, 0);
 	ERR_FAIL_COND_V(max_size < 4, 0);
 	size_t start = offset;
@@ -25,14 +65,14 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 			break;
 		case Variant::RECT2: {
 			const Rect2 rect = data;
-			serialize(rect.position, matrix_layout);
-			serialize(rect.size, matrix_layout);
+			write(rect.position, matrix_layout);
+			write(rect.size, matrix_layout);
 			break;
 		}
 		case Variant::RECT2I: {
 			const Rect2i rect = data;
-			serialize(rect.position, matrix_layout);
-			serialize(rect.size, matrix_layout);
+			write(rect.position, matrix_layout);
+			write(rect.size, matrix_layout);
 			break;
 		}
 		case Variant::VECTOR2: {
@@ -105,21 +145,21 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 			const Basis basis = data;
 			switch (matrix_layout) {
 				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
-					serialize(basis[0]);
+					write(basis[0]);
 					align(16);
-					serialize(basis[1]);
+					write(basis[1]);
 					align(16);
-					serialize(basis[2]);
+					write(basis[2]);
 					break;
 				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector3 col0(basis[0].x, basis[1].x, basis[2].x);
 					const Vector3 col1(basis[0].y, basis[1].y, basis[2].y);
 					const Vector3 col2(basis[0].z, basis[1].z, basis[2].z);
-					serialize(col0);
+					write(col0);
 					align(16);
-					serialize(col1);
+					write(col1);
 					align(16);
-					serialize(col2);
+					write(col2);
 					break;
 				}
 				default:
@@ -131,20 +171,20 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 			const Projection projection = data;
 			switch (matrix_layout) {
 				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
-					serialize(projection[0]);
-					serialize(projection[1]);
-					serialize(projection[2]);
-					serialize(projection[3]);
+					write(projection[0]);
+					write(projection[1]);
+					write(projection[2]);
+					write(projection[3]);
 					break;
 				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector4 col0(projection[0].x, projection[1].x, projection[2].x, projection[3].x);
 					const Vector4 col1(projection[0].y, projection[1].y, projection[2].y, projection[3].y);
 					const Vector4 col2(projection[0].z, projection[1].z, projection[2].z, projection[3].z);
 					const Vector4 col3(projection[0].w, projection[1].w, projection[2].w, projection[3].w);
-					serialize(col0);
-					serialize(col1);
-					serialize(col2);
-					serialize(col3);
+					write(col0);
+					write(col1);
+					write(col2);
+					write(col3);
 					break;
 				}
 				default:
@@ -154,27 +194,27 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 		}
 		case Variant::AABB: {
 			const AABB aabb = data;
-			serialize(aabb.position);
+			write(aabb.position);
 			align(16);
-			serialize(aabb.size);
+			write(aabb.size);
 			break;
 		}
 		case Variant::TRANSFORM2D: {
 			const Transform2D transform = data;
 			switch (matrix_layout) {
 				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
-					serialize(transform[0]);
+					write(transform[0]);
 					align(16);
-					serialize(transform[1]);
+					write(transform[1]);
 					align(16);
-					serialize(transform[2]);
+					write(transform[2]);
 					break;
 				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector3 col0(transform[0].x, transform[1].x, transform[2].x);
 					const Vector3 col1(transform[0].y, transform[1].y, transform[2].y);
-					serialize(col0);
+					write(col0);
 					align(16);
-					serialize(col1);
+					write(col1);
 					break;
 				}
 				default:
@@ -186,21 +226,21 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 			const Transform3D transform = data;
 			switch (matrix_layout) {
 				case StructTypeLayoutShape::MatrixLayout::ROW_MAJOR:
-					serialize(transform.basis[0]);
+					write(transform.basis[0]);
 					align(16);
-					serialize(transform.basis[1]);
+					write(transform.basis[1]);
 					align(16);
-					serialize(transform.basis[2]);
+					write(transform.basis[2]);
 					align(16);
-					serialize(transform.origin);
+					write(transform.origin);
 					break;
 				case StructTypeLayoutShape::MatrixLayout::COLUMN_MAJOR: {
 					const Vector4 col0(transform.basis[0].x, transform.basis[1].x, transform.basis[2].x, transform.origin.x);
 					const Vector4 col1(transform.basis[0].y, transform.basis[1].y, transform.basis[2].y, transform.origin.y);
 					const Vector4 col2(transform.basis[0].z, transform.basis[1].z, transform.basis[2].z, transform.origin.z);
-					serialize(col0);
-					serialize(col1);
-					serialize(col2);
+					write(col0);
+					write(col1);
+					write(col2);
 					break;
 				}
 				default:
@@ -208,26 +248,28 @@ size_t VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutS
 			}
 			break;
 		}
-		case Variant::STRING: {
-			// TODO: Handle large strings that would overflow the max_size
-			const String string = data;
-			const PackedByteArray array = string.to_utf8_buffer();
-			const size_t size = Math::min(static_cast<size_t>(array.size()), max_size);
-			memcpy(destination, array.ptr(), size);
-			offset += size;
-			break;
-		}
-		case Variant::PACKED_BYTE_ARRAY: {
-			// TODO: Handle large byte arrays that would overflow the max_size
-			const PackedByteArray& array = data;
-			const size_t size = Math::min(static_cast<size_t>(array.size()), max_size);
-			memcpy(destination, array.ptr(), size);
-			offset += size;
-			break;
-		}
 		default:
-			// TODO: Handle other Packed*Array types
-			ERR_FAIL_V_MSG(offset - start, String("Unsupported data type: ") + Variant::get_type_name(data.get_type()));
+			ERR_FAIL_V_MSG(offset - start, String("Unsupported data type for serialization: ") + Variant::get_type_name(data.get_type()));
 	}
 	return offset - start;
+}
+
+VariantSerializer::Buffer VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+	switch (data.get_type()) {
+		case Variant::STRING: {
+			const String string = data;
+			return string.to_utf8_buffer();
+		}
+		case Variant::PACKED_BYTE_ARRAY: {
+			const PackedByteArray& array = data;
+			return array;
+		}
+		// TODO: Handle more Packed*Array types
+		default:
+			break;
+	}
+	Buffer buffer{};
+	const size_t size = VariantSerializer(buffer.data(), Buffer::max_size).write(data, matrix_layout);
+	buffer.set_inline_size(size);
+	return buffer;
 }

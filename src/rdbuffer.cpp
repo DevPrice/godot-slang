@@ -29,7 +29,8 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Writing fixed-size buffer before initialize!");
 	dirty_start = Math::min(offset, dirty_start);
 	dirty_end = Math::max(offset + size, dirty_end);
-	write(buffer, offset, size, data, matrix_layout);
+	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, matrix_layout);
+	serialized.copy(buffer.ptrw() + offset, size);
 }
 
 void RDBuffer::set_size(const int64_t size) {
@@ -86,12 +87,6 @@ Ref<RDBuffer> RDBuffer::ref(const RID& buffer_rid) {
 	result->set_is_fixed_size(true);
 	result->is_ref = true;
 	return result;
-}
-
-void RDBuffer::write(PackedByteArray& destination, const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
-	uint8_t buffer[256];
-	const size_t written = VariantSerializer(buffer, sizeof(buffer)).serialize(data, matrix_layout);
-	memcpy(destination.ptrw() + offset, buffer, Math::min(static_cast<size_t>(size), written));
 }
 
 int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {

@@ -1,11 +1,50 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <variant>
 
 #include "compute_shader_shape.h"
 #include "godot_cpp/core/error_macros.hpp"
 
+// TODO: Handle both std140 and std430 correctly
 class VariantSerializer {
+
+public:
+    class Buffer {
+    private:
+        template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+        template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+        static constexpr size_t max_size = 64;
+
+        struct InlineBuffer {
+            std::array<uint8_t, max_size> data{};
+            size_t size = 0;
+        };
+
+        std::variant<InlineBuffer, PackedByteArray> buffer;
+
+        Buffer();
+        Buffer(const PackedByteArray& p_array);
+
+        void set_inline_size(size_t size);
+
+        friend class VariantSerializer;
+
+    public:
+        Buffer(const Buffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
+
+        Buffer(Buffer&&) noexcept = default;
+        Buffer& operator=(Buffer&&) noexcept = default;
+
+        [[nodiscard]] uint8_t* data();
+        [[nodiscard]] const uint8_t* data() const;
+        [[nodiscard]] size_t size() const;
+
+        void copy(uint8_t* destination, size_t max_size) const;
+    };
 
 private:
     uint8_t* destination{};
@@ -26,5 +65,6 @@ private:
 public:
     explicit VariantSerializer(uint8_t* p_destination, const size_t p_max_size) : destination(p_destination), max_size(p_max_size) { }
 
-    size_t serialize(const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
+    size_t write(const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
+    static Buffer serialize(const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
 };
