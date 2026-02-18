@@ -44,6 +44,7 @@ public:
         [[nodiscard]] size_t size() const;
 
         void copy(uint8_t* destination, size_t max_size) const;
+        int64_t compare(const uint8_t* other, size_t max_size) const;
     };
 
 private:

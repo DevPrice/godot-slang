@@ -37,7 +37,11 @@ size_t VariantSerializer::Buffer::size() const {
 }
 
 void VariantSerializer::Buffer::copy(uint8_t* destination, const size_t max_size) const {
-	memcpy(destination, data(), std::min(size(), max_size));
+	memcpy(destination, data(), Math::min(size(), max_size));
+}
+
+int64_t VariantSerializer::Buffer::compare(const uint8_t* other, const size_t max_size) const {
+	return memcmp(this, other, Math::min(size(), max_size));
 }
 
 void VariantSerializer::align(const size_t alignment) {

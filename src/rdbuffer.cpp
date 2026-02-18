@@ -23,10 +23,12 @@ RDBuffer::~RDBuffer() {
 
 void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Writing fixed-size buffer before initialize!");
-	dirty_start = Math::min(offset, dirty_start);
-	dirty_end = Math::max(offset + size, dirty_end);
 	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, matrix_layout);
-	serialized.copy(buffer.ptrw() + offset, size);
+	if (serialized.compare(buffer.ptr(), size)) {
+		serialized.copy(buffer.ptrw() + offset, size);
+		dirty_start = Math::min(offset, dirty_start);
+		dirty_end = Math::max(offset + size, dirty_end);
+	}
 }
 
 void RDBuffer::set_size(const int64_t size) {
