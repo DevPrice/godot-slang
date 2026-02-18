@@ -13,14 +13,12 @@ class VariantSerializer {
 public:
     class Buffer {
     private:
-        template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-        template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-
         static constexpr size_t max_size = 64;
 
         struct InlineBuffer {
             std::array<uint8_t, max_size> data{};
             size_t size = 0;
+            InlineBuffer() = default;
         };
 
         std::variant<InlineBuffer, PackedByteArray> buffer;
