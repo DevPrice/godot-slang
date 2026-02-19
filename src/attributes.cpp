@@ -38,7 +38,8 @@ AttributeRegistry::AttributeRegistry() {
     register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
         return [](Variant& value) {
             if (value.get_type() == Variant::Type::NIL) {
-                value = RenderingServer::get_singleton()->get_white_texture();
+                const auto rs = RenderingServer::get_singleton();
+                value = rs->texture_get_rd_texture(rs->get_white_texture());
             }
         };
     });
