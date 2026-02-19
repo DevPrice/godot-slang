@@ -10,18 +10,28 @@
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/window.hpp"
 
+void handle_color_write(Variant& value) {
+    if (value.get_type() == Variant::Type::COLOR) {
+        value = static_cast<Color>(value).srgb_to_linear();
+    } else if (value.get_type() == Variant::Type::PACKED_COLOR_ARRAY) {
+        PackedColorArray converted = value.duplicate();
+        for (Color& color : converted) {
+            color = color.srgb_to_linear();
+        }
+        value = converted;
+    } else if (const Texture* texture = Object::cast_to<Texture>(value)) {
+        value = RenderingServer::get_singleton()->texture_get_rd_texture(texture->get_rid(), true);
+    } else if (value.get_type() == Variant::Type::ARRAY) {
+        value = value.duplicate();
+        for (Variant& element : static_cast<Array>(value)) {
+            handle_color_write(element);
+        }
+    }
+}
+
 AttributeRegistry::AttributeRegistry() {
     register_write_handler(GodotAttributes::color(), [](const Dictionary&, Variant& value) {
-        if (value.get_type() == Variant::Type::COLOR) {
-            value = static_cast<Color>(value).srgb_to_linear();
-        }
-        if (value.get_type() == Variant::Type::PACKED_COLOR_ARRAY) {
-            PackedColorArray converted = value.duplicate();
-            for (Color& color : converted) {
-                color = color.srgb_to_linear();
-            }
-            value = converted;
-        }
+        handle_color_write(value);
     });
     register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, Variant& value) {
         if (value.get_type() == Variant::Type::NIL) {

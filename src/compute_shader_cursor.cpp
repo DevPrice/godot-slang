@@ -120,9 +120,6 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 			uniform.add_id(_get_resource_rid(sampler));
 			uniform.add_id(_get_resource_rid(default_texture));
 		} else {
-			if (data.get_type() == Variant::Type::RID) {
-				UtilityFunctions::push_warning("Binding an RID to a UNIFORM_TYPE_SAMPLER_WITH_TEXTURE binding is ambiguous; assuming a RD Texture RID...");
-			}
 			const Variant default_sampler = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER);
 			uniform.add_id(_get_resource_rid(default_sampler));
 			uniform.add_id(_get_resource_rid(data_or_default));
