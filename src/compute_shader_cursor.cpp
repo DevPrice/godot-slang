@@ -259,8 +259,8 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     	for (auto attribute_name : attributes.keys()) {
     		const Dictionary attribute_arguments = attributes[attribute_name];
 		    if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-    			if (AttributeRegistry::WriteHandler handler = (*factory)(attribute_arguments, *property_shape.ptr())) {
-    				current.write_handlers.push_back(handler);
+    			if (const auto handler = factory->factory(attribute_arguments, *property_shape.ptr())) {
+    				current.write_handlers.insert(WriteHandlerWithPriority{handler, factory->priority});
     			}
     		}
     	}
@@ -308,8 +308,8 @@ void ComputeShaderCursor::write(const Variant& data) const {
 }
 
 Variant ComputeShaderCursor::_apply_write_handlers(Variant data) const {
-	for (const AttributeRegistry::WriteHandler write_handler : write_handlers) {
-		write_handler(data);
+	for (const auto [handler, _] : write_handlers) {
+		handler(data);
 	}
 	return data;
 }

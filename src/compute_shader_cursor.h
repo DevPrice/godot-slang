@@ -61,11 +61,20 @@ private:
 class ComputeShaderCursor {
 
 private:
+    struct WriteHandlerWithPriority {
+        AttributeRegistry::WriteHandler handler{};
+        int64_t priority{};
+
+        bool operator<(const WriteHandlerWithPriority& other) const {
+            return priority > other.priority;
+        }
+    };
+
     ComputeShaderOffset offset{};
     ComputeShaderObject* object;
     Ref<ShaderTypeLayoutShape> shape{};
 
-    std::vector<AttributeRegistry::WriteHandler> write_handlers{};
+    std::multiset<WriteHandlerWithPriority> write_handlers{};
     Variant default_value{};
 
 public:

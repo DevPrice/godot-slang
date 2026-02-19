@@ -34,7 +34,7 @@ AttributeRegistry::AttributeRegistry() {
         return [](Variant& value) {
             handle_color_write(value);
         };
-    });
+    }, PRIORITY_MODIFIER);
     register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
         return [](Variant& value) {
             if (value.get_type() == Variant::Type::NIL) {
@@ -112,11 +112,11 @@ AttributeRegistry::AttributeRegistry() {
     });
 }
 
-void AttributeRegistry::register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory) {
-    write_handler_factories.insert_or_assign(attribute_name, factory);
+void AttributeRegistry::register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, const int64_t priority) {
+    write_handler_factories.insert_or_assign(attribute_name, FactoryWithPriority<WriteHandler>{factory, priority});
 }
 
-void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable) {
+void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable, const int64_t priority) {
     const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const ShaderTypeLayoutShape&) -> WriteHandler {
         const Callable handler_callable = factory_callable.call(arguments);
         if (handler_callable.is_valid()) {
@@ -126,12 +126,12 @@ void AttributeRegistry::register_write_handler(const StringName& attribute_name,
         }
         return nullptr;
     };
-    register_write_handler(attribute_name, factory);
+    register_write_handler(attribute_name, factory, priority);
 }
 
-AttributeRegistry::AttributeHandlerFactory<AttributeRegistry::WriteHandler>* AttributeRegistry::get_write_handler(const StringName& attribute_name) {
+std::optional<AttributeRegistry::FactoryWithPriority<AttributeRegistry::WriteHandler>> AttributeRegistry::get_write_handler(const StringName& attribute_name) {
     const auto it = write_handler_factories.find(attribute_name);
-    return it != write_handler_factories.end() ? &it->second : nullptr;
+    return it != write_handler_factories.end() ? std::make_optional(it->second) : std::nullopt;
 }
 
 AttributeRegistry* AttributeRegistry::get_instance() {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <unordered_map>
 
 #include "compute_shader_shape.h"
@@ -69,8 +70,14 @@ public:
     template <typename T>
     using AttributeHandlerFactory = std::function<T(const Dictionary&, const ShaderTypeLayoutShape&)>;
 
+    template <typename T>
+    struct FactoryWithPriority {
+        AttributeHandlerFactory<T> factory{};
+        int64_t priority{};
+    };
+
 private:
-    std::unordered_map<StringName, AttributeHandlerFactory<WriteHandler>> write_handler_factories;
+    std::unordered_map<StringName, FactoryWithPriority<WriteHandler>> write_handler_factories;
 
 public:
     AttributeRegistry();
@@ -79,9 +86,12 @@ public:
     AttributeRegistry& operator=(const AttributeRegistry&) = delete;
     AttributeRegistry& operator=(AttributeRegistry&&) = delete;
 
-    void register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory);
-    void register_write_handler(const StringName& attribute_name, const Callable& factory_callable);
-    AttributeHandlerFactory<WriteHandler>* get_write_handler(const StringName& attribute_name);
+    void register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, int64_t priority = PRIORITY_DEFAULT);
+    void register_write_handler(const StringName& attribute_name, const Callable& factory_callable, int64_t priority = PRIORITY_DEFAULT);
+    std::optional<FactoryWithPriority<WriteHandler>> get_write_handler(const StringName& attribute_name);
 
     static AttributeRegistry* get_instance();
+
+    static constexpr int64_t PRIORITY_DEFAULT = 0;
+    static constexpr int64_t PRIORITY_MODIFIER = -10;
 };
