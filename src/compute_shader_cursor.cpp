@@ -218,8 +218,10 @@ Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformTy
 			return Array { _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER), _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE) };
 		case RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE:
 		case RenderingDevice::UniformType::UNIFORM_TYPE_IMAGE: {
-			RenderingServer* rs = RenderingServer::get_singleton();
-			return rs->texture_get_rd_texture(rs->get_test_texture());
+			if (default_texture.is_null()) {
+				default_texture.instantiate();
+			}
+			return default_texture;
 		}
 		default:
 			return {};

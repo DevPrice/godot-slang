@@ -3,6 +3,7 @@
 #include "attributes.h"
 #include "compute_shader_shape.h"
 #include "rdbuffer.h"
+#include "godot_cpp/classes/placeholder_texture2d.hpp"
 
 struct ComputeShaderOffset {
     uint32_t binding_offset{};
@@ -37,6 +38,7 @@ private:
     PackedByteArray push_constants{};
     Dictionary buffers{};
     TypedArray<Array> uniforms{};
+    Ref<PlaceholderTexture2D> default_texture{};
 
 public:
     ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape);
@@ -55,7 +57,7 @@ private:
     RDUniform& _get_uniform(int64_t binding_space, int64_t binding_index);
     [[nodiscard]] RID _get_resource_rid(const Variant& data) const;
 
-    [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
+    [[nodiscard]] Variant _get_default_value(RenderingDevice::UniformType type);
 };
 
 class ComputeShaderCursor {
