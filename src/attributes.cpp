@@ -77,7 +77,12 @@ AttributeRegistry::AttributeRegistry() {
             }
         };
     });
-    register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, const ShaderTypeLayoutShape&) {
+    register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, const ShaderTypeLayoutShape& shape) -> WriteHandler {
+        const auto resource_shape = Object::cast_to<ResourceTypeLayoutShape>(&shape);
+        if (!resource_shape) return nullptr;
+
+        const RenderingDevice::UniformType uniform_type = resource_shape->get_uniform_type();
+
         int64_t filter_mode_int = arguments.get("filter", RenderingDevice::SAMPLER_FILTER_LINEAR);
         int64_t repeat_mode_int = arguments.get("repeat_mode", RenderingDevice::SAMPLER_REPEAT_MODE_REPEAT);
         Ref<RDSamplerState> sampler_state;
@@ -88,11 +93,12 @@ AttributeRegistry::AttributeRegistry() {
         sampler_state->set_repeat_u(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
         sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
         sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
-        return [sampler_state](Variant& value) {
+
+        return [sampler_state, uniform_type](Variant& value) {
             if (value.get_type() == Variant::Type::NIL) {
                 value = sampler_state;
-            } else if (const auto texture = Object::cast_to<Texture>(value)) {
-                value = Array { sampler_state, texture };
+            } else if (value.get_type() != Variant::Type::ARRAY && uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE) {
+                value = Array { sampler_state, value };
             }
         };
     });
