@@ -249,9 +249,21 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
 
     	const Dictionary property = properties[field_name];
         const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
+        ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
+
         current.shape = property_shape;
 		current.offset += ComputeShaderOffset::from_field(property);
-    	current.attributes = property.get("user_attributes", {});
+
+    	current.write_handlers.clear();
+    	const Dictionary attributes = property.get("user_attributes", {});
+    	for (auto attribute_name : attributes.keys()) {
+    		const Dictionary attribute_arguments = attributes[attribute_name];
+		    if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+    			if (AttributeRegistry::WriteHandler handler = (*factory)(attribute_arguments, *property_shape.ptr())) {
+    				current.write_handlers.push_back(handler);
+    			}
+    		}
+    	}
     	current.default_value = property.get("default_value", {});
     }
     return current;
@@ -296,11 +308,8 @@ void ComputeShaderCursor::write(const Variant& data) const {
 }
 
 Variant ComputeShaderCursor::_apply_write_handlers(Variant data) const {
-	for (const Variant& attribute_name: attributes.keys()) {
-		Dictionary attribute_arguments = attributes[attribute_name];
-		if (const AttributeRegistry::WriteHandler* write_handler = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-			(*write_handler)(attribute_arguments, data);
-		}
+	for (const AttributeRegistry::WriteHandler write_handler : write_handlers) {
+		write_handler(data);
 	}
 	return data;
 }

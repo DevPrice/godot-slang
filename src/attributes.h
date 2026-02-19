@@ -1,10 +1,9 @@
 #pragma once
 
 #include <functional>
-#include <string>
 #include <unordered_map>
 
-#include "godot_cpp/templates/hash_map.hpp"
+#include "compute_shader_shape.h"
 
 using namespace godot;
 
@@ -66,10 +65,12 @@ struct std::hash<StringName>
 class AttributeRegistry {
 
 public:
-    using WriteHandler = std::function<void(const Dictionary&, Variant&)>;
+    using WriteHandler = std::function<void(Variant&)>;
+    template <typename T>
+    using AttributeHandlerFactory = std::function<T(const Dictionary&, const ShaderTypeLayoutShape&)>;
 
 private:
-    std::unordered_map<StringName, WriteHandler> write_handlers;
+    std::unordered_map<StringName, AttributeHandlerFactory<WriteHandler>> write_handler_factories;
 
 public:
     AttributeRegistry();
@@ -78,9 +79,9 @@ public:
     AttributeRegistry& operator=(const AttributeRegistry&) = delete;
     AttributeRegistry& operator=(AttributeRegistry&&) = delete;
 
-    void register_write_handler(const StringName& attribute_name, const WriteHandler& handler);
-    void register_write_handler(const StringName& attribute_name, const Callable& handler);
-    WriteHandler* get_write_handler(const StringName& attribute_name);
+    void register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory);
+    void register_write_handler(const StringName& attribute_name, const Callable& factory_callable);
+    AttributeHandlerFactory<WriteHandler>* AttributeRegistry::get_write_handler(const StringName& attribute_name);
 
     static AttributeRegistry* get_instance();
 };

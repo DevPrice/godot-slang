@@ -65,7 +65,7 @@ private:
     ComputeShaderObject* object;
     Ref<ShaderTypeLayoutShape> shape{};
 
-    Dictionary attributes;
+    std::vector<AttributeRegistry::WriteHandler> write_handlers{};
     Variant default_value{};
 
 public:
