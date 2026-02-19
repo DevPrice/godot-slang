@@ -81,7 +81,7 @@ public:
 
     void register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory);
     void register_write_handler(const StringName& attribute_name, const Callable& factory_callable);
-    AttributeHandlerFactory<WriteHandler>* AttributeRegistry::get_write_handler(const StringName& attribute_name);
+    AttributeHandlerFactory<WriteHandler>* get_write_handler(const StringName& attribute_name);
 
     static AttributeRegistry* get_instance();
 };
