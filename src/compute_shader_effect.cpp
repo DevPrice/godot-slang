@@ -11,7 +11,7 @@
 #include "attributes.h"
 
 void ComputeShaderEffect::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("uniforms_bound",  PropertyInfo(Variant::INT, "view")));
+	ADD_SIGNAL(MethodInfo("view_dispatching",  PropertyInfo(Variant::INT, "view")));
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, task, ComputeShaderTask);
 	BIND_METHOD(ComputeShaderEffect, queue_dispatch, "kernel_name");
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
@@ -72,12 +72,13 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					(size.y - 1) / local_size.y + 1,
 					1);
 			for (int32_t view = 0; view < view_count; ++view) {
-				_bind_parameters(task, p_render_data->get_render_scene_data(), render_scene_buffers, view);
+				_create_textures(task, render_scene_buffers);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
 				Ref<ComputeDispatchContext> dispatch_context;
 				dispatch_context.instantiate();
 				dispatch_context->set_render_data(p_render_data);
-				emit_signal("uniforms_bound", view);
+				dispatch_context->set_view(view);
+				emit_signal("view_dispatching", view);
 				task->dispatch_at(kernel_index, groups, dispatch_context);
 			}
 		}
@@ -91,7 +92,7 @@ void ComputeShaderEffect::_task_changed() {
 	set_effect_callback_type(get_effect_callback_type());
 }
 
-void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, const int32_t view) {
+void ComputeShaderEffect::_create_textures(const Ref<ComputeShaderTask>& task, RenderSceneBuffersRD* render_scene_buffers) {
 	const Ref<ComputeShaderFile> shader = task->get_shader();
 	ERR_FAIL_NULL(shader);
 	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
@@ -101,22 +102,9 @@ void ComputeShaderEffect::_bind_parameters(const Ref<ComputeShaderTask>& task, c
 		static StringName key_name("name");
 		Dictionary param_dict = params.get(param_name, Dictionary());
 		Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
-		if (user_attributes.has(CompositorAttributes::internal_size())) {
-			task->set_shader_parameter(param_name, render_scene_buffers->get_internal_size());
-		}
-		if (user_attributes.has(CompositorAttributes::scene_data())) {
-			task->set_shader_parameter(param_name, scene_data->get_uniform_buffer());
-		}
-		if (user_attributes.has(CompositorAttributes::color_texture())) {
-			task->set_shader_parameter(param_name, render_scene_buffers->get_color_layer(view));
-		}
-		if (user_attributes.has(CompositorAttributes::depth_texture())) {
-			task->set_shader_parameter(param_name, render_scene_buffers->get_depth_layer(view));
-		}
-		if (user_attributes.has(CompositorAttributes::velocity_texture())) {
-			task->set_shader_parameter(param_name, render_scene_buffers->get_velocity_layer(view));
-		}
 		String context = "__global_context";
+
+		// TODO: Handle texture creation in write handler(s) somehow
 		if (user_attributes.has(CompositorAttributes::context())) {
 			Dictionary context_args = user_attributes[CompositorAttributes::context()];
 			static StringName key_context("context");

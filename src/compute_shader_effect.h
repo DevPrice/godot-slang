@@ -31,5 +31,5 @@ private:
 
 	void _task_changed();
 
-	static void _bind_parameters(const Ref<ComputeShaderTask>& task, const RenderSceneData* scene_data, RenderSceneBuffersRD* render_scene_buffers, int32_t view);
+	static void _create_textures(const Ref<ComputeShaderTask>& task, RenderSceneBuffersRD* render_scene_buffers);
 };

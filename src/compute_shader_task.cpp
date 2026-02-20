@@ -16,10 +16,10 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
 	BIND_METHOD(ComputeShaderTask, clear_shader_parameters)
-	BIND_METHOD(ComputeShaderTask, dispatch, "kernel_name", "thread_groups")
-	BIND_METHOD(ComputeShaderTask, dispatch_at, "kernel_index", "thread_groups")
-	BIND_METHOD(ComputeShaderTask, dispatch_all, "thread_groups")
-	BIND_METHOD(ComputeShaderTask, dispatch_group, "group_name", "thread_groups")
+	ClassDB::bind_method(D_METHOD("dispatch","kernel_name", "thread_groups", "context"), &ComputeShaderTask::dispatch, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_at","kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_all","thread_groups", "context"), &ComputeShaderTask::dispatch_all, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_group","group_name", "thread_groups", "context"), &ComputeShaderTask::dispatch_group, DEFVAL(nullptr));
 }
 
 ComputeShaderTask::ComputeShaderTask() : _shader_object(nullptr) { }
@@ -294,7 +294,7 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
-	ComputeShaderCursor(_shader_object.get()).write(_shader_parameters);
+	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
 	_shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);

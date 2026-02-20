@@ -6,6 +6,8 @@
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
+#include "godot_cpp/classes/render_scene_buffers_rd.hpp"
+#include "godot_cpp/classes/render_scene_data.hpp"
 #include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/window.hpp"
@@ -107,6 +109,53 @@ AttributeRegistry::AttributeRegistry() {
         return [](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 value = Time::get_singleton()->get_ticks_msec() * .001f;
+            }
+        };
+    });
+    register_write_handler(CompositorAttributes::color_texture(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const ComputeDispatchContext* context) {
+            if (value.get_type() == Variant::Type::NIL && context) {
+                if (const auto render_scene_buffers = context->get_render_scene_buffers()) {
+                    value = render_scene_buffers->get_color_layer(context->get_view());
+                }
+            }
+        };
+    });
+    register_write_handler(CompositorAttributes::depth_texture(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const ComputeDispatchContext* context) {
+            if (value.get_type() == Variant::Type::NIL && context) {
+                if (const auto render_scene_buffers = context->get_render_scene_buffers()) {
+                    value = render_scene_buffers->get_depth_layer(context->get_view());
+                }
+            }
+        };
+    });
+    register_write_handler(CompositorAttributes::internal_size(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const ComputeDispatchContext* context) {
+            if (value.get_type() == Variant::Type::NIL && context) {
+                if (const auto render_scene_buffers = context->get_render_scene_buffers()) {
+                    value = render_scene_buffers->get_internal_size();
+                }
+            }
+        };
+    });
+    register_write_handler(CompositorAttributes::scene_data(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const ComputeDispatchContext* context) {
+            if (value.get_type() == Variant::Type::NIL && context) {
+                if (const RenderData* render_data = context->get_render_data()) {
+                    if (const RenderSceneData* scene_data = render_data->get_render_scene_data()) {
+                        value = scene_data->get_uniform_buffer();
+                    }
+                }
+            }
+        };
+    });
+    register_write_handler(CompositorAttributes::velocity_texture(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const ComputeDispatchContext* context) {
+            if (value.get_type() == Variant::Type::NIL && context) {
+                if (const auto render_scene_buffers = context->get_render_scene_buffers()) {
+                    value = render_scene_buffers->get_velocity_layer(context->get_view());
+                }
             }
         };
     });
