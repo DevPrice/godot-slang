@@ -364,11 +364,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			shape->set_alignment(type_layout->getAlignment());
 
-			TypedArray<Dictionary> bindings{};
-			shape->set_bindings(bindings);
+			int64_t push_constant_size = 0;
 
-			// TODO: Feels hacky
-			int64_t push_constants_size = 0;
 			Dictionary field_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
@@ -397,7 +394,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_shapes.set(get_name(field, field_attributes), field_info);
 
 				if (field->getCategory() == slang::ParameterCategory::PushConstantBuffer) {
-					push_constants_size += field_shape->get_size();
+					push_constant_size += field_shape->get_size();
 				}
 
 				if (include_property_info) {
@@ -422,9 +419,13 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				}
 			}
 			shape->set_properties(field_shapes);
+			shape->set_push_constant_size(push_constant_size);
 			if (slang::TypeReflection* type = type_layout->getType()) {
 				shape->set_user_attributes(get_attributes(type));
 			}
+
+			TypedArray<Dictionary> bindings{};
+			shape->set_bindings(bindings);
 
 			if (type_layout->getBindingRangeCount()) {
 				for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
@@ -436,13 +437,10 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 
 					const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 					const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
+					binding.set("binding_type", static_cast<int64_t>(binding_type));
 					binding.set("space_offset", type_layout->getDescriptorSetSpaceOffset(set_index));
 					binding.set("slot_offset", type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
-					if (binding_type == slang::BindingType::PushConstant) {
-						binding.set("size", push_constants_size);
-						binding.set("alignment", 16); // TODO: Can we fetch the alignment?
-					}
 					bindings.push_back(binding);
 				}
 			}

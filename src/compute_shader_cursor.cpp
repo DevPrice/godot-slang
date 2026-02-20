@@ -68,6 +68,9 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
 	ERR_FAIL_NULL(rd);
 	ERR_FAIL_NULL(p_shape);
+	if (p_shape->get_push_constant_size() > 0) {
+		push_constants.resize(RDBuffer::aligned_size(p_shape->get_push_constant_size(), 16));
+	}
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
 			const int64_t size = binding["size"];
@@ -81,8 +84,6 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.set(Vector2i(binding_space, binding_index), buffer_data);
-			} else {
-				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {
 			const int64_t uniform_type = binding["uniform_type"];

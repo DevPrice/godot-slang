@@ -31,6 +31,7 @@ void StructTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(StructTypeLayoutShape, alignment, Variant::INT);
     BIND_GET_SET(StructTypeLayoutShape, properties, Variant::DICTIONARY);
     BIND_GET_SET(StructTypeLayoutShape, user_attributes, Variant::DICTIONARY);
+    BIND_GET_SET(StructTypeLayoutShape, push_constant_size, Variant::INT);
 }
 
 void ResourceTypeLayoutShape::_bind_methods() {
@@ -49,6 +50,7 @@ GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, properties)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, user_attributes)
+GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, int64_t, push_constant_size)
 
 GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, ResourceTypeLayoutShape::ComputeShaderResourceType, resource_type)
 GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uniform_type)
@@ -75,9 +77,6 @@ int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
 void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
-    const int64_t stride = get_stride();
-    ERR_FAIL_COND(stride <= 0);
-
     Variant key;
     bool is_valid;
     if (data.iter_init(key, is_valid) && is_valid) {

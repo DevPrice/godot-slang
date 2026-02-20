@@ -94,6 +94,7 @@ protected:
 	GET_SET_PROPERTY(int64_t, alignment)
 	GET_SET_PROPERTY(Dictionary, properties)
 	GET_SET_PROPERTY(Dictionary, user_attributes)
+	GET_SET_PROPERTY(int64_t, push_constant_size)
 
 public:
 	[[nodiscard]] int64_t get_size() const override;
