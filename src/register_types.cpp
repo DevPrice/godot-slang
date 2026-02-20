@@ -5,6 +5,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "compute_dispatch_context.h"
 #include "compute_shader_effect.h"
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
@@ -31,6 +32,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(StructTypeLayoutShape);
 		GDREGISTER_CLASS(ResourceTypeLayoutShape);
 		GDREGISTER_VIRTUAL_CLASS(ComputeShaderFile);
+		GDREGISTER_VIRTUAL_CLASS(ComputeDispatchContext);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
 	}

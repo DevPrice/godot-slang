@@ -80,30 +80,30 @@ void ComputeShaderTask::clear_shader_parameters() {
 	_shader_parameters.clear();
 }
 
-void ComputeShaderTask::dispatch_all(const Vector3i thread_groups) {
+void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
-		_dispatch(i, thread_groups);
+		_dispatch(i, thread_groups, context);
 	}
 }
 
-void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups) {
+void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
 		Ref<ComputeShaderKernel> kernel = kernels[i];
 		if (kernel.is_valid() && kernel->get_kernel_name() == kernel_name) {
-			_dispatch(i, thread_groups);
+			_dispatch(i, thread_groups, context);
 		}
 	}
 }
 
-void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups) {
-	_dispatch(kernel_index, thread_groups);
+void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+	_dispatch(kernel_index, thread_groups, context);
 }
 
-void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups) {
+void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -113,7 +113,7 @@ void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vecto
 			if (attributes.has(GodotAttributes::kernel_group())) {
 				const Dictionary kernel_group_attr = attributes[GodotAttributes::kernel_group()];
 				if (kernel_group_attr["group_name"] == group_name) {
-					_dispatch(i, thread_groups);
+					_dispatch(i, thread_groups, context);
 				}
 			}
 		}
@@ -279,7 +279,7 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 	return _kernel_pipelines.get(kernel_index, RID{});
 }
 
-void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups) {
+void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
 	ERR_FAIL_NULL(shader);
 	ERR_FAIL_NULL(_shader_object);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();

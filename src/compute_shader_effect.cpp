@@ -74,8 +74,11 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 			for (int32_t view = 0; view < view_count; ++view) {
 				_bind_parameters(task, p_render_data->get_render_scene_data(), render_scene_buffers, view);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
+				Ref<ComputeDispatchContext> dispatch_context;
+				dispatch_context.instantiate();
+				dispatch_context->set_render_data(p_render_data);
 				emit_signal("uniforms_bound", view);
-				task->dispatch_at(kernel_index, groups);
+				task->dispatch_at(kernel_index, groups, dispatch_context);
 			}
 		}
 	}

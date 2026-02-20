@@ -1,6 +1,7 @@
 #pragma once
 
 #include "attributes.h"
+#include "compute_dispatch_context.h"
 #include "compute_shader_shape.h"
 #include "rdbuffer.h"
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
@@ -75,16 +76,14 @@ private:
     ComputeShaderOffset offset{};
     ComputeShaderObject* object;
     Ref<ShaderTypeLayoutShape> shape{};
+    const Ref<ComputeDispatchContext> dispatch_context;
 
     std::multiset<WriteHandlerWithPriority> write_handlers{};
     Variant default_value{};
 
 public:
-    explicit ComputeShaderCursor(ComputeShaderObject* p_object) : object(p_object) {
-        if (object) {
-            shape = object->get_shape();
-        }
-    }
+    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const Ref<ComputeDispatchContext>& p_context = {})
+        : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context) {}
 
     [[nodiscard]] ComputeShaderCursor field(const StringName& path) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
