@@ -441,6 +441,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					binding.set("space_offset", type_layout->getDescriptorSetSpaceOffset(set_index));
 					binding.set("slot_offset", type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 					binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
+					binding.set("leaf_shape", _get_shape(type_layout->getBindingRangeLeafTypeLayout(i), 0, include_property_info));
 					bindings.push_back(binding);
 				}
 			}
@@ -491,8 +492,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			if (element_type->getSize() && element_shape.is_valid()) {
 				Dictionary binding{};
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
-				binding.set("space_offset", 0);
-				binding.set("slot_offset", 0);
+				binding.set("space_offset", element_var->getOffset(slang::ParameterCategory::SubElementRegisterSpace));
+				binding.set("slot_offset", element_var->getOffset(slang::ParameterCategory::DescriptorTableSlot));
 				binding.set("slot_count", 1);
 				binding.set("size", static_cast<int64_t>(element_type->getSize()));
 				binding.set("alignment", element_type->getAlignment());

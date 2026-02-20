@@ -7,7 +7,7 @@
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
 
 struct ComputeShaderOffset {
-    uint32_t binding_offset{};
+    uint32_t binding_range_offset{};
     uint32_t binding_index_offset{};
     int64_t byte_offset{};
 
@@ -38,8 +38,9 @@ private:
     Ref<StructTypeLayoutShape> shape{};
     PackedByteArray push_constants{};
     Dictionary buffers{};
-    TypedArray<Array> uniforms{};
+    TypedArray<Ref<RDUniform>> uniforms{};
     Ref<PlaceholderTexture2D> default_texture{};
+    std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
     ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape);
@@ -51,11 +52,13 @@ public:
     void write(const ComputeShaderOffset& offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
-    void bind_uniforms(int64_t compute_list, const RID& shader_rid) const;
+    void bind_uniforms(int64_t compute_list, const RID& shader_rid, int64_t space_offset = 0) const;
+
+    ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 
 private:
-    RDBuffer& _get_buffer(int64_t binding_space, int64_t binding_index);
-    RDUniform& _get_uniform(int64_t binding_space, int64_t binding_index);
+    RDBuffer& _get_buffer(int64_t binding_index);
+    RDUniform& _get_uniform(int64_t binding_index);
     [[nodiscard]] RID _get_resource_rid(const Variant& data) const;
 
     [[nodiscard]] Variant _get_default_value(RenderingDevice::UniformType type);
