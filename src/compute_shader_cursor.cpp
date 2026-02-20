@@ -312,7 +312,7 @@ void ComputeShaderCursor::write(const Variant& data) const {
 
 Variant ComputeShaderCursor::_apply_write_handlers(Variant data) const {
 	for (const auto [handler, _] : write_handlers) {
-		handler(data);
+		handler(data, dispatch_context.ptr());
 	}
 	return data;
 }

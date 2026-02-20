@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_map>
 
+#include "compute_dispatch_context.h"
 #include "compute_shader_shape.h"
 
 using namespace godot;
@@ -66,9 +67,9 @@ struct std::hash<StringName>
 class AttributeRegistry {
 
 public:
-    using WriteHandler = std::function<void(Variant&)>;
+    using WriteHandler = std::function<void(Variant& value, const ComputeDispatchContext* context)>;
     template <typename T>
-    using AttributeHandlerFactory = std::function<T(const Dictionary&, const ShaderTypeLayoutShape&)>;
+    using AttributeHandlerFactory = std::function<T(const Dictionary& attribute_arguments, const ShaderTypeLayoutShape& shape)>;
 
     template <typename T>
     struct FactoryWithPriority {

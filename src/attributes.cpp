@@ -31,12 +31,12 @@ void handle_color_write(Variant& value) {
 
 AttributeRegistry::AttributeRegistry() {
     register_write_handler(GodotAttributes::color(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
-        return [](Variant& value) {
+        return [](Variant& value, const ComputeDispatchContext*) {
             handle_color_write(value);
         };
     }, PRIORITY_MODIFIER);
     register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
-        return [](Variant& value) {
+        return [](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 const auto rs = RenderingServer::get_singleton();
                 value = rs->texture_get_rd_texture(rs->get_white_texture());
@@ -44,7 +44,7 @@ AttributeRegistry::AttributeRegistry() {
         };
     });
     register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
-        return [](Variant& value) {
+        return [](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 value = Engine::get_singleton()->get_frames_drawn();
             }
@@ -52,7 +52,7 @@ AttributeRegistry::AttributeRegistry() {
     });
     register_write_handler(GodotAttributes::global_param(), [](const Dictionary& arguments, const ShaderTypeLayoutShape&) {
         const StringName param_name = arguments["name"];
-        return [param_name](Variant& value) {
+        return [param_name](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
     #ifdef TOOLS_ENABLED
                 if (unlikely(!RenderingServer::get_singleton()->is_on_render_thread())) {
@@ -68,7 +68,7 @@ AttributeRegistry::AttributeRegistry() {
         };
     });
     register_write_handler(GodotAttributes::mouse_position(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
-        return [](Variant& value) {
+        return [](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 if (const SceneTree* scene_tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
                     if (const Window* window = scene_tree->get_root()) {
@@ -95,7 +95,7 @@ AttributeRegistry::AttributeRegistry() {
         sampler_state->set_repeat_v(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
         sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 
-        return [sampler_state, uniform_type](Variant& value) {
+        return [sampler_state, uniform_type](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 value = sampler_state;
             } else if (value.get_type() != Variant::Type::ARRAY && uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE) {
@@ -104,7 +104,7 @@ AttributeRegistry::AttributeRegistry() {
         };
     });
     register_write_handler(GodotAttributes::time(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
-        return [](Variant& value) {
+        return [](Variant& value, const ComputeDispatchContext*) {
             if (value.get_type() == Variant::Type::NIL) {
                 value = Time::get_singleton()->get_ticks_msec() * .001f;
             }
@@ -117,11 +117,11 @@ void AttributeRegistry::register_write_handler(const StringName& attribute_name,
 }
 
 void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable, const int64_t priority) {
-    const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const ShaderTypeLayoutShape&) -> WriteHandler {
-        const Callable handler_callable = factory_callable.call(arguments);
+    const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const ShaderTypeLayoutShape& shape) -> WriteHandler {
+        const Callable handler_callable = factory_callable.call(arguments, &shape);
         if (handler_callable.is_valid()) {
-            return [handler_callable](Variant& value) {
-                value = handler_callable.call(value);
+            return [handler_callable](Variant& value, const ComputeDispatchContext* context) {
+                value = handler_callable.call(value, context);
             };
         }
         return nullptr;
