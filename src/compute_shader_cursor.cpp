@@ -80,7 +80,7 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.set(binding_index, buffer_data);
-			} else {
+			} else if (static_cast<int64_t>(binding["binding_type"]) == 14) { // TODO: Make an enum for this
 				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {

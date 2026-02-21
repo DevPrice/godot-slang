@@ -427,8 +427,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				Dictionary binding{};
 				binding.set("size", static_cast<int64_t>(type_layout->getSize()));
 				binding.set("alignment", type_layout->getAlignment());
-				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
 				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
+				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
 				binding.set("space_offset", 0);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
@@ -444,9 +444,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					0,
 					binding_type == slang::BindingType::ParameterBlock ? 1 : 0,
 					include_property_info);
+				binding.set("binding_type", static_cast<int64_t>(binding_type));
 				if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
 					binding.set("uniform_type", *uniform_type);
-				} else if (leaf_shape.is_valid()) {
+				}
+				if (binding_type == slang::BindingType::PushConstant) {
 					binding.set("size", leaf_shape->get_size());
 					binding.set("alignment", 16);
 				}
