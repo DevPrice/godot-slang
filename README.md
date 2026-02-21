@@ -97,7 +97,7 @@ git submodule update --init --recursive
 
 Then, build the GDExtension:
 ```shell
-scons target=editor debug_symbols=yes dev_build=yes
+scons target=editor debug_symbols=yes dev_build=yes api_version=4.5
 ```
 
 ## Work-in-progress
