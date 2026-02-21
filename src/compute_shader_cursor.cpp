@@ -267,13 +267,6 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     	current.shape = property_shape;
     	current.offset += ComputeShaderOffset::from_field(*property);
 
-    	if (static_cast<int64_t>((*property)["layout_unit"]) == ShaderTypeLayoutShape::LayoutUnit::SUB_ELEMENT_REGISTER_SPACE) {
-    		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
-    			// TODO: This only handles ParameterBlock
-    			return ComputeShaderCursor(subobject, dispatch_context);
-    		}
-    	}
-
     	current.write_handlers.clear();
     	const Dictionary attributes = property->get("user_attributes", {});
     	for (auto attribute_name : attributes.keys()) {
@@ -285,6 +278,13 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     		}
     	}
     	current.default_value = property->get("default_value", {});
+
+    	if (static_cast<int64_t>((*property)["layout_unit"]) == ShaderTypeLayoutShape::LayoutUnit::SUB_ELEMENT_REGISTER_SPACE) {
+    		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
+    			current.object = subobject;
+    			current.offset = {};
+    		}
+    	}
     }
     return current;
 }
