@@ -52,7 +52,7 @@ public:
     void write(const ComputeShaderOffset& offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
-    void bind_uniforms(int64_t compute_list, const RID& shader_rid, int64_t space_offset = 0) const;
+    void bind_uniforms(int64_t compute_list, const RID& shader_rid, int64_t space_offset = 0);
 
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 

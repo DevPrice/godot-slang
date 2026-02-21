@@ -68,9 +68,6 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
 	ERR_FAIL_NULL(rd);
 	ERR_FAIL_NULL(p_shape);
-	if (p_shape->get_push_constant_size() > 0) {
-		push_constants.resize(RDBuffer::aligned_size(p_shape->get_push_constant_size(), 16));
-	}
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
 			const int64_t size = binding["size"];
@@ -83,6 +80,8 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.set(binding_index, buffer_data);
+			} else {
+				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {
 			const int64_t uniform_type = binding["uniform_type"];
@@ -153,9 +152,6 @@ void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant
 }
 
 void ComputeShaderObject::flush_buffers() {
-	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
-		it->second->flush_buffers();
-	}
 	for (const int64_t key : buffers.keys()) {
 		const Ref<RDBuffer> buffer = buffers[key];
 		if (buffer.is_valid()) {
@@ -166,15 +162,28 @@ void ComputeShaderObject::flush_buffers() {
 			buffer_uniform.add_id(buffer->get_rid());
 		}
 	}
+	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
+		it->second->flush_buffers();
+	}
 }
 
-void ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID& shader_rid, const int64_t space_offset) const {
+void ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID& shader_rid, const int64_t space_offset) {
 	ERR_FAIL_NULL(rd);
+	ERR_FAIL_NULL(shape);
 	const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_offset, uniforms);
 	rd->compute_list_bind_uniform_set(compute_list, uniform_set, space_offset);
     if (push_constants.size() > 0) {
         rd->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());
     }
+	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
+		const int64_t binding_range_index = it->first;
+		const TypedArray<Dictionary> bindings = shape->get_bindings();
+		ERR_FAIL_INDEX(binding_range_index, bindings.size());
+		const Dictionary binding = bindings[binding_range_index];
+		ComputeShaderObject* subobject = it->second.get();
+		const int64_t offset = binding["space_offset"];
+		subobject->bind_uniforms(compute_list, shader_rid, space_offset + offset);
+	}
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
@@ -186,7 +195,7 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	}
 	const Dictionary binding = bindings[binding_range_index];
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
-	ERR_FAIL_NULL_V(subshape, nullptr);
+	if (subshape.is_null()) return nullptr; // TODO: Eventually this should be an invalid state
 	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rd, sampler_cache, subshape));
 	return it->second.get();
 }
@@ -259,8 +268,10 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     	current.offset += ComputeShaderOffset::from_field(*property);
 
     	if (static_cast<int64_t>((*property)["layout_unit"]) == ShaderTypeLayoutShape::LayoutUnit::SUB_ELEMENT_REGISTER_SPACE) {
-    		ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset);
-    		return ComputeShaderCursor(subobject, dispatch_context);
+    		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
+    			// TODO: This only handles ParameterBlock
+    			return ComputeShaderCursor(subobject, dispatch_context);
+    		}
     	}
 
     	current.write_handlers.clear();
