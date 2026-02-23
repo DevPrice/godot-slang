@@ -244,21 +244,16 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     const PackedStringArray parts = path.split("/");
     ComputeShaderCursor current(*this);
     for (const String& field_name : parts) {
-        const auto struct_shape = Object::cast_to<StructTypeLayoutShape>(current.shape.ptr());
-        ERR_FAIL_NULL_V(struct_shape, ComputeShaderCursor(nullptr));
-
-        const Dictionary properties = struct_shape->get_properties();
-        ERR_FAIL_COND_V(!properties.has(field_name), ComputeShaderCursor(nullptr));
-
-    	const Dictionary property = properties[field_name];
-        const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
+    	const std::optional<Dictionary> property = shape->field(field_name);
+    	ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
+        const Ref<ShaderTypeLayoutShape> property_shape = property->get("shape", nullptr);
         ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
 
         current.shape = property_shape;
-		current.offset += ComputeShaderOffset::from_field(property);
+		current.offset += ComputeShaderOffset::from_field(*property);
 
     	current.write_handlers.clear();
-    	const Dictionary attributes = property.get("user_attributes", {});
+    	const Dictionary attributes = property->get("user_attributes", {});
     	for (auto attribute_name : attributes.keys()) {
     		const Dictionary attribute_arguments = attributes[attribute_name];
 		    if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
@@ -267,7 +262,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     			}
     		}
     	}
-    	current.default_value = property.get("default_value", {});
+    	current.default_value = property->get("default_value", {});
     }
     return current;
 }

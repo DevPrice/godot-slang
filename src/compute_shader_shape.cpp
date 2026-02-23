@@ -92,7 +92,13 @@ void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const V
 }
 
 int64_t StructTypeLayoutShape::get_size() const { return size; }
+
 void StructTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
+
+std::optional<Dictionary> StructTypeLayoutShape::field(const StringName& field_name) const {
+	ERR_FAIL_COND_V(!properties.has(field_name), std::nullopt);
+    return properties[field_name];
+}
 
 void StructTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     const Dictionary properties = get_properties();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "godot_cpp/classes/resource.hpp"
 
 #include "binding_macros.h"
@@ -19,6 +21,7 @@ protected:
 
 public:
 	[[nodiscard]] virtual int64_t get_size() const { return 0; }
+	virtual std::optional<Dictionary> field(const StringName& field_name) const { return std::nullopt; }
 	virtual void write_into(const ComputeShaderCursor& cursor, const Variant& data) const = 0;
 
 	// Values must match SlangMatrixLayoutMode
@@ -95,6 +98,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
+	std::optional<Dictionary> field(const StringName& field_name) const override;
 	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
 
 private:
