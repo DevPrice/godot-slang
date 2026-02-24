@@ -28,10 +28,10 @@ public:
 	void set_shader_parameter(const StringName& param, const Variant& value);
 	void clear_shader_parameters();
 
-	void dispatch_all(Vector3i thread_groups, const Ref<ComputeDispatchContext>& context = {});
-	void dispatch(const StringName& kernel_name, Vector3i thread_groups, const Ref<ComputeDispatchContext>& context = {});
-	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Ref<ComputeDispatchContext>& context = {});
-	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Ref<ComputeDispatchContext>& context = {});
+	void dispatch_all(Vector3i thread_groups, const Object* context = {});
+	void dispatch(const StringName& kernel_name, Vector3i thread_groups, const Object* context = {});
+	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Object* context = {});
+	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Object* context = {});
 
 	[[nodiscard]] Dictionary get_shader_parameters() const;
 
@@ -59,5 +59,5 @@ private:
 	RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
 	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
 
-	void _dispatch(int64_t kernel_index, Vector3i thread_groups, const Ref<ComputeDispatchContext>& context = {});
+	void _dispatch(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
 };

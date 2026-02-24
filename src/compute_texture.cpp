@@ -1,6 +1,8 @@
 #include "compute_texture.h"
 
 #include "attributes.h"
+#include "compute_dispatch_context.h"
+
 #include "godot_cpp/classes/editor_file_system.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/engine.hpp"
@@ -119,28 +121,10 @@ void ComputeTexture::render() {
                     (get_width() - 1) / local_size.x + 1,
                     (get_height() - 1) / local_size.y + 1,
                     1);
-            _bind_parameters(task);
-            task->dispatch_at(kernel_index, groups);
-        }
-    }
-}
-
-void ComputeTexture::_bind_parameters(const Ref<ComputeShaderTask>& p_task) const {
-    const Ref<ComputeShaderFile> shader = p_task->get_shader();
-    ERR_FAIL_NULL(shader);
-    const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
-    ERR_FAIL_NULL(params_shape);
-    const Dictionary params = params_shape->get_properties();
-    for (const StringName param_name : params.keys()) {
-        if (!param_name.is_empty()) {
-            Dictionary param_dict = params[param_name];
-            Dictionary user_attributes = param_dict["user_attributes"];
-            if (user_attributes.has(TextureAttributes::output_size())) {
-                p_task->set_shader_parameter(param_name, size);
-            }
-            if (user_attributes.has(TextureAttributes::output_texture())) {
-                task->set_shader_parameter(param_name, texture_rd_rid);
-            }
+        	const Ref context = memnew(ComputeTextureDispatchContext);
+        	context->set_output_texture_rid(texture_rd_rid);
+        	context->set_output_size(size);
+            task->dispatch_at(kernel_index, groups, context.ptr());
         }
     }
 }

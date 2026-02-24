@@ -37,7 +37,6 @@ private:
     RenderingDevice::DataFormat remote_data_format{};
     bool updated_queued{};
 
-    void _bind_parameters(const Ref<ComputeShaderTask>& p_task) const;
     void _queue_update();
     void _update_textures();
 	void _task_changed();

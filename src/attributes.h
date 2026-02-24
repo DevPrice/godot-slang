@@ -67,7 +67,7 @@ struct std::hash<StringName>
 class AttributeRegistry {
 
 public:
-    using WriteHandler = std::function<void(Variant& value, const ComputeDispatchContext* context)>;
+    using WriteHandler = std::function<void(Variant& value, const Object* context)>;
     template <typename T>
     using AttributeHandlerFactory = std::function<T(const Dictionary& attribute_arguments, const ShaderTypeLayoutShape& shape)>;
 

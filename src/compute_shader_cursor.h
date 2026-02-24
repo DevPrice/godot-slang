@@ -76,13 +76,13 @@ private:
     ComputeShaderOffset offset{};
     ComputeShaderObject* object;
     Ref<ShaderTypeLayoutShape> shape{};
-    const Ref<ComputeDispatchContext> dispatch_context;
+    const Object* dispatch_context;
 
     std::multiset<WriteHandlerWithPriority> write_handlers{};
     Variant default_value{};
 
 public:
-    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const Ref<ComputeDispatchContext>& p_context = {})
+    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const Object* p_context = nullptr)
         : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context) {}
 
     [[nodiscard]] ComputeShaderCursor field(const StringName& path) const;

@@ -74,12 +74,12 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 			for (int32_t view = 0; view < view_count; ++view) {
 				_create_textures(task, render_scene_buffers);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
-				Ref<ComputeDispatchContext> dispatch_context;
+				Ref<CompositorEffectDispatchContext> dispatch_context;
 				dispatch_context.instantiate();
 				dispatch_context->set_render_data(p_render_data);
 				dispatch_context->set_view(view);
 				emit_signal("view_dispatching", view);
-				task->dispatch_at(kernel_index, groups, dispatch_context);
+				task->dispatch_at(kernel_index, groups, dispatch_context.ptr());
 			}
 		}
 	}

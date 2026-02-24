@@ -32,7 +32,8 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(StructTypeLayoutShape);
 		GDREGISTER_CLASS(ResourceTypeLayoutShape);
 		GDREGISTER_VIRTUAL_CLASS(ComputeShaderFile);
-		GDREGISTER_VIRTUAL_CLASS(ComputeDispatchContext);
+		GDREGISTER_VIRTUAL_CLASS(CompositorEffectDispatchContext);
+		GDREGISTER_VIRTUAL_CLASS(ComputeTextureDispatchContext);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
 	}

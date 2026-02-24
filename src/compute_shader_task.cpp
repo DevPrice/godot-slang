@@ -80,7 +80,7 @@ void ComputeShaderTask::clear_shader_parameters() {
 	_shader_parameters.clear();
 }
 
-void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -88,7 +88,7 @@ void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Ref<Com
 	}
 }
 
-void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Object* context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -99,11 +99,11 @@ void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i t
 	}
 }
 
-void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
 	_dispatch(kernel_index, thread_groups, context);
 }
 
-void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Object* context) {
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -279,7 +279,7 @@ RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, Rend
 	return _kernel_pipelines.get(kernel_index, RID{});
 }
 
-void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Ref<ComputeDispatchContext>& context) {
+void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
 	ERR_FAIL_NULL(shader);
 	ERR_FAIL_NULL(_shader_object);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
