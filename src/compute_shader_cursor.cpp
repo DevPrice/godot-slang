@@ -1,8 +1,5 @@
 #include "compute_shader_cursor.h"
 
-#include "attributes.h"
-#include "rdbuffer.h"
-#include "variant_serializer.h"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
@@ -10,6 +7,10 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/texture.hpp"
 #include "godot_cpp/classes/uniform_set_cache_rd.hpp"
+
+#include "attributes.h"
+#include "rdbuffer.h"
+#include "variant_serializer.h"
 
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{

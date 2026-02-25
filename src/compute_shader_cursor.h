@@ -2,11 +2,13 @@
 
 #include <memory>
 
-#include "attributes.h"
-#include "compute_dispatch_context.h"
-#include "compute_shader_shape.h"
-#include "rdbuffer.h"
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
+#include "godot_cpp/classes/rd_uniform.hpp"
+
+#include "attributes.h"
+#include "compute_shader_shape.h"
+
+class RDBuffer;
 
 struct ComputeShaderOffset {
     uint32_t binding_range_offset{};
