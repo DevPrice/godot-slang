@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "attributes.h"
 #include "compute_dispatch_context.h"
 #include "compute_shader_shape.h"
