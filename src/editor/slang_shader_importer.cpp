@@ -345,7 +345,7 @@ Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 	return _get_shape(program_layout->getGlobalParamsTypeLayout());
 }
 
-Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const int64_t implicit_offset, const int64_t space_offset, const bool include_property_info) const {
+Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const int64_t implicit_offset, const int64_t slot_offset, const bool include_property_info) const {
 	ERR_FAIL_NULL_V(type_layout, nullptr);
 
 	switch (type_layout->getKind()) {
@@ -377,7 +377,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
 					field->getTypeLayout(),
 					implicit_inner_offset + type_layout->getFieldBindingRangeOffset(i),
-					space_offset,
+					slot_offset,
 					include_property_info && is_exported);
 
 				field_info.set("shape", field_shape);
@@ -429,7 +429,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("alignment", type_layout->getAlignment());
 				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
-				binding.set("space_offset", 0);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
 				bindings.push_back(binding);
@@ -442,7 +441,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Ref<ShaderTypeLayoutShape> leaf_shape = _get_shape(
 					leaf_type,
 					0,
-					binding_type == slang::BindingType::ParameterBlock ? 1 : 0,
+					0,
 					include_property_info);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
 				if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
@@ -456,8 +455,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 				const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
-				binding.set("slot_offset", (space_offset > 0) + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index)); // TODO: ULTRA HACK
-
+				binding.set("slot_offset", slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 				binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
 				binding.set("leaf_shape", leaf_shape);
 				bindings.push_back(binding);
@@ -493,7 +491,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		case slang::TypeReflection::Kind::ShaderStorageBuffer: {
 			Ref<ArrayTypeLayoutShape> shape;
 			shape.instantiate();
-			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), 0, space_offset, include_property_info));
+			shape->set_element_shape(_get_shape(type_layout->getElementTypeLayout(), 0, slot_offset, include_property_info));
 			if (type_layout->isArray()) {
 				shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			}
@@ -505,7 +503,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 		case slang::TypeReflection::Kind::ParameterBlock: {
 			slang::VariableLayoutReflection* element_var = type_layout->getElementVarLayout();
 			slang::TypeLayoutReflection* element_type = element_var->getTypeLayout();
-			const Ref<ShaderTypeLayoutShape> element_shape = _get_shape(element_type, element_type->getSize() > 0, space_offset, include_property_info);
+			const Ref<ShaderTypeLayoutShape> element_shape = _get_shape(
+				element_type,
+				element_type->getSize() > 0,
+				element_var->getOffset(slang::ParameterCategory::DescriptorTableSlot),
+				include_property_info);
 			return element_shape;
 		}
 		default:
