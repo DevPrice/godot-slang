@@ -456,9 +456,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 				const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
-				// TODO: Surely there is a more correct way to compute this offset
-				// but getDescriptorSetSpaceOffset(set_index) doesn't work
-				binding.set("space_offset", binding_type == slang::BindingType::ParameterBlock ? 1 : 0);
 				binding.set("slot_offset", (space_offset > 0) + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index)); // TODO: ULTRA HACK
 
 				binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));

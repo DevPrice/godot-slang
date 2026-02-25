@@ -168,23 +168,20 @@ void ComputeShaderObject::flush_buffers() {
 	}
 }
 
-void ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID& shader_rid, const int64_t space_offset) {
-	ERR_FAIL_NULL(rd);
-	ERR_FAIL_NULL(shape);
+int64_t ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID& shader_rid, const int64_t space_offset) {
+	ERR_FAIL_NULL_V(rd, 0);
+	ERR_FAIL_NULL_V(shape, 0);
 	const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_offset, uniforms);
 	rd->compute_list_bind_uniform_set(compute_list, uniform_set, space_offset);
     if (push_constants.size() > 0) {
         rd->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());
     }
+	int64_t sub_element_offset = 1;
 	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
-		const int64_t binding_range_index = it->first;
-		const TypedArray<Dictionary> bindings = shape->get_bindings();
-		ERR_FAIL_INDEX(binding_range_index, bindings.size());
-		const Dictionary binding = bindings[binding_range_index];
 		ComputeShaderObject* subobject = it->second.get();
-		const int64_t offset = binding["space_offset"];
-		subobject->bind_uniforms(compute_list, shader_rid, space_offset + offset);
+		sub_element_offset += subobject->bind_uniforms(compute_list, shader_rid, space_offset + sub_element_offset);
 	}
+	return sub_element_offset;
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
