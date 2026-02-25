@@ -28,10 +28,10 @@ public:
 	void set_shader_parameter(const StringName& param, const Variant& value);
 	void clear_shader_parameters();
 
-	void dispatch_all(Vector3i thread_groups, const Object* context = {});
-	void dispatch(const StringName& kernel_name, Vector3i thread_groups, const Object* context = {});
-	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Object* context = {});
-	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Object* context = {});
+	void dispatch_all(Vector3i thread_groups, const Object* context = nullptr);
+	void dispatch(const StringName& kernel_name, Vector3i thread_groups, const Object* context = nullptr);
+	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
+	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Object* context = nullptr);
 
 	[[nodiscard]] Dictionary get_shader_parameters() const;
 
