@@ -226,15 +226,15 @@ RDUniform& ComputeShaderObject::_get_uniform(const int64_t binding_index) {
 
 Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformType type) {
 	switch (type) {
-		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER:
-			return Ref(memnew(RDSamplerState));
+		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER: {
+			static Ref default_sampler_state = memnew(RDSamplerState);
+			return default_sampler_state;
+		}
 		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
 			return Array { _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER), _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE) };
 		case RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE:
 		case RenderingDevice::UniformType::UNIFORM_TYPE_IMAGE: {
-			if (default_texture.is_null()) {
-				default_texture.instantiate();
-			}
+			static Ref default_texture = memnew(PlaceholderTexture2D);
 			return default_texture;
 		}
 		default:

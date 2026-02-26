@@ -43,7 +43,6 @@ private:
     PackedByteArray push_constants{};
     Dictionary buffers{};
     TypedArray<Ref<RDUniform>> uniforms{};
-    Ref<PlaceholderTexture2D> default_texture{};
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
@@ -65,7 +64,7 @@ private:
     RDUniform& _get_uniform(int64_t binding_index);
     [[nodiscard]] RID _get_resource_rid(const Variant& data) const;
 
-    [[nodiscard]] Variant _get_default_value(RenderingDevice::UniformType type);
+    [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
 };
 
 class ComputeShaderCursor {
