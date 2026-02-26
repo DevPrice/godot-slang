@@ -371,12 +371,17 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
 
-				const int64_t implicit_inner_offset = field->getCategory() == slang::ParameterCategory::Mixed || field->getCategory() == slang::ParameterCategory::SubElementRegisterSpace
+				slang::TypeLayoutReflection* field_type_layout = field->getTypeLayout();
+				const slang::TypeReflection::Kind field_type_kind = field_type_layout->getKind();
+				const slang::ParameterCategory inner_layout_unit = field_type_kind == slang::TypeReflection::Kind::ParameterBlock || field_type_kind == slang::TypeReflection::Kind::ConstantBuffer
+					? field_type_layout->getElementTypeLayout()->getParameterCategory()
+					: field->getCategory();
+				const int64_t implicit_inner_offset = inner_layout_unit == slang::ParameterCategory::Mixed
 					? implicit_offset
 					: 0;
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
-					field->getTypeLayout(),
-					implicit_inner_offset + type_layout->getFieldBindingRangeOffset(i),
+					field_type_layout,
+					type_layout->getFieldBindingRangeOffset(i) + implicit_inner_offset,
 					slot_offset,
 					include_property_info && is_exported);
 
@@ -384,8 +389,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.set("user_attributes", field_attributes);
 				field_info.set("layout_unit", field->getCategory());
 				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
-				field_info.set("slot_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::DescriptorTableSlot)));
-				field_info.set("element_offset", static_cast<int64_t>(field->getOffset(slang::ParameterCategory::SubElementRegisterSpace)));
 				if (field->getCategory() == slang::ParameterCategory::Uniform || field->getCategory() == slang::ParameterCategory::Mixed) {
 					field_info.set("binding_offset", 0);
 				} else {
