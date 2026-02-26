@@ -66,7 +66,7 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 	return sampler_rid;
 }
 
-ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
+ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
 	ERR_FAIL_NULL(rd);
 	ERR_FAIL_NULL(p_shape);
 	for (const Dictionary binding : p_shape->get_bindings()) {

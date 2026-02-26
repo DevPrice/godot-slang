@@ -39,7 +39,7 @@ class ComputeShaderObject {
 private:
     RenderingDevice* rd;
     SamplerCache* sampler_cache;
-    Ref<StructTypeLayoutShape> shape{};
+    Ref<ShaderTypeLayoutShape> shape{};
     PackedByteArray push_constants{};
     Dictionary buffers{};
     TypedArray<Ref<RDUniform>> uniforms{};
@@ -47,7 +47,7 @@ private:
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
-    ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<StructTypeLayoutShape>& p_shape);
+    ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape);
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
