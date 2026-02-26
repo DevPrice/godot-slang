@@ -380,14 +380,14 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					? implicit_offset
 					: 0;
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
-					field_type_layout,
+					field->getTypeLayout(),
 					type_layout->getFieldBindingRangeOffset(i) + implicit_inner_offset,
 					slot_offset,
 					include_property_info && is_exported);
 
 				field_info.set("shape", field_shape);
 				field_info.set("user_attributes", field_attributes);
-				field_info.set("layout_unit", field->getCategory());
+				field_info.set("layout_unit", inner_layout_unit);
 				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
 				if (field->getCategory() == slang::ParameterCategory::Uniform || field->getCategory() == slang::ParameterCategory::Mixed) {
 					field_info.set("binding_offset", 0);
@@ -460,7 +460,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
 				binding.set("slot_offset", slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 				binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
-				binding.set("leaf_shape", leaf_shape);
+				if (/*binding_type == slang::BindingType::ConstantBuffer || */binding_type == slang::BindingType::ParameterBlock) {
+					binding.set("leaf_shape", leaf_shape);
+				}
 				bindings.push_back(binding);
 			}
 

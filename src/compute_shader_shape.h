@@ -34,6 +34,7 @@ public:
 	// Values must match SlangParameterCategory
 	enum LayoutUnit {
 		NONE = 0,
+		MIXED = 1,
 		UNIFORM = 8,
 		DESCRIPTOR_TABLE_SLOT = 9,
 		PUSH_CONSTANT_BUFFER = 11,

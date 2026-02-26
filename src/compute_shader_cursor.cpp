@@ -185,15 +185,15 @@ int64_t ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
-	ERR_FAIL_NULL_V(shape, nullptr);
-	const TypedArray<Dictionary> bindings = shape->get_bindings();
-	ERR_FAIL_INDEX_V(binding_range_index, bindings.size(), nullptr);
 	if (const auto it = subobjects.find(binding_range_index); it != subobjects.end()) {
 		return it->second.get();
 	}
+	ERR_FAIL_NULL_V(shape, nullptr);
+	const TypedArray<Dictionary> bindings = shape->get_bindings();
+	ERR_FAIL_INDEX_V(binding_range_index, bindings.size(), nullptr);
 	const Dictionary binding = bindings[binding_range_index];
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
-	if (subshape.is_null()) return nullptr; // TODO: Eventually this should be an invalid state
+	if (subshape.is_null()) return nullptr;
 	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rd, sampler_cache, subshape));
 	return it->second.get();
 }
@@ -277,11 +277,9 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     	}
     	current.default_value = property->get("default_value", {});
 
-    	if (static_cast<int64_t>((*property)["layout_unit"]) == ShaderTypeLayoutShape::LayoutUnit::SUB_ELEMENT_REGISTER_SPACE) {
-    		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
-    			current.object = subobject;
-    			current.offset = {};
-    		}
+    	if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
+    		current.object = subobject;
+    		current.offset = {};
     	}
     }
     return current;
