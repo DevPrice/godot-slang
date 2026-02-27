@@ -5,6 +5,8 @@
 #include "compute_shader_cursor.h"
 #include "variant_serializer.h"
 
+using namespace godot;
+
 void ShaderTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ShaderTypeLayoutShape, bindings, Variant::ARRAY);
 }

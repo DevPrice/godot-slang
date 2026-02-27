@@ -9,6 +9,9 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 
 #include "attributes.h"
+#include "compute_dispatch_context.h"
+
+using namespace godot;
 
 void ComputeShaderEffect::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("view_dispatching",  PropertyInfo(Variant::INT, "view")));

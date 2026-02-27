@@ -9,20 +9,18 @@
 
 class ComputeShaderCursor;
 
-using namespace godot;
-
-class ShaderTypeLayoutShape : public Resource {
+class ShaderTypeLayoutShape : public godot::Resource {
 	GDCLASS(ShaderTypeLayoutShape, Resource);
 
-	GET_SET_PROPERTY(TypedArray<Dictionary>, bindings)
+	GET_SET_PROPERTY(godot::TypedArray<godot::Dictionary>, bindings)
 
 protected:
 	static void _bind_methods();
 
 public:
 	[[nodiscard]] virtual int64_t get_size() const { return 0; }
-	virtual std::optional<Dictionary> field(const StringName& field_name) const { return std::nullopt; }
-	virtual void write_into(const ComputeShaderCursor& cursor, const Variant& data) const = 0;
+	virtual std::optional<godot::Dictionary> field(const godot::StringName& field_name) const { return std::nullopt; }
+	virtual void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const = 0;
 
 	// Values must match SlangMatrixLayoutMode
 	enum MatrixLayout {
@@ -53,7 +51,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
-	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
+	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
 
 private:
 	int64_t size{};
@@ -66,21 +64,21 @@ class ArrayTypeLayoutShape : public ShaderTypeLayoutShape {
 protected:
 	static void _bind_methods();
 
-	GET_SET_PROPERTY(Ref<ShaderTypeLayoutShape>, element_shape)
+	GET_SET_PROPERTY(godot::Ref<ShaderTypeLayoutShape>, element_shape)
 	GET_SET_PROPERTY(int64_t, stride)
 	GET_SET_PROPERTY(int64_t, alignment)
 
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
-	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
+	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
 
 private:
 	int64_t size{};
 
 };
 
-class StructPropertyShape : public Resource {
+class StructPropertyShape : public godot::Resource {
 	GDCLASS(StructPropertyShape, Resource);
 
 protected:
@@ -94,14 +92,14 @@ protected:
 	static void _bind_methods();
 
 	GET_SET_PROPERTY(int64_t, alignment)
-	GET_SET_PROPERTY(Dictionary, properties)
-	GET_SET_PROPERTY(Dictionary, user_attributes)
+	GET_SET_PROPERTY(godot::Dictionary, properties)
+	GET_SET_PROPERTY(godot::Dictionary, user_attributes)
 
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
-	std::optional<Dictionary> field(const StringName& field_name) const override;
-	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
+	std::optional<godot::Dictionary> field(const godot::StringName& field_name) const override;
+	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
 
 private:
 	int64_t size{};
@@ -118,10 +116,10 @@ public:
 	};
 
 	GET_SET_PROPERTY(ComputeShaderResourceType, resource_type)
-	GET_SET_PROPERTY(RenderingDevice::UniformType, uniform_type)
+	GET_SET_PROPERTY(godot::RenderingDevice::UniformType, uniform_type)
 
 public:
-	void write_into(const ComputeShaderCursor& cursor, const Variant& data) const override;
+	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
 
 protected:
 	static void _bind_methods();

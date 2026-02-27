@@ -11,6 +11,8 @@
 #include "compute_shader_cursor.h"
 #include "compute_shader_shape.h"
 
+using namespace godot;
+
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")

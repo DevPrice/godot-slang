@@ -4,13 +4,13 @@
 #include <optional>
 #include <unordered_map>
 
-#include "compute_dispatch_context.h"
+#include "godot_cpp/variant/string_name.hpp"
+
 #include "compute_shader_shape.h"
+#include "variant_utils.h"
 
-using namespace godot;
-
-#define DECLARE_ATTRIBUTE(function_name, attribute_name) static StringName& function_name() { \
-    static StringName attribute(#attribute_name); \
+#define DECLARE_ATTRIBUTE(function_name, attribute_name) static godot::StringName& function_name() { \
+    static godot::StringName attribute(#attribute_name); \
     return attribute; \
 }
 
@@ -56,20 +56,12 @@ struct TextureAttributes {
     DECLARE_TEXTURE_ATTRIBUTE(output_texture, OutputTexture)
 };
 
-template <>
-struct std::hash<StringName>
-{
-    std::size_t operator()(const StringName& k) const noexcept {
-        return k.hash();
-    }
-};
-
 class AttributeRegistry {
 
 public:
-    using WriteHandler = std::function<void(Variant& value, const Object* context)>;
+    using WriteHandler = std::function<void(godot::Variant& value, const godot::Object* context)>;
     template <typename T>
-    using AttributeHandlerFactory = std::function<T(const Dictionary& attribute_arguments, const ShaderTypeLayoutShape& shape)>;
+    using AttributeHandlerFactory = std::function<T(const godot::Dictionary& attribute_arguments, const ShaderTypeLayoutShape& shape)>;
 
     template <typename T>
     struct FactoryWithPriority {
@@ -78,7 +70,7 @@ public:
     };
 
 private:
-    std::unordered_map<StringName, FactoryWithPriority<WriteHandler>> write_handler_factories;
+    std::unordered_map<godot::StringName, FactoryWithPriority<WriteHandler>, GodotHasher> write_handler_factories;
 
 public:
     AttributeRegistry();
@@ -87,9 +79,9 @@ public:
     AttributeRegistry& operator=(const AttributeRegistry&) = delete;
     AttributeRegistry& operator=(AttributeRegistry&&) = delete;
 
-    void register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, int64_t priority = PRIORITY_DEFAULT);
-    void register_write_handler(const StringName& attribute_name, const Callable& factory_callable, int64_t priority = PRIORITY_DEFAULT);
-    std::optional<FactoryWithPriority<WriteHandler>> get_write_handler(const StringName& attribute_name);
+    void register_write_handler(const godot::StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, int64_t priority = PRIORITY_DEFAULT);
+    void register_write_handler(const godot::StringName& attribute_name, const godot::Callable& factory_callable, int64_t priority = PRIORITY_DEFAULT);
+    std::optional<FactoryWithPriority<WriteHandler>> get_write_handler(const godot::StringName& attribute_name);
 
     static AttributeRegistry* get_instance();
 

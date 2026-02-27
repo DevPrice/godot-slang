@@ -18,53 +18,53 @@ struct ComputeShaderOffset {
     ComputeShaderOffset operator+(const ComputeShaderOffset& other) const;
     ComputeShaderOffset& operator+=(const ComputeShaderOffset& other);
 
-    static ComputeShaderOffset from_field(const Dictionary& field);
+    static ComputeShaderOffset from_field(const godot::Dictionary& field);
 };
 
 class SamplerCache {
 
 private:
-    RenderingDevice* rd;
-    TypedArray<RID> cache{};
+    godot::RenderingDevice* rd;
+    godot::TypedArray<godot::RID> cache{};
 
 public:
-    explicit SamplerCache(RenderingDevice* p_rendering_device);
+    explicit SamplerCache(godot::RenderingDevice* p_rendering_device);
     virtual ~SamplerCache();
 
-    RID get_sampler(const Ref<RDSamplerState>& sampler_state);
+    godot::RID get_sampler(const godot::Ref<godot::RDSamplerState>& sampler_state);
 };
 
 class ComputeShaderObject {
 
 private:
-    RenderingDevice* rd;
+    godot::RenderingDevice* rd;
     SamplerCache* sampler_cache;
-    Ref<ShaderTypeLayoutShape> shape{};
-    PackedByteArray push_constants{};
-    Dictionary buffers{};
-    TypedArray<Ref<RDUniform>> uniforms{};
+    godot::Ref<ShaderTypeLayoutShape> shape{};
+    godot::PackedByteArray push_constants{};
+    godot::Dictionary buffers{};
+    godot::TypedArray<godot::Ref<godot::RDUniform>> uniforms{};
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
-    ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape);
+    ComputeShaderObject(godot::RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape);
     virtual ~ComputeShaderObject() = default;
 
-    [[nodiscard]] Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
+    [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
-    void write_resource(const ComputeShaderOffset& offset, const Variant& data);
-    void write(const ComputeShaderOffset& offset, const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
+    void write_resource(const ComputeShaderOffset& offset, const godot::Variant& data);
+    void write(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
-    int64_t bind_uniforms(int64_t compute_list, const RID& shader_rid, int64_t space_offset = 0);
+    int64_t bind_uniforms(int64_t compute_list, const godot::RID& shader_rid, int64_t space_offset = 0);
 
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 
 private:
     RDBuffer& _get_buffer(int64_t binding_index);
-    RDUniform& _get_uniform(int64_t binding_index);
-    [[nodiscard]] RID _get_resource_rid(const Variant& data) const;
+    godot::RDUniform& _get_uniform(int64_t binding_index);
+    [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 
-    [[nodiscard]] static Variant _get_default_value(RenderingDevice::UniformType type);
+    [[nodiscard]] static godot::Variant _get_default_value(godot::RenderingDevice::UniformType type);
 };
 
 class ComputeShaderCursor {
@@ -81,24 +81,24 @@ private:
 
     ComputeShaderOffset offset{};
     ComputeShaderObject* object;
-    Ref<ShaderTypeLayoutShape> shape{};
-    const Object* dispatch_context;
+    godot::Ref<ShaderTypeLayoutShape> shape{};
+    const godot::Object* dispatch_context;
 
     std::multiset<WriteHandlerWithPriority> write_handlers{};
-    Variant default_value{};
+    godot::Variant default_value{};
 
 public:
-    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const Object* p_context = nullptr)
+    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const godot::Object* p_context = nullptr)
         : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context) {}
 
-    [[nodiscard]] ComputeShaderCursor field(const StringName& path) const;
+    [[nodiscard]] ComputeShaderCursor field(const godot::StringName& path) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
 
-    void write_bytes(const Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) const;
-    void write_resource(const Variant& data) const;
-    void write(const Variant& data) const;
+    void write_bytes(const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) const;
+    void write_resource(const godot::Variant& data) const;
+    void write(const godot::Variant& data) const;
 
 private:
-    Variant _apply_write_handlers(Variant data) const;
+    godot::Variant _apply_write_handlers(godot::Variant data) const;
 
 };
