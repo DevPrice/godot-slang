@@ -65,7 +65,8 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 	return sampler_rid;
 }
 
-ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape) : sampler_cache(p_sampler_cache), shape(p_shape) {
+ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space)
+		: sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space) {
 	ERR_FAIL_NULL(p_shape);
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
@@ -166,20 +167,20 @@ void ComputeShaderObject::flush_buffers() {
 	}
 }
 
-ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets(const uint64_t space_offset) const {
+ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets() const {
 	DescriptorSets result{};
-	get_descriptor_sets(result, space_offset);
+	uint64_t next_space_index = 0;
+	get_descriptor_sets(result, 0, next_space_index);
 	return result;
 }
 
-int64_t ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t space_offset) const {
-	descriptor_sets[space_offset].append_array(uniforms);
-	int64_t sub_element_offset = 1;
+void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) const {
+	const int64_t active_space_index = owns_binding_space ? next_space_index++ : current_space_index;
+	descriptor_sets[active_space_index].append_array(uniforms);
 	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
 		const ComputeShaderObject* subobject = it->second.get();
-		sub_element_offset += subobject->get_descriptor_sets(descriptor_sets, space_offset + sub_element_offset);
+		subobject->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
 	}
-	return sub_element_offset;
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
@@ -192,7 +193,8 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	const Dictionary binding = bindings[binding_range_index];
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
 	if (subshape.is_null()) return nullptr;
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape));
+	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space));
 	return it->second.get();
 }
 

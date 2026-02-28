@@ -43,12 +43,13 @@ private:
     godot::PackedByteArray push_constants{};
     godot::Dictionary buffers{};
     godot::TypedArray<godot::Ref<godot::RDUniform>> uniforms{};
+    bool owns_binding_space{};
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
     using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
 
-    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape);
+    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape, bool p_owns_binding_space = true);
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
@@ -58,8 +59,7 @@ public:
 
     void flush_buffers();
 
-    DescriptorSets get_descriptor_sets(uint64_t space_offset = 0) const;
-    int64_t get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t space_offset = 0) const;
+    DescriptorSets get_descriptor_sets() const;
     const godot::PackedByteArray& get_push_constants() const { return push_constants; }
 
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
@@ -68,6 +68,8 @@ private:
     RDBuffer& _get_buffer(int64_t binding_index);
     godot::RDUniform& _get_uniform(int64_t binding_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
+
+    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index) const;
 
     [[nodiscard]] static godot::Variant _get_default_value(godot::RenderingDevice::UniformType type);
 };

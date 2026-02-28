@@ -30,13 +30,20 @@ public:
 	};
 
 	// Values must match SlangParameterCategory
-	enum LayoutUnit {
+	enum class LayoutUnit {
 		NONE = 0,
 		MIXED = 1,
 		UNIFORM = 8,
 		DESCRIPTOR_TABLE_SLOT = 9,
 		PUSH_CONSTANT_BUFFER = 11,
 		SUB_ELEMENT_REGISTER_SPACE = 20,
+	};
+
+	// Values must match SlangBindingType
+	enum class BindingType {
+		UNKNOWN = 0,
+		CONSTANT_BUFFER = 3,
+		PARAMETER_BLOCK = 4,
 	};
 };
 
