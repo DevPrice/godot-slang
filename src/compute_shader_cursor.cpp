@@ -105,7 +105,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	ERR_FAIL_COND(!binding.has("uniform_type"));
 
 	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
-	RDUniform& uniform = _get_uniform(binding["slot_offset"]);
+	RDUniform& uniform = _get_uniform(offset.binding_range_offset);
 	uniform.set_uniform_type(uniform_type);
 	uniform.clear_ids();
 
@@ -139,7 +139,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant
 	ERR_FAIL_INDEX(offset.binding_range_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_range_offset];
 	if (binding.has("uniform_type")) {
-		RDBuffer& buffer = _get_buffer(binding["slot_offset"]);
+		RDBuffer& buffer = _get_buffer(offset.binding_index_offset);
 		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
 			buffer.set_size(offset.byte_offset + size);
 		}
@@ -176,7 +176,7 @@ ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets() c
 
 void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) const {
 	const int64_t active_space_index = owns_binding_space ? next_space_index++ : current_space_index;
-	descriptor_sets[active_space_index].append_array(uniforms);
+	descriptor_sets[active_space_index].append_array(uniforms.values());
 	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
 		const ComputeShaderObject* subobject = it->second.get();
 		subobject->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
@@ -199,29 +199,35 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	return it->second.get();
 }
 
-RDBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_index) {
-	if (buffers.has(binding_index)) {
-		const Ref<RDBuffer> buffer = buffers[binding_index];
+RDBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_range_index) {
+	if (buffers.has(binding_range_index)) {
+		const Ref<RDBuffer> buffer = buffers[binding_range_index];
 		if (buffer.is_valid()) {
 			return *buffer.ptr();
 		}
 	}
 	Ref<RDBuffer> buffer{};
 	buffer.instantiate();
-	buffers.set(binding_index, buffer);
+	buffers.set(binding_range_index, buffer);
 	return *buffer.ptr();
 }
 
-RDUniform& ComputeShaderObject::_get_uniform(const int64_t binding_index) {
-	if (uniforms.size() <= binding_index) {
-		uniforms.resize(binding_index + 1);
+RDUniform& ComputeShaderObject::_get_uniform(const int64_t binding_range_index) {
+	if (uniforms.has(binding_range_index)) {
+		const Ref<RDUniform> uniform = uniforms[binding_range_index];
+		if (uniform.is_valid()) {
+			return *uniform.ptr();
+		}
 	}
-	Ref<RDUniform> uniform = uniforms[binding_index];
-	if (uniform.is_null()) {
-		uniform.instantiate();
-		uniform->set_binding(first_slot_index + binding_index);
-		uniforms[binding_index] = uniform;
-	}
+	Ref<RDUniform> uniform{};
+	uniform.instantiate();
+	ERR_FAIL_NULL_V(shape, *uniform.ptr());
+	const TypedArray<Dictionary> bindings = shape->get_bindings();
+	ERR_FAIL_INDEX_V(binding_range_index, bindings.size(), *uniform.ptr());
+	const Dictionary binding = bindings[binding_range_index];
+	const int64_t slot_offset = binding["slot_offset"];
+	uniform->set_binding(first_slot_index + slot_offset);
+	uniforms.set(binding_range_index, uniform);
 	return *uniform.ptr();
 }
 
