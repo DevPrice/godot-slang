@@ -32,6 +32,21 @@ void handle_color_write(Variant& value) {
     }
 }
 
+RID get_black_texture() {
+    static RID black_texture{};
+    if (black_texture.is_valid()) {
+        return black_texture;
+    }
+    PackedByteArray data{};
+    constexpr int64_t data_size = 16 * 3;
+    data.resize(data_size);
+    memset(data.ptrw(), 0, data_size);
+    const Ref black = memnew(Image);
+    black->set_data(4, 4, false, Image::FORMAT_RGB8, data);
+    black_texture = RenderingServer::get_singleton()->texture_2d_create(black);
+    return black_texture;
+}
+
 AttributeRegistry::AttributeRegistry() {
     register_write_handler(GodotAttributes::color(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
         return [](Variant& value, const Object*) {
@@ -43,6 +58,14 @@ AttributeRegistry::AttributeRegistry() {
             if (value.get_type() == Variant::Type::NIL) {
                 const auto rs = RenderingServer::get_singleton();
                 value = rs->texture_get_rd_texture(rs->get_white_texture());
+            }
+        };
+    });
+    register_write_handler(GodotAttributes::default_black(), [](const Dictionary&, const ShaderTypeLayoutShape&) {
+        return [](Variant& value, const Object*) {
+            if (value.get_type() == Variant::Type::NIL) {
+                const auto rs = RenderingServer::get_singleton();
+                value = rs->texture_get_rd_texture(get_black_texture());
             }
         };
     });
