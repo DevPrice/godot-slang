@@ -65,8 +65,7 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 	return sampler_rid;
 }
 
-ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape) : rd(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape) {
-	ERR_FAIL_NULL(rd);
+ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape) : sampler_cache(p_sampler_cache), shape(p_shape) {
 	ERR_FAIL_NULL(p_shape);
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
@@ -193,7 +192,7 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	const Dictionary binding = bindings[binding_range_index];
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
 	if (subshape.is_null()) return nullptr;
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rd, sampler_cache, subshape));
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape));
 	return it->second.get();
 }
 

@@ -38,7 +38,6 @@ public:
 class ComputeShaderObject {
 
 private:
-    godot::RenderingDevice* rd;
     SamplerCache* sampler_cache;
     godot::Ref<ShaderTypeLayoutShape> shape{};
     godot::PackedByteArray push_constants{};
@@ -49,7 +48,7 @@ private:
 public:
     using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
 
-    ComputeShaderObject(godot::RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape);
+    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape);
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
