@@ -15,6 +15,7 @@ class ComputeShaderKernel : public Resource {
 	GET_SET_PROPERTY(Ref<RDShaderSPIRV>, spirv)
 	GET_SET_PROPERTY(Vector3i, thread_group_size)
 	GET_SET_PROPERTY(Dictionary, user_attributes)
+	GET_SET_PROPERTY(Dictionary, used_binding_sets)
 
 protected:
 	static void _bind_methods();

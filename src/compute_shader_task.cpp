@@ -306,8 +306,10 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const ComputeShaderObject::DescriptorSets descriptor_sets = _shader_object->get_descriptor_sets();
 	const RID shader_rid = _get_shader_rid(kernel_index, rendering_device);
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
-		const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);
-		rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
+		if (kernel->get_used_binding_sets().get(space_index, false)) {
+			const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);
+			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
+		}
 	}
 	const PackedByteArray& push_constants = _shader_object->get_push_constants();
 	if (push_constants.size() > 0) {

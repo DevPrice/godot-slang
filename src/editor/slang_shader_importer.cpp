@@ -26,6 +26,8 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
+#include "compute_shader_cursor.h"
+
 void SlangShaderImporter::_bind_methods() {
 }
 
@@ -118,9 +120,10 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	const Ref slang_shader = memnew(ComputeShaderFile);
 	if (slang_module && slang_error.is_empty()) {
 		const SlangReflectionContext reflection_context(slang_module->getLayout());
-		slang_shader->set_parameters(reflection_context.get_params_shape());
+		const Ref<StructTypeLayoutShape> params_shape = reflection_context.get_params_shape();
+		slang_shader->set_parameters(params_shape);
 		TypedArray<ComputeShaderKernel> kernels;
-		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", PackedStringArray()))) {
+		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", {}), params_shape.ptr())) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
 		}
 		slang_shader->set_kernels(kernels);
@@ -186,7 +189,7 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 	return global_session->createSession(session_desc, out_session);
 }
 
-Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points) {
+Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points, const Ref<ShaderTypeLayoutShape>& global_params_shape) {
 	ERR_FAIL_NULL_V(slang_module, ERR_BUG);
 	std::vector<Slang::ComPtr<slang::IEntryPoint>> entry_points{};
 	entry_points.reserve(slang_module->getDefinedEntryPointCount() + additional_entry_points.size());
@@ -230,7 +233,7 @@ Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, 
 		}
 	}
 	for (const Slang::ComPtr<slang::IEntryPoint>& entry_point : entry_points) {
-		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point);
+		const Ref<ComputeShaderKernel> kernel = _slang_compile_kernel(slang_module->getSession(), slang_module, entry_point, global_params_shape);
 		if (kernel.is_valid()) {
 			out_kernels.push_back(kernel);
 		}
@@ -239,7 +242,7 @@ Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, 
 	return OK;
 }
 
-Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point) {
+Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape) {
 	String compile_error{};
 
 	const Ref kernel = memnew(ComputeShaderKernel);
@@ -317,6 +320,10 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 		} else if (diagnostics_blob) {
 			UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		} else {
+			Dictionary used_binding_sets{};
+			_get_used_bindings_sets(metadata, global_params_shape, used_binding_sets);
+			kernel->set_used_binding_sets(used_binding_sets);
 		}
 	}
 
@@ -339,6 +346,29 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
 	return kernel;
+}
+
+void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets) {
+	ERR_FAIL_NULL(metadata);
+	ERR_FAIL_NULL(global_params_shape);
+	const auto cache = std::make_unique<SamplerCache>(RenderingServer::get_singleton()->get_rendering_device());
+	// TODO: sort of hacky / awkward, but at least keeps the logic consistent with how data is actually written
+	auto object = ComputeShaderObject(cache.get(), global_params_shape);
+	ComputeShaderCursor(&object).write(nullptr);
+	const auto descriptor_sets = object.get_descriptor_sets();
+	for (const auto& [space_index, uniforms] : descriptor_sets) {
+		bool set_used = false;
+		for (const Ref<RDUniform> uniform : uniforms) {
+			if (uniform.is_valid()) {
+				bool slot_used{};
+				if (SLANG_SUCCEEDED(metadata->isParameterLocationUsed(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT, space_index, uniform->get_binding(), slot_used)) && slot_used) {
+					set_used = true;
+					break;
+				}
+			}
+		}
+		out_used_binding_sets.set(space_index, set_used);
+	}
 }
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
@@ -431,6 +461,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("size", static_cast<int64_t>(type_layout->getSize()));
 				binding.set("alignment", type_layout->getAlignment());
 				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
+				binding.set("layout_unit", slang::ParameterCategory::ConstantBuffer);
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
@@ -447,6 +478,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					0,
 					include_property_info);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
+				binding.set("layout_unit", leaf_type->getParameterCategory());
 				if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
 					binding.set("uniform_type", *uniform_type);
 				}

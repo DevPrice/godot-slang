@@ -85,7 +85,8 @@ public:
 
 private:
 	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options, bool enable_glsl = false);
-	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points);
-	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point);
+	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points, const Ref<ShaderTypeLayoutShape>& global_params_shape);
+	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape);
+	static void _get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets);
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 };
