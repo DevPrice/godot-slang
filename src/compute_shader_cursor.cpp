@@ -65,8 +65,8 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 	return sampler_rid;
 }
 
-ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space)
-		: sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space) {
+ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index)
+		: sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
 	ERR_FAIL_NULL(p_shape);
 	for (const Dictionary binding : p_shape->get_bindings()) {
 		if (binding.has("size")) {
@@ -194,7 +194,8 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
 	if (subshape.is_null()) return nullptr;
 	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space));
+	const int64_t first_slot_index = binding.get("slot_offset", 0);
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, first_slot_index));
 	return it->second.get();
 }
 
@@ -218,7 +219,7 @@ RDUniform& ComputeShaderObject::_get_uniform(const int64_t binding_index) {
 	Ref<RDUniform> uniform = uniforms[binding_index];
 	if (uniform.is_null()) {
 		uniform.instantiate();
-		uniform->set_binding(binding_index);
+		uniform->set_binding(first_slot_index + binding_index);
 		uniforms[binding_index] = uniform;
 	}
 	return *uniform.ptr();

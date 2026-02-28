@@ -44,12 +44,13 @@ private:
     godot::Dictionary buffers{};
     godot::TypedArray<godot::Ref<godot::RDUniform>> uniforms{};
     bool owns_binding_space{};
+    int64_t first_slot_index{};
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
     using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
 
-    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape, bool p_owns_binding_space = true);
+    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape, bool p_owns_binding_space = true, int64_t p_first_slot_index = 0);
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }

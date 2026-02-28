@@ -460,7 +460,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
 				binding.set("slot_offset", slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 				binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
-				if (/*binding_type == slang::BindingType::ConstantBuffer || */binding_type == slang::BindingType::ParameterBlock) {
+				if (binding_type == slang::BindingType::ConstantBuffer || binding_type == slang::BindingType::ParameterBlock) {
 					binding.set("leaf_shape", leaf_shape);
 				}
 				bindings.push_back(binding);
