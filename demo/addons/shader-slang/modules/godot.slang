@@ -259,11 +259,18 @@ public struct gd_FrameIdAttribute {};
 public struct gd_MousePositionAttribute {};
 
 /**
- Will bind a white color/texture if no texture is bound by the user.
+ Will bind a white texture if no texture is bound by the user.
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_DefaultWhiteAttribute {};
+
+/**
+ Will bind a black texture if no texture is bound by the user.
+ Must be applied to a variable of type `Texture2D` or `Sampler2D`.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_DefaultBlackAttribute {};
 
 /**
  Binds a parameter to a Godot [global shader parameter](https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms).
