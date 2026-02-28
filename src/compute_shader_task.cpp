@@ -10,6 +10,7 @@
 #include "attributes.h"
 #include "compute_shader_cursor.h"
 #include "compute_shader_shape.h"
+#include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 
 using namespace godot;
 
@@ -302,7 +303,17 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
 
-	_shader_object->bind_uniforms(compute_list, _get_shader_rid(kernel_index, rendering_device));
+	const ComputeShaderObject::DescriptorSets descriptor_sets = _shader_object->get_descriptor_sets();
+	const RID shader_rid = _get_shader_rid(kernel_index, rendering_device);
+	for (const auto& [space_index, uniforms] : descriptor_sets) {
+		const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);
+		rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
+	}
+	const PackedByteArray& push_constants = _shader_object->get_push_constants();
+	if (push_constants.size() > 0) {
+		rendering_device->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());
+	}
+
 	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
 	rendering_device->compute_list_end();
 }

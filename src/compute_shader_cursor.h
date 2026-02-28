@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
@@ -46,6 +47,8 @@ private:
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
 
 public:
+    using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
+
     ComputeShaderObject(godot::RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape);
     virtual ~ComputeShaderObject() = default;
 
@@ -55,7 +58,10 @@ public:
     void write(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
-    int64_t bind_uniforms(int64_t compute_list, const godot::RID& shader_rid, int64_t space_offset = 0);
+
+    DescriptorSets get_descriptor_sets(uint64_t space_offset = 0) const;
+    int64_t get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t space_offset = 0) const;
+    const godot::PackedByteArray& get_push_constants() const { return push_constants; }
 
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 

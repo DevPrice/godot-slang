@@ -6,7 +6,6 @@
 #include "godot_cpp/classes/rendering_device.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/texture.hpp"
-#include "godot_cpp/classes/uniform_set_cache_rd.hpp"
 
 #include "attributes.h"
 #include "rdbuffer.h"
@@ -168,18 +167,18 @@ void ComputeShaderObject::flush_buffers() {
 	}
 }
 
-int64_t ComputeShaderObject::bind_uniforms(const int64_t compute_list, const RID& shader_rid, const int64_t space_offset) {
-	ERR_FAIL_NULL_V(rd, 0);
-	ERR_FAIL_NULL_V(shape, 0);
-	const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_offset, uniforms);
-	rd->compute_list_bind_uniform_set(compute_list, uniform_set, space_offset);
-    if (push_constants.size() > 0) {
-        rd->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());
-    }
+ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets(const uint64_t space_offset) const {
+	DescriptorSets result{};
+	get_descriptor_sets(result, space_offset);
+	return result;
+}
+
+int64_t ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t space_offset) const {
+	descriptor_sets[space_offset].append_array(uniforms);
 	int64_t sub_element_offset = 1;
 	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
-		ComputeShaderObject* subobject = it->second.get();
-		sub_element_offset += subobject->bind_uniforms(compute_list, shader_rid, space_offset + sub_element_offset);
+		const ComputeShaderObject* subobject = it->second.get();
+		sub_element_offset += subobject->get_descriptor_sets(descriptor_sets, space_offset + sub_element_offset);
 	}
 	return sub_element_offset;
 }
