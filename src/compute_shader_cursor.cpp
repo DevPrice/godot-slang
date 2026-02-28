@@ -194,8 +194,8 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
 	if (subshape.is_null()) return nullptr;
 	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
-	const int64_t first_slot_index = binding.get("slot_offset", 0);
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, first_slot_index));
+	const int64_t subobject_first_slot = first_slot_index + static_cast<int64_t>(binding.get("slot_offset", 0));
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, subobject_first_slot));
 	return it->second.get();
 }
 
