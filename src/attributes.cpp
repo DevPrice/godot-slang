@@ -221,7 +221,7 @@ AttributeRegistry::AttributeRegistry() {
 		};
 	});
 	register_write_handler(CompositorAttributes::texture_name(), [](const Dictionary& args, const Dictionary& field) {
-		const String texture_name = args.get(key_name, String());
+		const String texture_name = args[key_name];
 		const Dictionary attributes = field["user_attributes"];
 		const Dictionary context_attr = attributes.get(CompositorAttributes::context(), {});
 		const StringName context_name = context_attr.get(key_context, "__global_context");

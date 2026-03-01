@@ -69,7 +69,10 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index)
 		: sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
 	ERR_FAIL_NULL(p_shape);
+	// TODO: Surely you can read directly if this should start a new space from the reflection API, but I can't find it
+	bool has_only_parameter_blocks = true;
 	for (const Dictionary binding : p_shape->get_bindings()) {
+		has_only_parameter_blocks = has_only_parameter_blocks && static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
 		if (binding.has("size")) {
 			const int64_t size = binding["size"];
 			const int64_t alignment = binding.get("alignment", 1);
@@ -95,6 +98,9 @@ ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Re
 				buffers.set(binding_index, buffer_data);
 			}
 		}
+	}
+	if (has_only_parameter_blocks) {
+		owns_binding_space = false;
 	}
 }
 
