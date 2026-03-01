@@ -102,14 +102,7 @@ scons target=editor debug_symbols=yes dev_build=yes api_version=4.5
 
 ## Work-in-progress
 
-Although `ComputeShaderFile` and `ComputeShaderKernel` should be fully functional, generating full reflection data for Godot is still very much a work-in-progress.
-If you don't need reflection information, then these should suffice for importing and running Slang shaders. However, you may need to handle shader dispatching and parameter bindings manually.
-
-`ComputeShaderTask::set_shader_parameter` supports most parameter types, but is not yet fully implemented. In particular, `ParameterBlock` is not yet supported.
-
-[Web documentation](https://devprice.github.io/godot-slang/) is currently bare-bones, but in-progress.
-
-If you have questions or comments, please start a [discussion](https://github.com/DevPrice/godot-slang/discussions/).
+[Web documentation](https://devprice.github.io/godot-slang/) is currently bare-bones, but in-progress. If you have questions or comments, please start a [discussion](https://github.com/DevPrice/godot-slang/discussions/).
 
 ## License
 
