@@ -34,7 +34,8 @@ ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
 	return result;
 }
 
-SamplerCache::SamplerCache(RenderingDevice* p_rendering_device) : rd(p_rendering_device) {
+SamplerCache::SamplerCache(RenderingDevice* p_rendering_device) :
+		rd(p_rendering_device) {
 	cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
 	ERR_FAIL_NULL(rd);
 }
@@ -66,8 +67,8 @@ RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
 	return sampler_rid;
 }
 
-ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index)
-		: sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
+ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index) :
+		sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
 	ERR_FAIL_NULL(p_shape);
 	// TODO: Surely you can read directly if this should start a new space from the reflection API, but I can't find it
 	bool has_only_parameter_blocks = true;
@@ -114,7 +115,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 	RDUniform& uniform = _get_uniform(offset.binding_range_offset);
 	uniform.set_uniform_type(uniform_type);
-	TypedArray<RID> rids = uniform.get_ids();
+	TypedArray<RID> rids = uniform.get_ids().duplicate();
 	uniform.clear_ids();
 
 	if (rids.size() <= offset.element_offset) {
@@ -131,7 +132,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 		}
 		if (const Object* sampler = data_or_default; sampler && sampler->is_class(RDSamplerState::get_class_static())) {
 			const Variant default_texture = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE);
-			rids[offset.element_offset * 2] =  _get_resource_rid(sampler);
+			rids[offset.element_offset * 2] = _get_resource_rid(sampler);
 			rids[offset.element_offset * 2 + 1] = _get_resource_rid(default_texture);
 		} else {
 			const Variant default_sampler = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER);
@@ -150,7 +151,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 		rids[offset.element_offset] = _get_resource_rid(data_or_default);
 	}
 
-	for (const RID rid: rids) {
+	for (const RID rid : rids) {
 		uniform.add_id(rid);
 	}
 }
@@ -214,7 +215,8 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	ERR_FAIL_INDEX_V(binding_range_index, bindings.size(), nullptr);
 	const Dictionary binding = bindings[binding_range_index];
 	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
-	if (subshape.is_null()) return nullptr;
+	if (subshape.is_null())
+		return nullptr;
 	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
 	const int64_t subobject_first_slot = first_slot_index + static_cast<int64_t>(binding.get("slot_offset", 0));
 	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, subobject_first_slot));
@@ -260,7 +262,7 @@ Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformTy
 			return default_sampler_state;
 		}
 		case RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE:
-			return Array { _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER), _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE) };
+			return Array{ _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER), _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE) };
 		case RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE:
 		case RenderingDevice::UniformType::UNIFORM_TYPE_IMAGE: {
 			static Ref default_texture = memnew(PlaceholderTexture2D);
@@ -283,39 +285,39 @@ RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 }
 
 ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
-    const PackedStringArray parts = path.split("/");
-    ComputeShaderCursor current(*this);
-    for (const String& field_name : parts) {
-    	const std::optional<Dictionary> property = shape->field(field_name);
-    	ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
-        const Ref<ShaderTypeLayoutShape> property_shape = property->get("shape", nullptr);
-        ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
+	const PackedStringArray parts = path.split("/");
+	ComputeShaderCursor current(*this);
+	for (const String& field_name : parts) {
+		const std::optional<Dictionary> property = shape->field(field_name);
+		ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
+		const Ref<ShaderTypeLayoutShape> property_shape = property->get("shape", nullptr);
+		ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
 
-    	current.shape = property_shape;
-    	current.offset += ComputeShaderOffset::from_field(*property);
+		current.shape = property_shape;
+		current.offset += ComputeShaderOffset::from_field(*property);
 
-    	current.write_handlers.clear();
-    	const Dictionary attributes = property->get("user_attributes", {});
-    	for (auto attribute_name : attributes.keys()) {
-    		const Dictionary attribute_arguments = attributes[attribute_name];
-		    if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-    			if (const auto handler = factory->factory(attribute_arguments, *property)) {
-    				current.write_handlers.insert(WriteHandlerWithPriority{handler, factory->priority});
-    			}
-    		}
-    	}
-    	current.default_value = property->get("default_value", {});
+		current.write_handlers.clear();
+		const Dictionary attributes = property->get("user_attributes", {});
+		for (auto attribute_name : attributes.keys()) {
+			const Dictionary attribute_arguments = attributes[attribute_name];
+			if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+				if (const auto handler = factory->factory(attribute_arguments, *property)) {
+					current.write_handlers.insert(WriteHandlerWithPriority{ handler, factory->priority });
+				}
+			}
+		}
+		current.default_value = property->get("default_value", {});
 
-    	if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
-    		current.object = subobject;
-    		current.offset = {};
-    	}
-    }
-    return current;
+		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
+			current.object = subobject;
+			current.offset = {};
+		}
+	}
+	return current;
 }
 
 ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
-    const auto array_shape = Object::cast_to<ArrayTypeLayoutShape>(shape.ptr());
+	const auto array_shape = Object::cast_to<ArrayTypeLayoutShape>(shape.ptr());
 	ERR_FAIL_NULL_V(array_shape, ComputeShaderCursor(nullptr));
 
 	ComputeShaderCursor result = *this;
@@ -323,7 +325,7 @@ ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
 	result.offset.byte_offset += index * array_shape->get_stride();
 	result.offset.element_offset *= array_shape->get_element_count();
 	result.offset.element_offset += index;
-    return result;
+	return result;
 }
 
 void ComputeShaderCursor::write_bytes(const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) const {

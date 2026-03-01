@@ -19,13 +19,14 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
 	BIND_METHOD(ComputeShaderTask, clear_shader_parameters)
-	ClassDB::bind_method(D_METHOD("dispatch","kernel_name", "thread_groups", "context"), &ComputeShaderTask::dispatch, DEFVAL(nullptr));
-	ClassDB::bind_method(D_METHOD("dispatch_at","kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
-	ClassDB::bind_method(D_METHOD("dispatch_all","thread_groups", "context"), &ComputeShaderTask::dispatch_all, DEFVAL(nullptr));
-	ClassDB::bind_method(D_METHOD("dispatch_group","group_name", "thread_groups", "context"), &ComputeShaderTask::dispatch_group, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch", "kernel_name", "thread_groups", "context"), &ComputeShaderTask::dispatch, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_all", "thread_groups", "context"), &ComputeShaderTask::dispatch_all, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_group", "group_name", "thread_groups", "context"), &ComputeShaderTask::dispatch_group, DEFVAL(nullptr));
 }
 
-ComputeShaderTask::ComputeShaderTask() : _shader_object(nullptr) { }
+ComputeShaderTask::ComputeShaderTask() :
+		_shader_object(nullptr) {}
 
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
@@ -58,7 +59,8 @@ Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
 	bool valid;
 	for (; i < parts.size() - 1; ++i) {
 		current = current.get_named(parts[i], valid);
-		if (!valid || current.get_type() == Variant::NIL) return nullptr;
+		if (!valid || current.get_type() == Variant::NIL)
+			return nullptr;
 	}
 	return current.get_named(parts[i], valid);
 }
@@ -182,16 +184,14 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 		} else {
 			const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
 			if (const auto structured_shape = cast_to<StructTypeLayoutShape>(property_shape.ptr())) {
-				_get_property_list(p_list, String("%s%s/") % TypedArray<String> { prefix, property_name }, structured_shape->get_properties());
+				_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ prefix, property_name }, structured_shape->get_properties());
 			}
 		}
 	}
 }
 
 bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_info) {
-	return property_info.type != Variant::NIL
-		&& property_info.type != Variant::RID
-		&& (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE);
+	return property_info.type != Variant::NIL && property_info.type != Variant::RID && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE);
 }
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
@@ -223,7 +223,8 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dicti
 			const Dictionary property = current.get_named(parts[i], valid);
 			const Ref<ShaderTypeLayoutShape> shape = property.get("shape", nullptr);
 			const auto structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
-			if (!valid || !structured_shape) return false;
+			if (!valid || !structured_shape)
+				return false;
 			current = structured_shape->get_properties();
 		}
 		r_reflection = current.get_named(parts[i], valid);
