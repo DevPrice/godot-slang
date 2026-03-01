@@ -73,7 +73,6 @@ protected:
 
 	GET_SET_PROPERTY(godot::Ref<ShaderTypeLayoutShape>, element_shape)
 	GET_SET_PROPERTY(int64_t, stride)
-	GET_SET_PROPERTY(int64_t, alignment)
 	GET_SET_PROPERTY(int64_t, element_count)
 
 public:

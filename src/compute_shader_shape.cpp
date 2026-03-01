@@ -20,7 +20,6 @@ void ArrayTypeLayoutShape::_bind_methods() {
     BIND_GET_SET_RESOURCE(ArrayTypeLayoutShape, element_shape, ShaderTypeLayoutShape);
     BIND_GET_SET(ArrayTypeLayoutShape, size, Variant::INT);
     BIND_GET_SET(ArrayTypeLayoutShape, stride, Variant::INT);
-    BIND_GET_SET(ArrayTypeLayoutShape, alignment, Variant::INT);
     BIND_GET_SET(ArrayTypeLayoutShape, element_count, Variant::INT);
 }
 
@@ -47,7 +46,6 @@ GET_SET_PROPERTY_IMPL(VariantTypeLayoutShape, ShaderTypeLayoutShape::MatrixLayou
 
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, Ref<ShaderTypeLayoutShape>, element_shape)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, stride)
-GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, element_count)
 
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, int64_t, alignment)
