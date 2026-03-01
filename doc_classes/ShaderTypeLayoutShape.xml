@@ -7,4 +7,9 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<members>
+		<member name="bindings" type="Dictionary[]" setter="set_bindings" getter="get_bindings" default="[]">
+			The binding ranges associated with this shape.
+		</member>
+	</members>
 </class>

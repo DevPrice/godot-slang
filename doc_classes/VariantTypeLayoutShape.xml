@@ -8,8 +8,8 @@
 	<tutorials>
 	</tutorials>
 	<members>
-		<member name="matrix_layout" type="int" setter="set_matrix_layout" getter="get_matrix_layout" enum="ComputeShaderFile.MatrixLayout" default="0">
-			The matrix layout used, if this is a matrix.
+		<member name="matrix_layout" type="int" setter="set_matrix_layout" getter="get_matrix_layout" enum="ShaderTypeLayoutShape.MatrixLayout" default="0">
+			The matrix layout used by this value, if this is a matrix.
 		</member>
 		<member name="size" type="int" setter="set_size" getter="get_size" default="0">
 			The total size of this shape, in bytes.

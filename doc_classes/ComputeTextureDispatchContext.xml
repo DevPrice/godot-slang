@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ComputeTextureDispatchContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		The dispatch context used by [ComputeTexture]. Exposes data about the render texture to the dispatch.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="output_size" type="Vector2i" setter="set_output_size" getter="get_output_size">
+			The size in pixels of the output texture for a dispatch.
+		</member>
+		<member name="output_texture_rid" type="RID" setter="set_output_texture_rid" getter="get_output_texture_rid">
+			The texture [RID] of the output texture for a dispatch.
+		</member>
+	</members>
+</class>

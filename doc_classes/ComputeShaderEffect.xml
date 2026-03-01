@@ -34,10 +34,10 @@
 		</member>
 	</members>
 	<signals>
-		<signal name="uniforms_bound">
+		<signal name="view_dispatching">
 			<param index="0" name="view" type="int" />
 			<description>
-				Emitted when uniforms are bound for this effect, but before the effect is executed. You may bind additional uniforms at this time.
+				Called right before a view is dispatched. In VR, this will typically be called twice (once for each eye).
 			</description>
 		</signal>
 	</signals>

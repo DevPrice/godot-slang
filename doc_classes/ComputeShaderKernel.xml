@@ -3,25 +3,22 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		A single entry-point of a [ComputeShaderFile]. Contains both the compiled SPIR-V associated with the kernel, and reflection metadata exposing information about the shader.
+		A single entry-point of a [ComputeShaderFile]. Contains both the compiled SPIR-V associated with the kernel, and reflection metadata related to this particular kernel within a shader.
 	</description>
 	<tutorials>
 	</tutorials>
 	<members>
-		<member name="buffers" type="Dictionary[]" setter="set_buffers" getter="get_buffers" default="[]">
-			Reflection information about the buffers used by this kernel.
-		</member>
 		<member name="kernel_name" type="StringName" setter="set_kernel_name" getter="get_kernel_name" default="&amp;&quot;&quot;">
 			The name of this kernel. By default, this will match the entry-point function name declared in the shader.
-		</member>
-		<member name="parameters" type="Dictionary" setter="set_parameters" getter="get_parameters" default="{}">
-			Reflection information about the shader parameters used by this kernel.
 		</member>
 		<member name="spirv" type="RDShaderSPIRV" setter="set_spirv" getter="get_spirv">
 			The SPIR-V intermediate representation of this kernel.
 		</member>
 		<member name="thread_group_size" type="Vector3i" setter="set_thread_group_size" getter="get_thread_group_size" default="Vector3i(0, 0, 0)">
 			The thread group size declared for this kernel.
+		</member>
+		<member name="used_binding_sets" type="Dictionary" setter="set_used_binding_sets" getter="get_used_binding_sets" default="{}">
+			The binding sets that are used by this kernel. The key is the binding set index, and the value is true/false.
 		</member>
 		<member name="user_attributes" type="Dictionary" setter="set_user_attributes" getter="get_user_attributes" default="{}">
 			Reflection information about any declared attributes on the entry-point function.

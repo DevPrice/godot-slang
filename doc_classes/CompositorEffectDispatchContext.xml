@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="CompositorEffectDispatchContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		The dispatch context used by [ComputeShaderEffect]. Exposes data from the render callback to the dispatch.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_render_data" qualifiers="const">
+			<return type="RenderData" />
+			<description>
+				Gets the render data passed to the compositor effect's render callback.
+			</description>
+		</method>
+		<method name="set_render_data">
+			<return type="void" />
+			<param index="0" name="p_render_data" type="RenderData" />
+			<description>
+				Sets the render data.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="view" type="int" setter="set_view" getter="get_view">
+			The view ID for this dispatch.
+		</member>
+	</members>
+</class>

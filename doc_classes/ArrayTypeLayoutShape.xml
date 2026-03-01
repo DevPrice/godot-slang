@@ -8,8 +8,8 @@
 	<tutorials>
 	</tutorials>
 	<members>
-		<member name="alignment" type="int" setter="set_alignment" getter="get_alignment" default="0">
-			The alignment size of the array, in bytes.
+		<member name="element_count" type="int" setter="set_element_count" getter="get_element_count" default="0">
+			The number of elements. Zero if the size of this array is unbounded.
 		</member>
 		<member name="element_shape" type="ShaderTypeLayoutShape" setter="set_element_shape" getter="get_element_shape">
 			The shape of the element type layout.

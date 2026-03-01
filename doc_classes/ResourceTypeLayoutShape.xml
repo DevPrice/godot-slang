@@ -11,6 +11,9 @@
 		<member name="resource_type" type="int" setter="set_resource_type" getter="get_resource_type" enum="ResourceTypeLayoutShape.ComputeShaderResourceType" default="0">
 			The type of this resource.
 		</member>
+		<member name="uniform_type" type="int" setter="set_uniform_type" getter="get_uniform_type" enum="RenderingDevice.UniformType" default="0">
+			The uniform type of this resource.
+		</member>
 	</members>
 	<constants>
 		<constant name="UNKNOWN" value="0" enum="ComputeShaderResourceType">

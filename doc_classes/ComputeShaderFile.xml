@@ -41,6 +41,9 @@
 		<member name="kernels" type="ComputeShaderKernel[]" setter="set_kernels" getter="get_kernels">
 			The kernels declared in this shader file, one for each entry-point.
 		</member>
+		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
+			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct registers.
+		</member>
 	</members>
 	<constants>
 		<constant name="UNKNOWN" value="0" enum="MatrixLayout">
