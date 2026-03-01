@@ -205,6 +205,11 @@ bool ComputeShaderTask::_property_get_revert(const StringName& p_name, Variant& 
 		r_property = reflection["default_value"];
 		return true;
 	}
+	if (reflection.has("property_info")) {
+		const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
+		r_property = UtilityFunctions::type_convert({}, property_info.type);
+		return true;
+	}
 	return false;
 }
 
