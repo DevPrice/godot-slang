@@ -419,7 +419,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.set("shape", field_shape);
 				field_info.set("name", field_name);
 				field_info.set("user_attributes", field_attributes);
-				field_info.set("layout_unit", inner_layout_unit);
 				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
 				if (field->getCategory() == slang::ParameterCategory::Uniform || field->getCategory() == slang::ParameterCategory::Mixed) {
 					field_info.set("binding_offset", 0);
@@ -463,7 +462,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("size", static_cast<int64_t>(type_layout->getSize()));
 				binding.set("alignment", type_layout->getAlignment());
 				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
-				binding.set("layout_unit", slang::ParameterCategory::ConstantBuffer);
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
 				binding.set("slot_offset", 0);
 				binding.set("slot_count", 1);
@@ -480,7 +478,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					0,
 					include_property_info);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
-				binding.set("layout_unit", leaf_type->getParameterCategory());
 				if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
 					binding.set("uniform_type", *uniform_type);
 				}
