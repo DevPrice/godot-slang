@@ -8,6 +8,7 @@
 #include "godot_cpp/classes/texture.hpp"
 
 #include "attributes.h"
+#include "compute_shader_shape.h"
 #include "rdbuffer.h"
 #include "variant_serializer.h"
 
@@ -80,7 +81,7 @@ ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Re
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.set(binding_index, buffer_data);
-			} else if (static_cast<int64_t>(binding["binding_type"]) == 14) { // TODO: Make an enum for this
+			} else if (static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT)) {
 				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {

@@ -44,6 +44,7 @@ public:
 		UNKNOWN = 0,
 		CONSTANT_BUFFER = 3,
 		PARAMETER_BLOCK = 4,
+		PUSH_CONSTANT = 14,
 	};
 };
 
