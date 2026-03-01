@@ -410,12 +410,14 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					? implicit_offset
 					: 0;
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
-					field->getTypeLayout(),
-					type_layout->getFieldBindingRangeOffset(i) + implicit_inner_offset,
-					slot_offset,
-					include_property_info && is_exported);
+						field->getTypeLayout(),
+						type_layout->getFieldBindingRangeOffset(i) + implicit_inner_offset,
+						slot_offset,
+						include_property_info && is_exported);
+				const StringName field_name = get_name(field, field_attributes);
 
 				field_info.set("shape", field_shape);
+				field_info.set("name", field_name);
 				field_info.set("user_attributes", field_attributes);
 				field_info.set("layout_unit", inner_layout_unit);
 				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
@@ -425,7 +427,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + implicit_offset);
 				}
 
-				field_shapes.set(get_name(field, field_attributes), field_info);
+				field_shapes.set(field_name, field_info);
 
 				if (include_property_info) {
 					Variant::Type type;

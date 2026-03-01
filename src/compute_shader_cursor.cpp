@@ -120,7 +120,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 		buffers.erase(binding["slot_offset"]);
 		rids[offset.element_offset] = _get_resource_rid(data_or_default);
 	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && data_or_default.get_type() != Variant::Type::ARRAY) {
-		if (rids.size() <= offset.element_offset * 2 + 1) {
+		if (rids.size() < offset.element_offset * 2 + 2) {
 			rids.resize(offset.element_offset * 2 + 2);
 		}
 		if (const Object* sampler = data_or_default; sampler && sampler->is_class(RDSamplerState::get_class_static())) {
@@ -134,6 +134,9 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 		}
 	} else if (data_or_default.get_type() == Variant::Type::ARRAY) {
 		const Array array = data_or_default;
+		if (rids.size() < offset.element_offset + array.size()) {
+			rids.resize(offset.element_offset + array.size());
+		}
 		for (int64_t i = 0; i < array.size(); i++) {
 			rids[offset.element_offset + i] = _get_resource_rid(array[i]);
 		}

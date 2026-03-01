@@ -5,7 +5,6 @@
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/render_data.hpp"
 #include "godot_cpp/classes/render_scene_buffers_rd.hpp"
-#include "godot_cpp/classes/render_scene_data.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 
 #include "attributes.h"
@@ -14,7 +13,7 @@
 using namespace godot;
 
 void ComputeShaderEffect::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("view_dispatching",  PropertyInfo(Variant::INT, "view")));
+	ADD_SIGNAL(MethodInfo("view_dispatching", PropertyInfo(Variant::INT, "view")));
 	BIND_GET_SET_RESOURCE(ComputeShaderEffect, task, ComputeShaderTask);
 	BIND_METHOD(ComputeShaderEffect, queue_dispatch, "kernel_name");
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
@@ -42,7 +41,8 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		return;
 	}
 	const TypedArray<ComputeShaderKernel> kernels = task->get_kernels();
-	if (kernels.is_empty()) return;
+	if (kernels.is_empty())
+		return;
 
 	if (is_first_run) {
 		is_first_run = false;
@@ -54,7 +54,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		}
 	}
 
-	auto* render_scene_buffers = cast_to<RenderSceneBuffersRD>(p_render_data->get_render_scene_buffers().ptr());
+	const auto* render_scene_buffers = cast_to<RenderSceneBuffersRD>(p_render_data->get_render_scene_buffers().ptr());
 	ERR_FAIL_NULL(render_scene_buffers);
 	const Vector2i size = render_scene_buffers->get_internal_size();
 	ERR_FAIL_COND(size.x <= 0 || size.y <= 0);
@@ -75,7 +75,6 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					(size.y - 1) / local_size.y + 1,
 					1);
 			for (int32_t view = 0; view < view_count; ++view) {
-				_create_textures(task, render_scene_buffers);
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
 				Ref<CompositorEffectDispatchContext> dispatch_context;
 				dispatch_context.instantiate();
@@ -93,58 +92,6 @@ void ComputeShaderEffect::_task_changed() {
 
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
-}
-
-void ComputeShaderEffect::_create_textures(const Ref<ComputeShaderTask>& task, RenderSceneBuffersRD* render_scene_buffers) {
-	const Ref<ComputeShaderFile> shader = task->get_shader();
-	ERR_FAIL_NULL(shader);
-	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
-	ERR_FAIL_NULL(params_shape);
-	const Dictionary params = params_shape->get_properties();
-	for (const StringName param_name : params.keys()) {
-		static StringName key_name("name");
-		Dictionary param_dict = params.get(param_name, Dictionary());
-		Dictionary user_attributes = param_dict.get("user_attributes", Dictionary());
-		String context = "__global_context";
-
-		// TODO: Handle texture creation in write handler(s) somehow
-		if (user_attributes.has(CompositorAttributes::context())) {
-			Dictionary context_args = user_attributes[CompositorAttributes::context()];
-			static StringName key_context("context");
-			context = context_args.get(key_context, String());
-		}
-		if (user_attributes.has(CompositorAttributes::create_texture())) {
-			Dictionary args = user_attributes[CompositorAttributes::create_texture()];
-			Dictionary texture_name_attribute = user_attributes.get(CompositorAttributes::texture_name(), Dictionary());
-			const int32_t format = args.get("format", 0);
-			const String texture_name = texture_name_attribute.get(key_name, param_name);
-			Vector2i texture_size = render_scene_buffers->get_internal_size();
-			if (user_attributes.has(CompositorAttributes::texture_size())) {
-				Dictionary context_args = user_attributes[CompositorAttributes::texture_size()];
-				static StringName key_size("size");
-				context = context_args.get(key_size, String());
-			}
-
-			// TODO: Make more of this configurable
-			const RID texture = render_scene_buffers->create_texture(
-				context,
-				texture_name,
-				static_cast<RenderingDevice::DataFormat>(format),
-				RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice::TEXTURE_USAGE_STORAGE_BIT,
-				RenderingDevice::TEXTURE_SAMPLES_1,
-				texture_size,
-				1,
-				1,
-				false,
-				false);
-			task->set_shader_parameter(param_name, texture);
-		} else if (user_attributes.has(CompositorAttributes::texture_name())) {
-			Dictionary args = user_attributes[CompositorAttributes::texture_name()];
-			const String texture_name = args.get(key_name, String());
-			const RID texture = render_scene_buffers->get_texture(context, texture_name);
-			task->set_shader_parameter(param_name, texture);
-		}
-	}
 }
 
 void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {

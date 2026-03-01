@@ -30,6 +30,4 @@ private:
 	bool is_first_run = true;
 
 	void _task_changed();
-
-	static void _create_textures(const Ref<ComputeShaderTask>& task, RenderSceneBuffersRD* render_scene_buffers);
 };
