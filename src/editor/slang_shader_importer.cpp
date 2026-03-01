@@ -401,17 +401,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
 
-				slang::TypeLayoutReflection* field_type_layout = field->getTypeLayout();
-				const slang::TypeReflection::Kind field_type_kind = field_type_layout->getKind();
-				const slang::ParameterCategory inner_layout_unit = field_type_kind == slang::TypeReflection::Kind::ParameterBlock || field_type_kind == slang::TypeReflection::Kind::ConstantBuffer
-					? field_type_layout->getElementTypeLayout()->getParameterCategory()
-					: field->getCategory();
-				const int64_t implicit_inner_offset = inner_layout_unit == slang::ParameterCategory::Mixed
-					? implicit_offset
-					: 0;
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
 						field->getTypeLayout(),
-						type_layout->getFieldBindingRangeOffset(i) + implicit_inner_offset,
+						type_layout->getFieldBindingRangeOffset(i),
 						slot_offset,
 						include_property_info && is_exported);
 				const StringName field_name = get_name(field, field_attributes);
