@@ -290,7 +290,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
     	for (auto attribute_name : attributes.keys()) {
     		const Dictionary attribute_arguments = attributes[attribute_name];
 		    if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-    			if (const auto handler = factory->factory(attribute_arguments, *property_shape.ptr())) {
+    			if (const auto handler = factory->factory(attribute_arguments, *property)) {
     				current.write_handlers.insert(WriteHandlerWithPriority{handler, factory->priority});
     			}
     		}
