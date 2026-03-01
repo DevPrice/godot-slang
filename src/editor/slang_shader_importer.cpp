@@ -753,7 +753,6 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 
 bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
 	ERR_FAIL_NULL_V(type, false);
-	out_type = Variant::ARRAY;
 
 	Variant::Type element_type;
 	PropertyHint element_hint;
@@ -788,8 +787,13 @@ bool SlangReflectionContext::_get_godot_array_type(slang::TypeReflection* type, 
 				out_type = Variant::PACKED_COLOR_ARRAY;
 				break;
 			default:
+				out_type = Variant::ARRAY;
 				out_hint = PROPERTY_HINT_ARRAY_TYPE;
-				out_hint_string = Variant::get_type_name(element_type);
+				if (element_type == Variant::Type::OBJECT) {
+					out_hint_string = String("%s/%s:%s") % Array { element_type, PROPERTY_HINT_RESOURCE_TYPE, element_hint_string };
+				} else {
+					out_hint_string = Variant::get_type_name(element_type);
+				}
 				break;
 		}
 		return true;
