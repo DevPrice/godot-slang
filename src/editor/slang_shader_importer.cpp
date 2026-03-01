@@ -456,7 +456,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
 				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
 				binding.set("slot_offset", 0);
-				binding.set("slot_count", 1);
+				binding.set("binding_count", 1);
 				bindings.push_back(binding);
 			}
 
@@ -482,7 +482,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
 				binding.set("slot_offset", slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
-				binding.set("slot_count", type_layout->getBindingRangeBindingCount(i));
+				binding.set("binding_count", type_layout->getBindingRangeBindingCount(i));
 				if (binding_type == slang::BindingType::ConstantBuffer || binding_type == slang::BindingType::ParameterBlock) {
 					binding.set("leaf_shape", leaf_shape);
 				}
