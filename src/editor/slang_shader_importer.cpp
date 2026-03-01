@@ -534,6 +534,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			}
 			shape->set_stride(static_cast<int64_t>(type_layout->getElementTypeLayout()->getStride()));
 			shape->set_alignment(type_layout->getElementTypeLayout()->getAlignment());
+			shape->set_element_count(type_layout->getElementCount());
 			return shape;
 		}
 		case slang::TypeReflection::Kind::ConstantBuffer:

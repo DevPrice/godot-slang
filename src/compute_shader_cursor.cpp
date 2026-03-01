@@ -14,14 +14,14 @@
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{
 		binding_range_offset + other.binding_range_offset,
-		binding_index_offset + other.binding_index_offset,
+		element_offset + other.element_offset,
 		byte_offset + other.byte_offset,
 	};
 }
 
 ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& other) {
 	binding_range_offset += other.binding_range_offset;
-	binding_index_offset += other.binding_index_offset;
+	element_offset += other.element_offset;
 	byte_offset += other.byte_offset;
 	return *this;
 }
@@ -139,7 +139,7 @@ void ComputeShaderObject::write(const ComputeShaderOffset& offset, const Variant
 	ERR_FAIL_INDEX(offset.binding_range_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_range_offset];
 	if (binding.has("uniform_type")) {
-		RDBuffer& buffer = _get_buffer(offset.binding_index_offset);
+		RDBuffer& buffer = _get_buffer(offset.binding_range_offset);
 		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
 			buffer.set_size(offset.byte_offset + size);
 		}
@@ -299,6 +299,8 @@ ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
 	ComputeShaderCursor result = *this;
 	result.shape = array_shape->get_element_shape();
 	result.offset.byte_offset += index * array_shape->get_stride();
+	result.offset.element_offset *= array_shape->get_element_count();
+	result.offset.element_offset += index;
     return result;
 }
 

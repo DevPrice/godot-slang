@@ -13,7 +13,7 @@ class RDBuffer;
 
 struct ComputeShaderOffset {
     uint32_t binding_range_offset{};
-    uint32_t binding_index_offset{};
+    uint32_t element_offset{};
     int64_t byte_offset{};
 
     ComputeShaderOffset operator+(const ComputeShaderOffset& other) const;

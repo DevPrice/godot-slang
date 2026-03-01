@@ -21,6 +21,7 @@ void ArrayTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ArrayTypeLayoutShape, size, Variant::INT);
     BIND_GET_SET(ArrayTypeLayoutShape, stride, Variant::INT);
     BIND_GET_SET(ArrayTypeLayoutShape, alignment, Variant::INT);
+    BIND_GET_SET(ArrayTypeLayoutShape, element_count, Variant::INT);
 }
 
 void StructPropertyShape::_bind_methods() {
@@ -47,6 +48,7 @@ GET_SET_PROPERTY_IMPL(VariantTypeLayoutShape, ShaderTypeLayoutShape::MatrixLayou
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, Ref<ShaderTypeLayoutShape>, element_shape)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, stride)
 GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, alignment)
+GET_SET_PROPERTY_IMPL(ArrayTypeLayoutShape, int64_t, element_count)
 
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(StructTypeLayoutShape, Dictionary, properties)
@@ -77,16 +79,10 @@ int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
 void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
-    Variant key;
-    bool is_valid;
-    if (data.iter_init(key, is_valid) && is_valid) {
-        int64_t i = 0;
-        do {
-            Variant value = data.iter_get(key, is_valid);
-            if (is_valid) {
-                cursor.element(i++).write(value);
-            }
-        } while (data.iter_next(key, is_valid) && is_valid);
+    for (int64_t i = 0; i < get_element_count(); ++i) {
+        bool is_valid{}, oob{};
+        const Variant value = data.get_indexed(i, is_valid, oob);
+        cursor.element(i).write(value);
     }
 }
 
