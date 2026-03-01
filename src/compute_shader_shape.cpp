@@ -77,10 +77,27 @@ int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
 void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
-    for (int64_t i = 0; i < get_element_count(); ++i) {
-        bool is_valid{}, oob{};
-        const Variant value = data.get_indexed(i, is_valid, oob);
-        cursor.element(i).write(value);
+    // TODO: Maybe these should be separate shapes
+    if (get_element_count()) {
+        // fixed-size array
+        for (int64_t i = 0; i < get_element_count(); ++i) {
+            bool is_valid{}, oob{};
+            const Variant value = data.get_indexed(i, is_valid, oob);
+            cursor.element(i).write(value);
+        }
+    } else {
+        // structured buffer, unbounded size
+        Variant key;
+        bool is_valid;
+        if (data.iter_init(key, is_valid) && is_valid) {
+            int64_t i = 0;
+            do {
+                Variant value = data.iter_get(key, is_valid);
+                if (is_valid) {
+                    cursor.element(i++).write(value);
+                }
+            } while (data.iter_next(key, is_valid) && is_valid);
+        }
     }
 }
 
