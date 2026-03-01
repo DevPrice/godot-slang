@@ -107,29 +107,41 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 	RDUniform& uniform = _get_uniform(offset.binding_range_offset);
 	uniform.set_uniform_type(uniform_type);
+	TypedArray<RID> rids = uniform.get_ids();
 	uniform.clear_ids();
+
+	if (rids.size() <= offset.element_offset) {
+		rids.resize(offset.element_offset + 1);
+	}
 
 	const Variant data_or_default = data.get_type() == Variant::Type::NIL ? _get_default_value(uniform_type) : data;
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
 		buffers.erase(binding["slot_offset"]);
-		uniform.add_id(_get_resource_rid(data_or_default));
+		rids[offset.element_offset] = _get_resource_rid(data_or_default);
 	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && data_or_default.get_type() != Variant::Type::ARRAY) {
+		if (rids.size() <= offset.element_offset * 2 + 1) {
+			rids.resize(offset.element_offset * 2 + 2);
+		}
 		if (const Object* sampler = data_or_default; sampler && sampler->is_class(RDSamplerState::get_class_static())) {
 			const Variant default_texture = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE);
-			uniform.add_id(_get_resource_rid(sampler));
-			uniform.add_id(_get_resource_rid(default_texture));
+			rids[offset.element_offset * 2] =  _get_resource_rid(sampler);
+			rids[offset.element_offset * 2 + 1] = _get_resource_rid(default_texture);
 		} else {
 			const Variant default_sampler = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER);
-			uniform.add_id(_get_resource_rid(default_sampler));
-			uniform.add_id(_get_resource_rid(data_or_default));
+			rids[offset.element_offset * 2] = _get_resource_rid(default_sampler);
+			rids[offset.element_offset * 2 + 1] = _get_resource_rid(data_or_default);
 		}
 	} else if (data_or_default.get_type() == Variant::Type::ARRAY) {
-		Array array = data_or_default;
-		for (const Variant& element : array) {
-			uniform.add_id(_get_resource_rid(element));
+		const Array array = data_or_default;
+		for (int64_t i = 0; i < array.size(); i++) {
+			rids[offset.element_offset + i] = _get_resource_rid(array[i]);
 		}
 	} else {
-		uniform.add_id(_get_resource_rid(data_or_default));
+		rids[offset.element_offset] = _get_resource_rid(data_or_default);
+	}
+
+	for (const RID rid: rids) {
+		uniform.add_id(rid);
 	}
 }
 
