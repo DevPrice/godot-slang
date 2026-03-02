@@ -403,7 +403,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
 						field->getTypeLayout(),
-						type_layout->getFieldBindingRangeOffset(i),
+						type_layout->getFieldBindingRangeOffset(i) + implicit_offset,
 						slot_offset,
 						include_property_info && is_exported);
 				const StringName field_name = get_name(field, field_attributes);
