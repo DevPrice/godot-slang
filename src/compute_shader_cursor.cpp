@@ -119,6 +119,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	uniform.clear_ids();
 
 	const int64_t element_count = binding["binding_count"];
+	ERR_FAIL_COND(element_count <= 0);
 	const int64_t elements_per_binding = uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE ? 2 : 1;
 
 	if (rids.size() != element_count * elements_per_binding) {
@@ -127,7 +128,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 
 	ERR_FAIL_INDEX(offset.element_offset, element_count);
 
-	const Variant data_or_default = data.get_type() == Variant::Type::NIL ? _get_default_value(uniform_type) : data;
+	const Variant data_or_default = data == Variant{} ? _get_default_value(uniform_type) : data;
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
 		buffers.erase(binding["slot_offset"]);
 		rids[offset.element_offset] = _get_resource_rid(data_or_default);
@@ -337,28 +338,23 @@ void ComputeShaderCursor::write_resource(const Variant& data) const {
 	object->write_resource(offset, data);
 }
 
-void ComputeShaderCursor::write(const Variant& data) const {
-	const Variant mutated_data = _apply_write_handlers(data);
-	switch (mutated_data.get_type()) {
-		case Variant::Type::PACKED_BYTE_ARRAY: {
-			const PackedByteArray& bytes = mutated_data;
-			const int64_t size = bytes.size();
-			write_bytes(mutated_data, size);
-			break;
-		}
-		case Variant::Type::RID:
-			write_resource(mutated_data);
-			break;
-		default:
-			ERR_FAIL_NULL(shape);
-			shape->write_into(*this, mutated_data);
-			break;
-	}
-}
-
-Variant ComputeShaderCursor::_apply_write_handlers(Variant data) const {
+void ComputeShaderCursor::write(Variant data) const {
 	for (const auto [handler, _] : write_handlers) {
 		handler(data, dispatch_context);
 	}
-	return data;
+	switch (data.get_type()) {
+		case Variant::Type::PACKED_BYTE_ARRAY: {
+			const PackedByteArray& bytes = data;
+			const int64_t size = bytes.size();
+			write_bytes(data, size);
+			break;
+		}
+		case Variant::Type::RID:
+			write_resource(data);
+			break;
+		default:
+			ERR_FAIL_NULL(shape);
+			shape->write_into(*this, data);
+			break;
+	}
 }

@@ -33,6 +33,7 @@ void handle_color_write(Variant& value) {
 }
 
 RID get_black_texture() {
+	// TODO: Free this RID eventually so the engine doesn't print a warning at shutdown
 	static RID black_texture{};
 	if (black_texture.is_valid()) {
 		return black_texture;

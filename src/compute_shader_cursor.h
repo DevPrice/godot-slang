@@ -104,9 +104,5 @@ public:
 
     void write_bytes(const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) const;
     void write_resource(const godot::Variant& data) const;
-    void write(const godot::Variant& data) const;
-
-private:
-    godot::Variant _apply_write_handlers(godot::Variant data) const;
-
+    void write(godot::Variant data) const;
 };
