@@ -118,18 +118,20 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	TypedArray<RID> rids = uniform.get_ids().duplicate();
 	uniform.clear_ids();
 
-	if (rids.size() <= offset.element_offset) {
-		rids.resize(offset.element_offset + 1);
+	const int64_t element_count = binding["binding_count"];
+	const int64_t elements_per_binding = uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE ? 2 : 1;
+
+	if (rids.size() != element_count * elements_per_binding) {
+		rids.resize(element_count * elements_per_binding);
 	}
+
+	ERR_FAIL_INDEX(offset.element_offset, element_count);
 
 	const Variant data_or_default = data.get_type() == Variant::Type::NIL ? _get_default_value(uniform_type) : data;
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
 		buffers.erase(binding["slot_offset"]);
 		rids[offset.element_offset] = _get_resource_rid(data_or_default);
 	} else if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE && data_or_default.get_type() != Variant::Type::ARRAY) {
-		if (rids.size() < offset.element_offset * 2 + 2) {
-			rids.resize(offset.element_offset * 2 + 2);
-		}
 		if (const Object* sampler = data_or_default; sampler && sampler->is_class(RDSamplerState::get_class_static())) {
 			const Variant default_texture = _get_default_value(RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE);
 			rids[offset.element_offset * 2] = _get_resource_rid(sampler);
@@ -141,10 +143,7 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 		}
 	} else if (data_or_default.get_type() == Variant::Type::ARRAY) {
 		const Array array = data_or_default;
-		if (rids.size() < offset.element_offset + array.size()) {
-			rids.resize(offset.element_offset + array.size());
-		}
-		for (int64_t i = 0; i < array.size(); i++) {
+		for (int64_t i = 0; i < array.size() && offset.element_offset + i < rids.size(); i++) {
 			rids[offset.element_offset + i] = _get_resource_rid(array[i]);
 		}
 	} else {
@@ -218,7 +217,7 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	if (subshape.is_null())
 		return nullptr;
 	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
-	const int64_t subobject_first_slot = first_slot_index + static_cast<int64_t>(binding.get("slot_offset", 0));
+	const int64_t subobject_first_slot = (new_binding_space ? 0 : first_slot_index) + static_cast<int64_t>(binding.get("slot_offset", 0));
 	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, subobject_first_slot));
 	return it->second.get();
 }

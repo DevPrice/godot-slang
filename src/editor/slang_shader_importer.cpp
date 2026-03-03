@@ -412,7 +412,12 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.set("name", field_name);
 				field_info.set("user_attributes", field_attributes);
 				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
-				if (field->getCategory() == slang::ParameterCategory::Uniform || field->getCategory() == slang::ParameterCategory::Mixed) {
+
+				// TODO: I feel like I shouldn't need to have this logic, but I'm not sure how to find the uniform buffer binding correctly otherwise.
+				slang::TypeLayoutReflection* field_type = field->getTypeLayout();
+				const bool has_uniform_data = field_type->getParameterCategory() == slang::ParameterCategory::Uniform || field_type->getParameterCategory() == slang::ParameterCategory::Mixed;
+				const bool has_own_binding_ranges = field_type->getKind() == slang::TypeReflection::Kind::ConstantBuffer || field_type->getKind() == slang::TypeReflection::Kind::ParameterBlock;
+				if (has_uniform_data && !has_own_binding_ranges) {
 					field_info.set("binding_offset", 0);
 				} else {
 					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + implicit_offset);
@@ -481,7 +486,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 				const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
 				binding.set("binding_type", static_cast<int64_t>(binding_type));
-				binding.set("slot_offset", slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
+				binding.set("slot_offset", binding_type == slang::BindingType::ParameterBlock
+					? 0 : slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
 				binding.set("binding_count", type_layout->getBindingRangeBindingCount(i));
 				if (binding_type == slang::BindingType::ConstantBuffer || binding_type == slang::BindingType::ParameterBlock) {
 					binding.set("leaf_shape", leaf_shape);
