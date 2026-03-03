@@ -60,7 +60,7 @@ Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
 	for (; i < parts.size() - 1; ++i) {
 		current = current.get_named(parts[i], valid);
 		if (!valid || current.get_type() == Variant::NIL)
-			return nullptr;
+			return {};
 	}
 	return current.get_named(parts[i], valid);
 }

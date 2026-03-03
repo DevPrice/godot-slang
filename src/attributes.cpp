@@ -13,6 +13,10 @@
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/window.hpp"
 
+bool is_null(const Variant& value) {
+	return value.get_type() == Variant::Type::NIL || (value.get_type() == Variant::Type::OBJECT && value.operator Object*() == nullptr);
+}
+
 void handle_color_write(Variant& value) {
 	if (value.get_type() == Variant::Type::COLOR) {
 		value = static_cast<Color>(value).srgb_to_linear();
@@ -49,12 +53,14 @@ RID get_black_texture() {
 }
 
 AttributeRegistry::AttributeRegistry() {
-	register_write_handler(GodotAttributes::color(), [](const Dictionary&, const Dictionary&) { return [](Variant& value, const Object*) {
-																									handle_color_write(value);
-																								}; }, PRIORITY_MODIFIER);
+	register_write_handler(GodotAttributes::color(), [](const Dictionary&, const Dictionary&) {
+		return [](Variant& value, const Object*) {
+			handle_color_write(value);
+		};
+	}, PRIORITY_MODIFIER);
 	register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				const auto rs = RenderingServer::get_singleton();
 				value = rs->texture_get_rd_texture(rs->get_white_texture());
 			}
@@ -62,7 +68,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(GodotAttributes::default_black(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				const auto rs = RenderingServer::get_singleton();
 				value = rs->texture_get_rd_texture(get_black_texture());
 			}
@@ -70,7 +76,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				value = Engine::get_singleton()->get_frames_drawn();
 			}
 		};
@@ -78,7 +84,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(GodotAttributes::global_param(), [](const Dictionary& arguments, const Dictionary&) {
 		const StringName param_name = arguments["name"];
 		return [param_name](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 #ifdef TOOLS_ENABLED
 				if (unlikely(!RenderingServer::get_singleton()->is_on_render_thread())) {
 					static bool first_print = true;
@@ -94,7 +100,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(GodotAttributes::mouse_position(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				if (const SceneTree* scene_tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
 					if (const Window* window = scene_tree->get_root()) {
 						value = Vector2i(window->get_mouse_position());
@@ -123,7 +129,7 @@ AttributeRegistry::AttributeRegistry() {
 		sampler_state->set_repeat_w(static_cast<RenderingDevice::SamplerRepeatMode>(repeat_mode_int));
 
 		return [sampler_state, uniform_type](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				value = sampler_state;
 			} else if (value.get_type() != Variant::Type::ARRAY && uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE) {
 				value = Array{ sampler_state, value };
@@ -132,14 +138,14 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(GodotAttributes::time(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
-			if (value.get_type() == Variant::Type::NIL) {
+			if (is_null(value)) {
 				value = Time::get_singleton()->get_ticks_msec() * .001f;
 			}
 		};
 	});
 	register_write_handler(CompositorAttributes::color_texture(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_color_layer(effect_context->get_view());
@@ -165,7 +171,7 @@ AttributeRegistry::AttributeRegistry() {
 			texture_size_override = size_args.get(key_size, {});
 		}
 		return [texture_format, texture_name, context_name, texture_size_override](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (RenderSceneBuffersRD* render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						const Vector2i texture_size = texture_size_override ? *texture_size_override : render_scene_buffers->get_internal_size();
@@ -188,7 +194,7 @@ AttributeRegistry::AttributeRegistry() {
 	}, PRIORITY_CREATE_TEXTURE);
 	register_write_handler(CompositorAttributes::depth_texture(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_depth_layer(effect_context->get_view());
@@ -199,7 +205,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(CompositorAttributes::internal_size(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_internal_size();
@@ -210,7 +216,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(CompositorAttributes::scene_data(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const RenderData* render_data = effect_context->get_render_data()) {
 						if (const RenderSceneData* scene_data = render_data->get_render_scene_data()) {
@@ -227,7 +233,7 @@ AttributeRegistry::AttributeRegistry() {
 		const Dictionary context_attr = attributes.get(CompositorAttributes::context(), {});
 		const StringName context_name = context_attr.get(key_context, "__global_context");
 		return [texture_name, context_name](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const RenderSceneBuffersRD* render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_texture(context_name, texture_name);
@@ -238,7 +244,7 @@ AttributeRegistry::AttributeRegistry() {
 	}, PRIORITY_CREATE_TEXTURE - 1);
 	register_write_handler(CompositorAttributes::velocity_texture(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_velocity_layer(effect_context->get_view());
@@ -249,7 +255,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(TextureAttributes::output_size(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
 					value = texture_context->get_output_size();
 				}
@@ -258,7 +264,7 @@ AttributeRegistry::AttributeRegistry() {
 	});
 	register_write_handler(TextureAttributes::output_texture(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object* context) {
-			if (value.get_type() == Variant::Type::NIL && context) {
+			if (is_null(value) && context) {
 				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
 					value = texture_context->get_output_texture_rid();
 				}
