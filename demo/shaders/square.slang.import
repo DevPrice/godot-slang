@@ -1,0 +1,16 @@
+[remap]
+
+importer="slang.shader.importer"
+type="ComputeShaderFile"
+uid="uid://jtlqkpp3yyhg"
+path="res://.godot/imported/square.slang-2c12dfc646c87272e266bfe1d0501eff.res"
+
+[deps]
+
+source_file="res://shaders/square.slang"
+dest_files=["res://.godot/imported/square.slang-2c12dfc646c87272e266bfe1d0501eff.res"]
+
+[params]
+
+entry_points=PackedStringArray()
+default_matrix_layout=1

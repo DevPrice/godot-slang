@@ -34,6 +34,8 @@ public:
 	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
 	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Object* context = nullptr);
 
+	PackedByteArray get_buffer_data(const StringName& param) const;
+
 	[[nodiscard]] Dictionary get_shader_parameters() const;
 
 	bool _set(const StringName& p_name, const Variant& p_value);

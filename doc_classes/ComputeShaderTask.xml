@@ -50,6 +50,13 @@
 				Dispatches all kernels in the specified [param group_name]. Kernels are associated with a group using the [code]gd::KernelGroup[/code] attribute.
 			</description>
 		</method>
+		<method name="get_buffer_data" qualifiers="const">
+			<return type="PackedByteArray" />
+			<param index="0" name="param" type="StringName" />
+				Get the raw bytes for [param]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param.
+			<description>
+			</description>
+		</method>
 		<method name="get_shader_parameter" qualifiers="const">
 			<return type="Variant" />
 			<param index="0" name="param" type="StringName" />

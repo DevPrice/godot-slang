@@ -24,6 +24,7 @@ void ComputeShaderTask::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_all", "thread_groups", "context"), &ComputeShaderTask::dispatch_all, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_group", "group_name", "thread_groups", "context"), &ComputeShaderTask::dispatch_group, DEFVAL(nullptr));
+	BIND_METHOD(ComputeShaderTask, get_buffer_data, "param")
 }
 
 ComputeShaderTask::ComputeShaderTask() :
@@ -133,6 +134,10 @@ void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vecto
 			}
 		}
 	}
+}
+PackedByteArray ComputeShaderTask::get_buffer_data(const StringName& param) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).field(param).get_buffer_data();
 }
 
 Dictionary ComputeShaderTask::get_shader_parameters() const {

@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://d1pxnlka8dbd1"]
+
+[ext_resource type="Script" uid="uid://212hjnw8mb6n" path="res://scripts/fetch_buffer.gd" id="1_xh7ir"]
+[ext_resource type="ComputeShaderFile" uid="uid://jtlqkpp3yyhg" path="res://shaders/square.slang" id="2_dpyg5"]
+
+[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_xh7ir"]
+shader = ExtResource("2_dpyg5")
+shader_parameter/data = PackedFloat32Array(1, 2, 3, 4, 5)
+
+[node name="FetchBuffer" type="Node" unique_id=1053468717]
+script = ExtResource("1_xh7ir")
+task = SubResource("ComputeShaderTask_xh7ir")
