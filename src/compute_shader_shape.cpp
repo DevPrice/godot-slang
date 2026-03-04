@@ -23,9 +23,6 @@ void ArrayTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(ArrayTypeLayoutShape, element_count, Variant::INT);
 }
 
-void StructPropertyShape::_bind_methods() {
-}
-
 void StructTypeLayoutShape::_bind_methods() {
     BIND_GET_SET(StructTypeLayoutShape, size, Variant::INT);
     BIND_GET_SET(StructTypeLayoutShape, alignment, Variant::INT);
@@ -77,47 +74,69 @@ int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
 void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
-    // TODO: Maybe these should be separate shapes
-    if (get_element_count()) {
-        // fixed-size array
-        for (int64_t i = 0; i < get_element_count(); ++i) {
-            bool is_valid{}, oob{};
-            const Variant value = data.get_indexed(i, is_valid, oob);
-            cursor.element(i).write(value);
-        }
-    } else {
-        // structured buffer, unbounded size
-        Variant key;
-        bool is_valid;
-        if (data.iter_init(key, is_valid) && is_valid) {
-            int64_t i = 0;
-            do {
-                Variant value = data.iter_get(key, is_valid);
-                if (is_valid) {
-                    cursor.element(i++).write(value);
-                }
-            } while (data.iter_next(key, is_valid) && is_valid);
-        }
-    }
+	// TODO: Maybe these should be separate shapes
+	if (get_element_count()) {
+		// fixed-size array
+		for (int64_t i = 0; i < get_element_count(); ++i) {
+			bool is_valid{}, oob{};
+			const Variant value = data.get_indexed(i, is_valid, oob);
+			cursor.element(i).write(value);
+		}
+	} else {
+		// structured buffer, unbounded size
+		Variant key;
+		bool is_valid;
+		if (data.iter_init(key, is_valid) && is_valid) {
+			int64_t i = 0;
+			do {
+				const Variant value = data.iter_get(key, is_valid);
+				if (is_valid) {
+					cursor.element(i++).write(value);
+				}
+			} while (data.iter_next(key, is_valid) && is_valid);
+		}
+	}
+}
+
+FieldShape::operator Dictionary() const {
+	Dictionary result;
+	result["name"] = name;
+	result["shape"] = shape;
+	result["user_attributes"] = user_attributes;
+	result["default_value"] = default_value;
+	result["binding_offset"] = binding_offset;
+	result["offset"] = byte_offset;
+	return result;
+}
+
+FieldShape FieldShape::from_dict(const Dictionary& dict) {
+	return FieldShape{
+		dict.get("name", {}),
+		dict.get("shape", {}),
+		dict.get("user_attributes", {}),
+		dict.get("default_value", {}),
+		dict.get("binding_offset", {}),
+		dict.get("offset", {}),
+	};
 }
 
 int64_t StructTypeLayoutShape::get_size() const { return size; }
 
 void StructTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
-std::optional<Dictionary> StructTypeLayoutShape::field(const StringName& field_name) const {
+std::optional<FieldShape> StructTypeLayoutShape::field(const StringName& field_name) const {
 	if (properties.has(field_name)) {
-		return properties[field_name];
+		return FieldShape::from_dict(properties[field_name]);
 	}
 	return std::nullopt;
 }
 
 void StructTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
-    const Dictionary properties = get_properties();
-    for (const StringName property_name : properties.keys()) {
-        const Dictionary property = properties[property_name];
+    const Dictionary fields = get_properties();
+    for (const StringName field_name : fields.keys()) {
+        const FieldShape field = FieldShape::from_dict(fields[field_name]);
         bool is_valid{};
-        Variant property_value = data.get_named(property_name, is_valid);
-        cursor.field(property_name).write(property_value);
+		const Variant field_value = data.get_named(field.name, is_valid);
+        cursor.field(field_name).write(field_value);
     }
 }

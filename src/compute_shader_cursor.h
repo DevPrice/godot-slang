@@ -19,7 +19,7 @@ struct ComputeShaderOffset {
     ComputeShaderOffset operator+(const ComputeShaderOffset& other) const;
     ComputeShaderOffset& operator+=(const ComputeShaderOffset& other);
 
-    static ComputeShaderOffset from_field(const godot::Dictionary& field);
+    static ComputeShaderOffset from_field(const FieldShape& field);
 };
 
 class SamplerCache {

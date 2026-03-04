@@ -38,12 +38,12 @@ void handle_color_write(Variant& value) {
 }
 
 AttributeRegistry::AttributeRegistry() {
-	register_write_handler(GodotAttributes::color(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::color(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			handle_color_write(value);
 		};
 	}, PRIORITY_MODIFIER);
-	register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
 				const auto rs = RenderingServer::get_singleton();
@@ -51,7 +51,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::default_black(), [this](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::default_black(), [this](const Dictionary&, const FieldShape&) {
 		RID black_texture = _get_black_texture();
 		return [black_texture](Variant& value, const Object*) {
 			if (is_null(value)) {
@@ -60,14 +60,14 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
 				value = Engine::get_singleton()->get_frames_drawn();
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::global_param(), [](const Dictionary& arguments, const Dictionary&) {
+	register_write_handler(GodotAttributes::global_param(), [](const Dictionary& arguments, const FieldShape&) {
 		const StringName param_name = arguments["name"];
 		return [param_name](Variant& value, const Object*) {
 			if (is_null(value)) {
@@ -84,7 +84,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::mouse_position(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::mouse_position(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
 				if (const SceneTree* scene_tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop())) {
@@ -122,14 +122,14 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::time(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(GodotAttributes::time(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
 				value = Time::get_singleton()->get_ticks_msec() * .001f;
 			}
 		};
 	});
-	register_write_handler(CompositorAttributes::color_texture(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(CompositorAttributes::color_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
@@ -178,7 +178,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	}, PRIORITY_CREATE_TEXTURE);
-	register_write_handler(CompositorAttributes::depth_texture(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(CompositorAttributes::depth_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
@@ -189,7 +189,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(CompositorAttributes::internal_size(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(CompositorAttributes::internal_size(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
@@ -200,7 +200,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(CompositorAttributes::scene_data(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(CompositorAttributes::scene_data(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
@@ -213,10 +213,9 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(CompositorAttributes::texture_name(), [](const Dictionary& args, const Dictionary& field) {
+	register_write_handler(CompositorAttributes::texture_name(), [](const Dictionary& args, const FieldShape& field) {
 		const String texture_name = args[key_name];
-		const Dictionary attributes = field["user_attributes"];
-		const Dictionary context_attr = attributes.get(CompositorAttributes::context(), {});
+		const Dictionary context_attr = field.user_attributes.get(CompositorAttributes::context(), {});
 		const StringName context_name = context_attr.get(key_context, "__global_context");
 		return [texture_name, context_name](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
@@ -228,7 +227,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	}, PRIORITY_CREATE_TEXTURE - 1);
-	register_write_handler(CompositorAttributes::velocity_texture(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(CompositorAttributes::velocity_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
@@ -239,7 +238,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(TextureAttributes::output_size(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(TextureAttributes::output_size(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
@@ -248,7 +247,7 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(TextureAttributes::output_texture(), [](const Dictionary&, const Dictionary&) {
+	register_write_handler(TextureAttributes::output_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
 				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
@@ -264,9 +263,8 @@ void AttributeRegistry::register_write_handler(const StringName& attribute_name,
 }
 
 void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable, const int64_t priority) {
-	const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const Dictionary& field) -> WriteHandler {
-		const Ref<ShaderTypeLayoutShape> shape = field["shape"];
-		const Callable handler_callable = factory_callable.call(arguments, shape);
+	const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const FieldShape& field) -> WriteHandler {
+		const Callable handler_callable = factory_callable.call(arguments, Dictionary(field));
 		if (handler_callable.is_valid()) {
 			return [handler_callable](Variant& value, const Object* context) {
 				value = handler_callable.call(value, context);

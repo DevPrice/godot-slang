@@ -64,7 +64,7 @@ class AttributeRegistry {
 public:
     using WriteHandler = std::function<void(godot::Variant& value, const godot::Object* context)>;
     template <typename T>
-    using AttributeHandlerFactory = std::function<T(const godot::Dictionary& attribute_arguments, const godot::Dictionary& field)>;
+    using AttributeHandlerFactory = std::function<T(const godot::Dictionary& attribute_arguments, const FieldShape& field)>;
 
     template <typename T>
     struct FactoryWithPriority {

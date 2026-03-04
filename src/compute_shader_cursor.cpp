@@ -27,10 +27,10 @@ ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& 
 	return *this;
 }
 
-ComputeShaderOffset ComputeShaderOffset::from_field(const Dictionary& field) {
+ComputeShaderOffset ComputeShaderOffset::from_field(const FieldShape& field) {
 	ComputeShaderOffset result{};
-	result.binding_range_offset = static_cast<int64_t>(field.get("binding_offset", 0));
-	result.byte_offset = static_cast<int64_t>(field.get("offset", 0));
+	result.binding_range_offset = static_cast<int64_t>(field.binding_offset);
+	result.byte_offset = static_cast<int64_t>(field.byte_offset);
 	return result;
 }
 
@@ -289,16 +289,16 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
 	const PackedStringArray parts = path.split("/");
 	ComputeShaderCursor current(*this);
 	for (const String& field_name : parts) {
-		const std::optional<Dictionary> property = shape->field(field_name);
+		const std::optional<FieldShape> property = shape->field(field_name);
 		ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
-		const Ref<ShaderTypeLayoutShape> property_shape = property->get("shape", nullptr);
+		const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
 		ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
 
 		current.shape = property_shape;
 		current.offset += ComputeShaderOffset::from_field(*property);
 
 		current.write_handlers.clear();
-		const Dictionary attributes = property->get("user_attributes", {});
+		const Dictionary attributes = property->user_attributes;
 		for (auto attribute_name : attributes.keys()) {
 			const Dictionary attribute_arguments = attributes[attribute_name];
 			if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
@@ -307,7 +307,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
 				}
 			}
 		}
-		current.default_value = property->get("default_value", {});
+		current.default_value = property->default_value;
 
 		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
 			current.object = subobject;

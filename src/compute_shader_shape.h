@@ -7,7 +7,22 @@
 #include "binding_macros.h"
 #include "godot_cpp/classes/rendering_device.hpp"
 
+class ShaderTypeLayoutShape;
 class ComputeShaderCursor;
+
+struct FieldShape {
+
+	godot::StringName name;
+	godot::Ref<ShaderTypeLayoutShape> shape;
+	godot::Dictionary user_attributes;
+	godot::Variant default_value;
+	int64_t binding_offset;
+	int64_t byte_offset;
+
+	operator godot::Dictionary() const;
+
+	static FieldShape from_dict(const godot::Dictionary& dict);
+};
 
 class ShaderTypeLayoutShape : public godot::Resource {
 	GDCLASS(ShaderTypeLayoutShape, Resource);
@@ -19,7 +34,7 @@ protected:
 
 public:
 	[[nodiscard]] virtual int64_t get_size() const { return 0; }
-	virtual std::optional<godot::Dictionary> field(const godot::StringName& field_name) const { return std::nullopt; }
+	virtual std::optional<FieldShape> field(const godot::StringName& field_name) const { return std::nullopt; }
 	virtual void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const = 0;
 
 	// Values must match SlangMatrixLayoutMode
@@ -86,13 +101,6 @@ private:
 
 };
 
-class StructPropertyShape : public godot::Resource {
-	GDCLASS(StructPropertyShape, Resource);
-
-protected:
-	static void _bind_methods();
-};
-
 class StructTypeLayoutShape : public ShaderTypeLayoutShape {
 	GDCLASS(StructTypeLayoutShape, ShaderTypeLayoutShape);
 
@@ -106,7 +114,7 @@ protected:
 public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
-	std::optional<godot::Dictionary> field(const godot::StringName& field_name) const override;
+	std::optional<FieldShape> field(const godot::StringName& field_name) const override;
 	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
 
 private:
