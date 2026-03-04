@@ -354,6 +354,7 @@ void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, co
 	const auto cache = std::make_unique<SamplerCache>(RenderingServer::get_singleton()->get_rendering_device());
 	// TODO: sort of hacky / awkward, but at least keeps the logic consistent with how data is actually written
 	auto object = ComputeShaderObject(cache.get(), global_params_shape);
+	// TODO: BUG! This doesn't work if the only used params are buffers, because nothing is written until flush
 	ComputeShaderCursor(&object).write(nullptr);
 	const auto descriptor_sets = object.get_descriptor_sets();
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
