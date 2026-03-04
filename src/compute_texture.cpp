@@ -18,21 +18,13 @@ void ComputeTexture::_bind_methods() {
     BIND_GET_SET_METHOD(ComputeTexture, data_format)
 }
 
-ComputeTexture::ComputeTexture() {
+ComputeTexture::ComputeTexture() : texture_rid(RenderingServer::get_singleton()), texture_rd_rid(UniqueRID(RenderingServer::get_singleton()->get_rendering_device())) {
     size = Size2i(256, 256);
     data_format = RenderingDevice::DATA_FORMAT_R8G8B8A8_UNORM;
 }
 
 ComputeTexture::~ComputeTexture() {
     if (RenderingServer* rendering_server = RenderingServer::get_singleton()) {
-        if (texture_rid.is_valid()) {
-            rendering_server->free_rid(texture_rid);
-        }
-        if (texture_rd_rid.is_valid()) {
-            if (RenderingDevice* rd = rendering_server->get_rendering_device()) {
-                rd->free_rid(texture_rd_rid);
-            }
-        }
         const Callable callable = callable_mp(this, &ComputeTexture::render);
         if (rendering_server->is_connected("frame_pre_draw", callable)) {
             rendering_server->disconnect("frame_pre_draw", callable);
@@ -163,11 +155,6 @@ void ComputeTexture::_update_textures() {
 
     Ref<RDTextureView> view;
     view.instantiate();
-
-    if (texture_rd_rid.is_valid()) {
-        // TODO: This gives an invalid RID error, but leaks if I don't free
-        rd->free_rid(texture_rd_rid);
-    }
 
     texture_rd_rid = rd->texture_create(format, view);
 

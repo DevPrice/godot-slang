@@ -31,8 +31,8 @@ public:
     void render();
 
 private:
-    RID texture_rid{};
-    RID texture_rd_rid{};
+    UniqueRID<RenderingServer> texture_rid;
+    UniqueRID<RenderingDevice> texture_rd_rid;
     Size2i remote_size{};
     RenderingDevice::DataFormat remote_data_format{};
     bool updated_queued{};
