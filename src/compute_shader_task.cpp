@@ -30,6 +30,10 @@ void ComputeShaderTask::_bind_methods() {
 ComputeShaderTask::ComputeShaderTask() :
 		_shader_object(nullptr) {}
 
+ComputeShaderTask::~ComputeShaderTask() {
+	_free_rids();
+}
+
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
 		return shader->get_kernels().duplicate();
@@ -59,8 +63,12 @@ RenderingDevice* ComputeShaderTask::get_rendering_device() const {
 }
 
 void ComputeShaderTask::set_rendering_device(RenderingDevice* p_rendering_device) {
-	rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
-	_reset();
+	ERR_FAIL_COND_MSG(p_rendering_device, "Overriding the rendering_device is not yet supported!");
+	if (p_rendering_device != ObjectDB::get_instance(rendering_device_id)) {
+		_free_rids();
+		rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
+		_reset();
+	}
 }
 
 Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
@@ -249,8 +257,20 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dicti
 }
 
 void ComputeShaderTask::_reset() {
+	_free_rids();
 	RenderingDevice* rendering_device = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
+	_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
+	if (shader.is_valid() && shader->get_base_error().is_empty()) {
+		_shader_object = std::make_unique<ComputeShaderObject>(_sampler_cache.get(), shader->get_parameters());
+	} else {
+		_shader_object = nullptr;
+	}
+}
+
+void ComputeShaderTask::_free_rids() {
+	RenderingDevice* rendering_device = _get_active_rendering_device();
+	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Attempted to free RIDs with null RenderingDevice!");
 
 	for (const Variant& key : _kernel_pipelines.keys()) {
 		const RID rid = _kernel_pipelines[key];
@@ -267,13 +287,6 @@ void ComputeShaderTask::_reset() {
 		}
 	}
 	_kernel_shaders.clear();
-
-	_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
-	if (shader.is_valid() && shader->get_base_error().is_empty()) {
-		_shader_object = std::make_unique<ComputeShaderObject>(_sampler_cache.get(), shader->get_parameters());
-	} else {
-		_shader_object = nullptr;
-	}
 }
 
 void ComputeShaderTask::_shader_changed() {
@@ -334,6 +347,7 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const RID shader_rid = _get_shader_rid(kernel_index);
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
 		if (kernel->get_used_binding_sets().get(space_index, false)) {
+			// TODO: UniformSetCacheRD only works with the default rendering device
 			const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);
 			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
 		}

@@ -22,6 +22,7 @@ protected:
 
 public:
 	ComputeShaderTask();
+	virtual ~ComputeShaderTask();
 
 	[[nodiscard]] TypedArray<ComputeShaderKernel> get_kernels() const;
 
@@ -57,6 +58,7 @@ private:
 	std::unique_ptr<ComputeShaderObject> _shader_object;
 
 	void _reset();
+	void _free_rids();
 	void _shader_changed();
 
 	RenderingDevice* _get_active_rendering_device() const;
