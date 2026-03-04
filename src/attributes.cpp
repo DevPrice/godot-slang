@@ -3,6 +3,7 @@
 #include "attributes.h"
 #include "compute_dispatch_context.h"
 #include "compute_texture.h"
+#include "rids.h"
 
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
@@ -36,22 +37,6 @@ void handle_color_write(Variant& value) {
 	}
 }
 
-RID get_black_texture() {
-	// TODO: Free this RID eventually so the engine doesn't print a warning at shutdown
-	static RID black_texture{};
-	if (black_texture.is_valid()) {
-		return black_texture;
-	}
-	PackedByteArray data{};
-	constexpr int64_t data_size = 16 * 3;
-	data.resize(data_size);
-	memset(data.ptrw(), 0, data_size);
-	const Ref black = memnew(Image);
-	black->set_data(4, 4, false, Image::FORMAT_RGB8, data);
-	black_texture = RenderingServer::get_singleton()->texture_2d_create(black);
-	return black_texture;
-}
-
 AttributeRegistry::AttributeRegistry() {
 	register_write_handler(GodotAttributes::color(), [](const Dictionary&, const Dictionary&) {
 		return [](Variant& value, const Object*) {
@@ -66,11 +51,12 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::default_black(), [](const Dictionary&, const Dictionary&) {
-		return [](Variant& value, const Object*) {
+	register_write_handler(GodotAttributes::default_black(), [this](const Dictionary&, const Dictionary&) {
+		RID black_texture = _get_black_texture();
+		return [black_texture](Variant& value, const Object*) {
 			if (is_null(value)) {
 				const auto rs = RenderingServer::get_singleton();
-				value = rs->texture_get_rd_texture(get_black_texture());
+				value = rs->texture_get_rd_texture(black_texture);
 			}
 		};
 	});
@@ -299,4 +285,18 @@ std::optional<AttributeRegistry::FactoryWithPriority<AttributeRegistry::WriteHan
 AttributeRegistry* AttributeRegistry::get_instance() {
 	static auto instance = std::make_unique<AttributeRegistry>();
 	return instance.get();
+}
+
+RID AttributeRegistry::_get_black_texture() const {
+	if (black_texture.is_valid()) {
+		return black_texture;
+	}
+	PackedByteArray data{};
+	constexpr int64_t data_size = 16 * 3;
+	data.resize(data_size);
+	memset(data.ptrw(), 0, data_size);
+	const Ref black = memnew(Image);
+	black->set_data(4, 4, false, Image::FORMAT_RGB8, data);
+	black_texture = RenderingServer::get_singleton()->texture_2d_create(black);
+	return black_texture;
 }

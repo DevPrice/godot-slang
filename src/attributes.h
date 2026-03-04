@@ -7,6 +7,8 @@
 #include "godot_cpp/variant/string_name.hpp"
 
 #include "compute_shader_shape.h"
+#include "godot_cpp/classes/rendering_server.hpp"
+#include "rids.h"
 #include "variant_utils.h"
 
 #define DECLARE_ATTRIBUTE(function_name, attribute_name) static godot::StringName& function_name() { \
@@ -71,6 +73,7 @@ public:
     };
 
 private:
+	mutable UniqueRID<godot::RenderingServer> black_texture = UniqueRID(godot::RenderingServer::get_singleton());
     std::unordered_map<godot::StringName, FactoryWithPriority<WriteHandler>, GodotHasher> write_handler_factories;
 
 public:
@@ -88,4 +91,7 @@ public:
 
     static constexpr int64_t PRIORITY_DEFAULT = 0;
     static constexpr int64_t PRIORITY_MODIFIER = -10;
+
+private:
+	godot::RID _get_black_texture() const;
 };
