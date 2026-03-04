@@ -345,6 +345,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
+	kernel->set_parameters(reflection_context.get_entry_point_params_shape(entry_point_layout));
 	return kernel;
 }
 
@@ -369,7 +370,13 @@ void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, co
 }
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
+	ERR_FAIL_NULL_V(program_layout, {});
 	return _get_shape(program_layout->getGlobalParamsTypeLayout());
+}
+
+Ref<StructTypeLayoutShape> SlangReflectionContext::get_entry_point_params_shape(slang::EntryPointReflection* entry_point_reflection) const {
+	ERR_FAIL_NULL_V(entry_point_reflection, {});
+	return _get_shape(entry_point_reflection->getTypeLayout());
 }
 
 Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const int64_t implicit_offset, const int64_t slot_offset, const bool include_property_info) const {
@@ -397,6 +404,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				Dictionary field_info{};
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
+				if (field->getCategory() == slang::ParameterCategory::None) {
+					continue;
+				}
 
 				const Ref<ShaderTypeLayoutShape> field_shape = _get_shape(
 						field->getTypeLayout(),
@@ -404,6 +414,8 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 						slot_offset,
 						include_property_info && is_exported);
 				const StringName field_name = get_name(field, field_attributes);
+
+				field_shapes.set(field_name, field_info);
 
 				field_info.set("shape", field_shape);
 				field_info.set("name", field_name);
@@ -419,8 +431,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				} else {
 					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + implicit_offset);
 				}
-
-				field_shapes.set(field_name, field_info);
 
 				if (include_property_info) {
 					Variant::Type type;

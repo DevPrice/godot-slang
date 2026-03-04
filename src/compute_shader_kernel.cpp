@@ -6,6 +6,7 @@ void ComputeShaderKernel::_bind_methods() {
 	BIND_GET_SET(ComputeShaderKernel, user_attributes, Variant::DICTIONARY);
 	BIND_GET_SET(ComputeShaderKernel, used_binding_sets, Variant::DICTIONARY);
 	BIND_GET_SET_RESOURCE(ComputeShaderKernel, spirv, RDShaderSPIRV);
+	BIND_GET_SET_RESOURCE(ComputeShaderKernel, parameters, StructTypeLayoutShape);
 }
 
 String ComputeShaderKernel::get_compile_error() const {
@@ -21,3 +22,4 @@ GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Ref<RDShaderSPIRV>, spirv);
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Vector3i, thread_group_size);
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Dictionary, user_attributes);
 GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Dictionary, used_binding_sets);
+GET_SET_PROPERTY_IMPL(ComputeShaderKernel, Ref<StructTypeLayoutShape>, parameters);

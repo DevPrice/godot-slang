@@ -18,6 +18,7 @@ public:
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
 	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
+	[[nodiscard]] Ref<StructTypeLayoutShape> get_entry_point_params_shape(slang::EntryPointReflection* entry_point_reflection) const;
 	[[nodiscard]] Variant to_json() const;
 
 	template<typename T>
