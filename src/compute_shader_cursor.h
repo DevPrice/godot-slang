@@ -60,7 +60,7 @@ public:
 
     void flush_buffers();
 
-    DescriptorSets get_descriptor_sets() const;
+    DescriptorSets get_descriptor_sets();
     const godot::PackedByteArray& get_push_constants() const { return push_constants; }
 	godot::PackedByteArray get_buffer_data(const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
 
@@ -70,7 +70,7 @@ private:
     RDBuffer& _get_buffer(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 
-    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index) const;
+    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
 
     [[nodiscard]] static godot::Variant _get_default_value(godot::RenderingDevice::UniformType type);
 };

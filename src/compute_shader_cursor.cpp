@@ -200,19 +200,21 @@ void ComputeShaderObject::flush_buffers() {
 	}
 }
 
-ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets() const {
+ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets() {
 	DescriptorSets result{};
 	uint64_t next_space_index = 0;
 	get_descriptor_sets(result, 0, next_space_index);
 	return result;
 }
 
-void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) const {
+void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) {
 	const int64_t active_space_index = owns_binding_space ? next_space_index++ : current_space_index;
 	descriptor_sets[active_space_index].append_array(uniforms.values());
-	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
-		const ComputeShaderObject* subobject = it->second.get();
-		subobject->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
+	ERR_FAIL_NULL(shape);
+	for (int64_t i = 0; i < shape->get_bindings().size(); i++) {
+		if (ComputeShaderObject* subobject = get_or_create_subobject(i)) {
+			subobject->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
+		}
 	}
 }
 
