@@ -45,6 +45,7 @@ void RDBuffer::flush() {
 	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
+	// TODO: Need to use the correct rendering device contextually
 	RenderingDevice* rd = rendering_server->get_rendering_device();
 	ERR_FAIL_NULL(rd);
 
@@ -72,10 +73,6 @@ void RDBuffer::flush() {
 	remote_size = buffer.size();
 	dirty_start = 0;
 	dirty_end = 0;
-}
-
-RenderingDevice::UniformType RDBuffer::get_uniform_type() const {
-	return get_is_fixed_size() ? RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER : RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER;
 }
 
 int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {

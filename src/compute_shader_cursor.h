@@ -56,7 +56,7 @@ public:
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
 
     void write_resource(const ComputeShaderOffset& offset, const godot::Variant& data);
-    void write(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
+    void write_bytes(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
 
@@ -68,7 +68,6 @@ public:
 
 private:
     RDBuffer& _get_buffer(int64_t binding_range_index);
-    godot::RDUniform& _get_uniform(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 
     void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index) const;

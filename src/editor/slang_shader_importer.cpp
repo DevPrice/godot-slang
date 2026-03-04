@@ -351,10 +351,9 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets) {
 	ERR_FAIL_NULL(metadata);
 	ERR_FAIL_NULL(global_params_shape);
-	const auto cache = std::make_unique<SamplerCache>(RenderingServer::get_singleton()->get_rendering_device());
+	SamplerCache cache(RenderingServer::get_singleton()->get_rendering_device());
 	// TODO: sort of hacky / awkward, but at least keeps the logic consistent with how data is actually written
-	auto object = ComputeShaderObject(cache.get(), global_params_shape);
-	// TODO: BUG! This doesn't work if the only used params are buffers, because nothing is written until flush
+	auto object = ComputeShaderObject(&cache, global_params_shape);
 	ComputeShaderCursor(&object).write(nullptr);
 	const auto descriptor_sets = object.get_descriptor_sets();
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
