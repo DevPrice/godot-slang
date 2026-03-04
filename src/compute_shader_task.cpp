@@ -16,6 +16,7 @@ using namespace godot;
 
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
+	BIND_GET_SET_OBJECT(ComputeShaderTask, rendering_device, RenderingDevice)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
 	BIND_METHOD(ComputeShaderTask, clear_shader_parameters)
@@ -50,6 +51,15 @@ void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
 		RenderingServer::get_singleton()->call_on_render_thread(changed_callable);
 		emit_changed();
 	}
+}
+
+RenderingDevice* ComputeShaderTask::get_rendering_device() const {
+	return cast_to<RenderingDevice>(ObjectDB::get_instance(rendering_device_id));
+}
+
+void ComputeShaderTask::set_rendering_device(RenderingDevice* p_rendering_device) {
+	rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
+	_reset();
 }
 
 Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
@@ -234,10 +244,8 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dicti
 }
 
 void ComputeShaderTask::_reset() {
-	const RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
-	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
+	RenderingDevice* rendering_device = _get_active_rendering_device();
+	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
 
 	for (const Variant& key : _kernel_pipelines.keys()) {
 		const RID rid = _kernel_pipelines[key];
@@ -255,9 +263,7 @@ void ComputeShaderTask::_reset() {
 	}
 	_kernel_shaders.clear();
 
-	if (!_sampler_cache) {
-		_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
-	}
+	_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
 	if (shader.is_valid() && shader->get_base_error().is_empty()) {
 		_shader_object = std::make_unique<ComputeShaderObject>(_sampler_cache.get(), shader->get_parameters());
 	} else {
@@ -270,7 +276,17 @@ void ComputeShaderTask::_shader_changed() {
 	notify_property_list_changed();
 }
 
-RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevice* rd) {
+RenderingDevice* ComputeShaderTask::_get_active_rendering_device() const {
+	if (RenderingDevice* rendering_device = get_rendering_device()) {
+		return rendering_device;
+	}
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
+	return rendering_server ? rendering_server->get_rendering_device() : nullptr;
+}
+
+RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index) {
+	RenderingDevice* rd = _get_active_rendering_device();
+	ERR_FAIL_NULL_V(rd, {});
 	ERR_FAIL_NULL_V(shader, {});
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	if (!_kernel_shaders.has(kernel_index)) {
@@ -280,9 +296,11 @@ RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index, RenderingDevi
 	return _kernel_shaders.get(kernel_index, RID{});
 }
 
-RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index, RenderingDevice* rd) {
+RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index) {
+	RenderingDevice* rd = _get_active_rendering_device();
+	ERR_FAIL_NULL_V(rd, {});
 	if (!_kernel_pipelines.has(kernel_index)) {
-		const RID shader_rid = _get_shader_rid(kernel_index, rd);
+		const RID shader_rid = _get_shader_rid(kernel_index);
 		_kernel_pipelines.set(kernel_index, rd->compute_pipeline_create(shader_rid));
 	}
 	return _kernel_pipelines.get(kernel_index, RID{});
@@ -298,19 +316,17 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
 	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
 
-	const RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL_MSG(rendering_server, "ComputeShaderTask: Couldn't obtain RenderingServer for dispatch!");
-	RenderingDevice* rendering_device = rendering_server->get_rendering_device();
+	RenderingDevice* rendering_device = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
 	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
 	_shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
-	const RID pipeline = _get_shader_pipeline_rid(kernel_index, rendering_device);
+	const RID pipeline = _get_shader_pipeline_rid(kernel_index);
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
 
 	const ComputeShaderObject::DescriptorSets descriptor_sets = _shader_object->get_descriptor_sets();
-	const RID shader_rid = _get_shader_rid(kernel_index, rendering_device);
+	const RID shader_rid = _get_shader_rid(kernel_index);
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
 		if (kernel->get_used_binding_sets().get(space_index, false)) {
 			const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);

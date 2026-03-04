@@ -69,6 +69,10 @@ private:
 	BIND_GET_SET_METHOD(ClassName, Name)                \
 	ClassDB::add_property(#ClassName, PropertyInfo(VariantType, #Name, ##__VA_ARGS__), "set_" #Name, "get_" #Name);
 
+#define BIND_GET_SET_OBJECT(ClassName, Name, ObjectClass) \
+	BIND_GET_SET_METHOD(ClassName, Name)                \
+	ClassDB::add_property(#ClassName, PropertyInfo(Variant::Type::OBJECT, #Name, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE, ObjectClass::get_class_static()), "set_" #Name, "get_" #Name);
+
 #define BIND_GET_SET_RESOURCE(ClassName, Name, Type, ...) \
 	BIND_GET_SET_METHOD(ClassName, Name)                  \
 	ClassDB::add_property(#ClassName, PropertyInfo(Variant::OBJECT, #Name, PROPERTY_HINT_RESOURCE_TYPE, #Type, ##__VA_ARGS__), "set_" #Name, "get_" #Name);

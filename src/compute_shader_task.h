@@ -15,6 +15,7 @@ class ComputeShaderTask : public Resource {
 	GDCLASS(ComputeShaderTask, Resource);
 
 	GET_SET_PROPERTY(Ref<ComputeShaderFile>, shader)
+	GET_SET_OBJECT_PTR(RenderingDevice, rendering_device)
 
 protected:
 	static void _bind_methods();
@@ -56,8 +57,9 @@ private:
 	void _reset();
 	void _shader_changed();
 
-	RID _get_shader_rid(int64_t kernel_index, RenderingDevice* rd);
-	RID _get_shader_pipeline_rid(int64_t kernel_index, RenderingDevice* rd);
+	RenderingDevice* _get_active_rendering_device() const;
+	RID _get_shader_rid(int64_t kernel_index);
+	RID _get_shader_pipeline_rid(int64_t kernel_index);
 
 	void _dispatch(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
 };

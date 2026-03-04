@@ -85,6 +85,9 @@
 		</method>
 	</methods>
 	<members>
+		<member name="rendering_device" type="RenderingDevice" setter="set_rendering_device" getter="get_rendering_device">
+			The underlying [RenderingDevice] to use for dispatch.
+		</member>
 		<member name="shader" type="ComputeShaderFile" setter="set_shader" getter="get_shader">
 			The shader executed during dispatch of this task.
 		</member>
