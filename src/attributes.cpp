@@ -95,9 +95,8 @@ AttributeRegistry::AttributeRegistry() {
 			}
 		};
 	});
-	register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, const Dictionary& field) -> WriteHandler {
-		const Ref<ShaderTypeLayoutShape> shape = field["shape"];
-		const auto resource_shape = Object::cast_to<ResourceTypeLayoutShape>(shape.ptr());
+	register_write_handler(GodotAttributes::sampler(), [](const Dictionary& arguments, const FieldShape& field) -> WriteHandler {
+		const auto resource_shape = Object::cast_to<ResourceTypeLayoutShape>(field.shape.ptr());
 		if (!resource_shape)
 			return nullptr;
 
@@ -143,17 +142,16 @@ AttributeRegistry::AttributeRegistry() {
 	static StringName key_name("name");
 	static StringName key_context("context");
 	static int64_t PRIORITY_CREATE_TEXTURE = PRIORITY_DEFAULT;
-	register_write_handler(CompositorAttributes::create_texture(), [](const Dictionary& args, const Dictionary& field) {
+	register_write_handler(CompositorAttributes::create_texture(), [](const Dictionary& args, const FieldShape& field) {
 		const int32_t texture_format = args.get("format", 0);
-		const Dictionary attributes = field["user_attributes"];
-		const Dictionary texture_name_attr = attributes.get(CompositorAttributes::texture_name(), {});
-		const String texture_name = texture_name_attr.get(key_name, field["name"]);
-		const Dictionary context_attr = attributes.get(CompositorAttributes::context(), {});
+		const Dictionary texture_name_attr = field.user_attributes.get(CompositorAttributes::texture_name(), {});
+		const String texture_name = texture_name_attr.get(key_name, field.name);
+		const Dictionary context_attr = field.user_attributes.get(CompositorAttributes::context(), {});
 		const StringName context_name = context_attr.get(key_context, "__global_context");
 		std::optional<Vector2i> texture_size_override = std::nullopt;
-		if (attributes.has(CompositorAttributes::texture_size())) {
+		if (field.user_attributes.has(CompositorAttributes::texture_size())) {
 			static StringName key_size("size");
-			const Dictionary size_args = attributes[CompositorAttributes::texture_size()];
+			const Dictionary size_args = field.user_attributes[CompositorAttributes::texture_size()];
 			texture_size_override = size_args.get(key_size, {});
 		}
 		return [texture_format, texture_name, context_name, texture_size_override](Variant& value, const Object* context) {

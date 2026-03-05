@@ -4,11 +4,13 @@
 #include <memory>
 
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
+#include "godot_cpp/classes/rd_sampler_state.hpp"
 #include "godot_cpp/classes/rd_uniform.hpp"
 
 #include "attributes.h"
 #include "compute_shader_shape.h"
 
+class SamplerCache;
 class RDBuffer;
 
 struct ComputeShaderOffset {
@@ -20,19 +22,6 @@ struct ComputeShaderOffset {
     ComputeShaderOffset& operator+=(const ComputeShaderOffset& other);
 
     static ComputeShaderOffset from_field(const FieldShape& field);
-};
-
-class SamplerCache {
-
-private:
-    godot::RenderingDevice* rd;
-    godot::TypedArray<godot::RID> cache{};
-
-public:
-    explicit SamplerCache(godot::RenderingDevice* p_rendering_device);
-    virtual ~SamplerCache();
-
-    godot::RID get_sampler(const godot::Ref<godot::RDSamplerState>& sampler_state);
 };
 
 class ComputeShaderObject {

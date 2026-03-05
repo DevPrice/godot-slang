@@ -106,7 +106,6 @@ void ComputeTexture::render() {
     const uint64_t kernel_count = kernels.size();
     for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
         Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-        const Dictionary kernel_attributes = kernel->get_user_attributes();
         if (kernel.is_valid()) {
             const Vector3i local_size = kernel->get_thread_group_size();
             const Vector3i groups(

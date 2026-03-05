@@ -8,9 +8,11 @@
 #include "godot_cpp/classes/texture.hpp"
 
 #include "attributes.h"
-#include "compute_shader_shape.h"
 #include "rdbuffer.h"
+#include "sampler_cache.h"
 #include "variant_serializer.h"
+
+#include "compute_shader_shape.h"
 
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{
@@ -32,39 +34,6 @@ ComputeShaderOffset ComputeShaderOffset::from_field(const FieldShape& field) {
 	result.binding_range_offset = static_cast<int64_t>(field.binding_offset);
 	result.byte_offset = static_cast<int64_t>(field.byte_offset);
 	return result;
-}
-
-SamplerCache::SamplerCache(RenderingDevice* p_rendering_device) :
-		rd(p_rendering_device) {
-	cache.resize(RenderingDevice::SAMPLER_REPEAT_MODE_MAX * 2);
-	ERR_FAIL_NULL(rd);
-}
-
-SamplerCache::~SamplerCache() {
-	ERR_FAIL_NULL(rd);
-	for (const RID rid : cache) {
-		if (rid.is_valid()) {
-			rd->free_rid(rid);
-		}
-	}
-}
-
-RID SamplerCache::get_sampler(const Ref<RDSamplerState>& sampler_state) {
-	ERR_FAIL_NULL_V(sampler_state, {});
-	// TODO: Support the rest of the properties
-	const RenderingDevice::SamplerFilter filter = sampler_state->get_mag_filter();
-	const RenderingDevice::SamplerRepeatMode repeat_mode = sampler_state->get_repeat_u();
-
-	ERR_FAIL_INDEX_V(filter, 2, RID{});
-	ERR_FAIL_INDEX_V(repeat_mode, RenderingDevice::SAMPLER_REPEAT_MODE_MAX, RID{});
-	const int64_t sampler_index = filter * 2 + repeat_mode;
-	if (RID cached_value = cache[sampler_index]; cached_value.is_valid()) {
-		return cached_value;
-	}
-
-	RID sampler_rid = rd->sampler_create(sampler_state);
-	cache[sampler_index] = sampler_rid;
-	return sampler_rid;
 }
 
 ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index) :
