@@ -401,7 +401,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			Dictionary field_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
-				Dictionary field_info{};
+				FieldShape field_info{};
 				const Dictionary field_attributes = get_attributes(field->getVariable());
 				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
 				if (field->getCategory() == slang::ParameterCategory::None) {
@@ -415,21 +415,19 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 						include_property_info && is_exported);
 				const StringName field_name = get_name(field, field_attributes);
 
-				field_shapes.set(field_name, field_info);
-
-				field_info.set("shape", field_shape);
-				field_info.set("name", field_name);
-				field_info.set("user_attributes", field_attributes);
-				field_info.set("offset", static_cast<int64_t>(field->getOffset()));
+				field_info.name = field_name;
+				field_info.shape = field_shape;
+				field_info.user_attributes = field_attributes;
+				field_info.byte_offset = static_cast<int64_t>(field->getOffset());
 
 				// TODO: I feel like I shouldn't need to have this logic, but I'm not sure how to find the uniform buffer binding correctly otherwise.
 				slang::TypeLayoutReflection* field_type = field->getTypeLayout();
 				const bool has_uniform_data = field_type->getParameterCategory() == slang::ParameterCategory::Uniform || field_type->getParameterCategory() == slang::ParameterCategory::Mixed;
 				const bool has_own_binding_ranges = field_type->getKind() == slang::TypeReflection::Kind::ConstantBuffer || field_type->getKind() == slang::TypeReflection::Kind::ParameterBlock;
 				if (has_uniform_data && !has_own_binding_ranges) {
-					field_info.set("binding_offset", 0);
+					field_info.binding_offset = 0;
 				} else {
-					field_info.set("binding_offset", type_layout->getFieldBindingRangeOffset(i) + implicit_offset);
+					field_info.binding_offset = type_layout->getFieldBindingRangeOffset(i) + implicit_offset;
 				}
 
 				if (include_property_info) {
@@ -443,15 +441,13 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 							hint = static_cast<PropertyHint>(static_cast<uint64_t>(property_hint_attr["property_hint"]));
 							hint_string = property_hint_attr["hint_string"];
 						}
-						PropertyInfo property_info{type, get_name(field, field_attributes), hint, hint_string, usage};
-						field_info.set("property_info", Dictionary(property_info));
+						field_info.property_info = {type, get_name(field, field_attributes), hint, hint_string, usage};
 					}
 
-					Variant default_value = get_default_value(field->getVariable());
-					if (default_value.get_type() != Variant::NIL) {
-						field_info.set("default_value", default_value);
-					}
+					field_info.default_value = get_default_value(field->getVariable());
 				}
+
+				field_shapes.set(field_name, Dictionary(field_info));
 			}
 			shape->set_properties(field_shapes);
 			if (slang::TypeReflection* type = type_layout->getType()) {

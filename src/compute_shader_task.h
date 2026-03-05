@@ -47,7 +47,7 @@ public:
 	static bool _can_show_property_info(const PropertyInfo& property_info);
 	[[nodiscard]] bool _property_can_revert(const StringName& p_name) const;
 	bool _property_get_revert(const StringName& p_name, Variant& r_property) const;
-	bool _property_get_reflection(const StringName& p_name, Dictionary& r_reflection) const;
+	bool _property_get_reflection(const StringName& p_name, FieldShape& r_reflection) const;
 
 private:
 	Dictionary _shader_parameters{};

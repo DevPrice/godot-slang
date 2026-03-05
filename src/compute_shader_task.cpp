@@ -173,16 +173,15 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 	if (p_name.begins_with("shader_parameter/")) {
 		const StringName param_name = p_name.substr(17);
 		const Dictionary params = get_shader_parameters();
-		Dictionary reflection;
-		if (_property_get_reflection(p_name, reflection)) {
+		FieldShape field;
+		if (_property_get_reflection(p_name, field)) {
 			const Variant value = get_shader_parameter(param_name);
-			if (value.get_type() == Variant::NIL && reflection.has("default_value")) {
-				r_ret = reflection["default_value"];
+			if (value.get_type() == Variant::NIL && field.default_value.get_type() != Variant::NIL) {
+				r_ret = field.default_value;
 				return true;
 			}
-			if (reflection.has("property_info")) {
-				const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-				r_ret = UtilityFunctions::type_convert(value, property_info.type);
+			if (field.property_info) {
+				r_ret = UtilityFunctions::type_convert(value, field.property_info->type);
 				return true;
 			}
 			r_ret = value;
@@ -219,25 +218,24 @@ bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_inf
 }
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
-	Dictionary reflection;
-	return _property_get_reflection(p_name, reflection);
+	FieldShape field;
+	return _property_get_reflection(p_name, field);
 }
 
 bool ComputeShaderTask::_property_get_revert(const StringName& p_name, Variant& r_property) const {
-	Dictionary reflection;
-	if (_property_get_reflection(p_name, reflection) && reflection.has("default_value")) {
-		r_property = reflection["default_value"];
+	FieldShape field;
+	if (_property_get_reflection(p_name, field) && field.default_value.get_type() != Variant::NIL) {
+		r_property = field.default_value;
 		return true;
 	}
-	if (reflection.has("property_info")) {
-		const PropertyInfo property_info = PropertyInfo::from_dict(reflection["property_info"]);
-		r_property = UtilityFunctions::type_convert({}, property_info.type);
+	if (field.property_info) {
+		r_property = UtilityFunctions::type_convert({}, field.property_info->type);
 		return true;
 	}
 	return false;
 }
 
-bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dictionary& r_reflection) const {
+bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, FieldShape& r_reflection) const {
 	if (p_name.begins_with("shader_parameter/")) {
 		const PackedStringArray parts = p_name.substr(17).split("/");
 		Variant current = get_shader_parameters();
@@ -251,8 +249,10 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Dicti
 				return false;
 			current = structured_shape->get_properties();
 		}
-		r_reflection = current.get_named(parts[i], valid);
-		return valid;
+		if (valid) {
+			r_reflection = FieldShape::from_dict(current.get_named(parts[i], valid));
+			return true;
+		}
 	}
 	return false;
 }

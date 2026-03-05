@@ -31,8 +31,8 @@ ComputeShaderOffset& ComputeShaderOffset::operator+=(const ComputeShaderOffset& 
 
 ComputeShaderOffset ComputeShaderOffset::from_field(const FieldShape& field) {
 	ComputeShaderOffset result{};
-	result.binding_range_offset = static_cast<int64_t>(field.binding_offset);
-	result.byte_offset = static_cast<int64_t>(field.byte_offset);
+	result.binding_range_offset = field.binding_offset;
+	result.byte_offset = field.byte_offset;
 	return result;
 }
 

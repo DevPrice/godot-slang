@@ -12,12 +12,13 @@ class ComputeShaderCursor;
 
 struct FieldShape {
 
-	godot::StringName name;
-	godot::Ref<ShaderTypeLayoutShape> shape;
-	godot::Dictionary user_attributes;
-	godot::Variant default_value;
-	int64_t binding_offset;
-	int64_t byte_offset;
+	godot::StringName name{};
+	godot::Ref<ShaderTypeLayoutShape> shape{};
+	godot::Dictionary user_attributes{};
+	godot::Variant default_value{};
+	std::optional<godot::PropertyInfo> property_info{};
+	int64_t binding_offset{};
+	int64_t byte_offset{};
 
 	operator godot::Dictionary() const;
 

@@ -103,9 +103,14 @@ FieldShape::operator Dictionary() const {
 	result["name"] = name;
 	result["shape"] = shape;
 	result["user_attributes"] = user_attributes;
-	result["default_value"] = default_value;
 	result["binding_offset"] = binding_offset;
 	result["offset"] = byte_offset;
+	if (default_value.get_type() != Variant::NIL) {
+		result["default_value"] = default_value;
+	}
+	if (property_info) {
+		result["property_info"] = Dictionary(*property_info);
+	}
 	return result;
 }
 
@@ -115,6 +120,9 @@ FieldShape FieldShape::from_dict(const Dictionary& dict) {
 		dict.get("shape", {}),
 		dict.get("user_attributes", {}),
 		dict.get("default_value", {}),
+		dict.has("property_info")
+			? std::make_optional(PropertyInfo::from_dict(dict["property_info"]))
+			: std::nullopt,
 		dict.get("binding_offset", {}),
 		dict.get("offset", {}),
 	};
