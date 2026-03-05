@@ -36,8 +36,8 @@ ComputeShaderOffset ComputeShaderOffset::from_field(const FieldShape& field) {
 	return result;
 }
 
-ComputeShaderObject::ComputeShaderObject(SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index) :
-		sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
+ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const Ref<ShaderTypeLayoutShape>& p_shape, const bool p_owns_binding_space, const int64_t p_first_slot_index) :
+		rendering_device(p_rendering_device), sampler_cache(p_sampler_cache), shape(p_shape), owns_binding_space(p_owns_binding_space), first_slot_index(p_first_slot_index) {
 	ERR_FAIL_NULL(p_shape);
 	// TODO: Surely you can read directly if this should start a new space from the reflection API, but I can't find it
 	bool has_only_parameter_blocks = true;
@@ -199,7 +199,8 @@ PackedByteArray ComputeShaderObject::get_buffer_data(const ComputeShaderOffset& 
 	ERR_FAIL_NULL_V(uniform, {});
 	ERR_FAIL_COND_V(uniform->get_ids().is_empty(), {});
 	const RID buffer_rid = uniform->get_ids().front();
-	return RenderingServer::get_singleton()->get_rendering_device()->buffer_get_data(buffer_rid, offset.byte_offset, size_bytes);
+	ERR_FAIL_NULL_V(rendering_device, {});
+	return rendering_device->buffer_get_data(buffer_rid, offset.byte_offset, size_bytes);
 }
 
 Error ComputeShaderObject::get_buffer_data_async(const Callable& callback, const ComputeShaderOffset& offset, const uint32_t size_bytes) const {
@@ -207,7 +208,8 @@ Error ComputeShaderObject::get_buffer_data_async(const Callable& callback, const
 	ERR_FAIL_NULL_V(uniform, {});
 	ERR_FAIL_COND_V(uniform->get_ids().is_empty(), {});
 	const RID buffer_rid = uniform->get_ids().front();
-	return RenderingServer::get_singleton()->get_rendering_device()->buffer_get_data_async(buffer_rid, callback, offset.byte_offset, size_bytes);
+	ERR_FAIL_NULL_V(rendering_device, {});
+	return rendering_device->buffer_get_data_async(buffer_rid, callback, offset.byte_offset, size_bytes);
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
@@ -223,7 +225,7 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 		return nullptr;
 	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
 	const int64_t subobject_first_slot = (new_binding_space ? 0 : first_slot_index) + static_cast<int64_t>(binding.get("slot_offset", 0));
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(sampler_cache, subshape, new_binding_space, subobject_first_slot));
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rendering_device, sampler_cache, subshape, new_binding_space, subobject_first_slot));
 	return it->second.get();
 }
 

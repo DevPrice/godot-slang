@@ -352,7 +352,7 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets) {
 	ERR_FAIL_NULL(metadata);
 	ERR_FAIL_NULL(global_params_shape);
-	ComputeShaderObject object(nullptr, global_params_shape);
+	ComputeShaderObject object(nullptr, nullptr, global_params_shape);
 	const auto descriptor_sets = object.get_descriptor_sets();
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
 		bool set_used = false;

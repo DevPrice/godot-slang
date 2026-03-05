@@ -27,6 +27,7 @@ struct ComputeShaderOffset {
 class ComputeShaderObject {
 
 private:
+	godot::RenderingDevice* rendering_device;
     SamplerCache* sampler_cache;
     godot::Ref<ShaderTypeLayoutShape> shape{};
     godot::PackedByteArray push_constants{};
@@ -39,7 +40,7 @@ private:
 public:
     using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
 
-    ComputeShaderObject(SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape, bool p_owns_binding_space = true, int64_t p_first_slot_index = 0);
+	ComputeShaderObject(godot::RenderingDevice* p_rendering_device, SamplerCache* p_sampler_cache, const godot::Ref<ShaderTypeLayoutShape>& p_shape, bool p_owns_binding_space = true, int64_t p_first_slot_index = 0);
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
