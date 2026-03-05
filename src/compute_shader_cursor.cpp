@@ -273,7 +273,8 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
 	const PackedStringArray parts = path.split("/");
 	ComputeShaderCursor current(*this);
 	for (const String& field_name : parts) {
-		const std::optional<FieldShape> property = shape->field(field_name);
+		ERR_FAIL_NULL_V(current.shape, ComputeShaderCursor(nullptr));
+		const std::optional<FieldShape> property = current.shape->field(field_name);
 		ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
 		const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
 		ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
