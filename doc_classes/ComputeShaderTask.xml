@@ -54,7 +54,22 @@
 			<return type="PackedByteArray" />
 			<param index="0" name="param" type="StringName" />
 			<description>
-				Get the raw bytes for [param]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param.
+				Fetch the raw bytes for [param param]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param. See: [method RenderingDevice.buffer_get_data].
+			</description>
+		</method>
+		<method name="get_buffer_data_async" qualifiers="const">
+			<return type="int" enum="Error" />
+			<param index="0" name="param" type="StringName" />
+			<param index="1" name="callback" type="Callable" />
+			<description>
+				Fetches the data for the buffer associated with [param param]. See: [method buffer_get_data] and [method RenderingDevice.buffer_get_data_async].
+			</description>
+		</method>
+		<method name="get_rids" qualifiers="const">
+			<return type="RID[]" />
+			<param index="0" name="param" type="StringName" />
+			<description>
+				Gets the uniform [RID]s associated with [param param] for the most recent dispatch.
 			</description>
 		</method>
 		<method name="get_shader_parameter" qualifiers="const">

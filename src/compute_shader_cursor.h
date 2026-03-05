@@ -51,7 +51,9 @@ public:
 
     DescriptorSets get_descriptor_sets();
     const godot::PackedByteArray& get_push_constants() const { return push_constants; }
+	godot::TypedArray<godot::RID> get_rids(const ComputeShaderOffset& offset) const;
 	godot::PackedByteArray get_buffer_data(const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
+	godot::Error get_buffer_data_async(const godot::Callable& callback, const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
 
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 
@@ -95,5 +97,7 @@ public:
     void write_resource(const godot::Variant& data) const;
     void write(godot::Variant data) const;
 
+	godot::TypedArray<godot::RID> get_rids() const;
 	godot::PackedByteArray get_buffer_data() const;
+	godot::Error get_buffer_data_async(const godot::Callable& callback) const;
 };

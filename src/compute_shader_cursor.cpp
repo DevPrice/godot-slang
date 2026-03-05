@@ -187,12 +187,27 @@ void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, c
 	}
 }
 
+TypedArray<RID> ComputeShaderObject::get_rids(const ComputeShaderOffset& offset) const {
+	const Ref<RDUniform> uniform = uniforms.get(offset.binding_range_offset, {});
+	ERR_FAIL_NULL_V(uniform, {});
+	ERR_FAIL_COND_V(uniform->get_ids().is_empty(), {});
+	return uniform->get_ids();
+}
+
 PackedByteArray ComputeShaderObject::get_buffer_data(const ComputeShaderOffset& offset, const uint32_t size_bytes) const {
 	const Ref<RDUniform> uniform = uniforms.get(offset.binding_range_offset, {});
 	ERR_FAIL_NULL_V(uniform, {});
 	ERR_FAIL_COND_V(uniform->get_ids().is_empty(), {});
 	const RID buffer_rid = uniform->get_ids().front();
-	return RenderingServer::get_singleton()->get_rendering_device()->buffer_get_data(buffer_rid, offset.byte_offset,  size_bytes);
+	return RenderingServer::get_singleton()->get_rendering_device()->buffer_get_data(buffer_rid, offset.byte_offset, size_bytes);
+}
+
+Error ComputeShaderObject::get_buffer_data_async(const Callable& callback, const ComputeShaderOffset& offset, const uint32_t size_bytes) const {
+	const Ref<RDUniform> uniform = uniforms.get(offset.binding_range_offset, {});
+	ERR_FAIL_NULL_V(uniform, {});
+	ERR_FAIL_COND_V(uniform->get_ids().is_empty(), {});
+	const RID buffer_rid = uniform->get_ids().front();
+	return RenderingServer::get_singleton()->get_rendering_device()->buffer_get_data_async(buffer_rid, callback, offset.byte_offset, size_bytes);
 }
 
 ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t binding_range_index) {
@@ -329,8 +344,19 @@ void ComputeShaderCursor::write(Variant data) const {
 	}
 }
 
+TypedArray<RID> ComputeShaderCursor::get_rids() const {
+	ERR_FAIL_NULL_V(object, {});
+	return object->get_rids(offset);
+}
+
 PackedByteArray ComputeShaderCursor::get_buffer_data() const {
 	ERR_FAIL_NULL_V(object, {});
 	ERR_FAIL_NULL_V(shape, {});
 	return object->get_buffer_data(offset, shape->get_size());
+}
+
+Error ComputeShaderCursor::get_buffer_data_async(const Callable& callback) const {
+	ERR_FAIL_NULL_V(object, {});
+	ERR_FAIL_NULL_V(shape, {});
+	return object->get_buffer_data_async(callback, offset, shape->get_size());
 }

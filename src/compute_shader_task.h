@@ -35,7 +35,9 @@ public:
 	void dispatch_at(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
 	void dispatch_group(const StringName& group_name, Vector3i thread_groups, const Object* context = nullptr);
 
+	TypedArray<RID> get_rids(const StringName& param) const;
 	PackedByteArray get_buffer_data(const StringName& param) const;
+	Error get_buffer_data_async(const StringName& param, const Callable& callback) const;
 
 	[[nodiscard]] Dictionary get_shader_parameters() const;
 

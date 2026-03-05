@@ -25,7 +25,9 @@ void ComputeShaderTask::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_all", "thread_groups", "context"), &ComputeShaderTask::dispatch_all, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_group", "group_name", "thread_groups", "context"), &ComputeShaderTask::dispatch_group, DEFVAL(nullptr));
+	BIND_METHOD(ComputeShaderTask, get_rids, "param")
 	BIND_METHOD(ComputeShaderTask, get_buffer_data, "param")
+	BIND_METHOD(ComputeShaderTask, get_buffer_data_async, "param", "callback")
 }
 
 ComputeShaderTask::ComputeShaderTask() :
@@ -144,9 +146,20 @@ void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vecto
 		}
 	}
 }
+
+TypedArray<RID> ComputeShaderTask::get_rids(const StringName& param) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).field(param).get_rids();
+}
+
 PackedByteArray ComputeShaderTask::get_buffer_data(const StringName& param) const {
 	ERR_FAIL_NULL_V(_shader_object, {});
 	return ComputeShaderCursor(_shader_object.get()).field(param).get_buffer_data();
+}
+
+Error ComputeShaderTask::get_buffer_data_async(const StringName& param, const Callable& callback) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).field(param).get_buffer_data_async(callback);
 }
 
 Dictionary ComputeShaderTask::get_shader_parameters() const {
@@ -199,14 +212,13 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties) {
 	ERR_FAIL_NULL(p_list);
 	for (const StringName property_name : properties.keys()) {
-		const Dictionary property = properties.get(property_name, Dictionary());
-		PropertyInfo property_info = PropertyInfo::from_dict(property.get("property_info", Dictionary()));
-		property_info.name = prefix + property_info.name;
-		if (_can_show_property_info(property_info)) {
-			p_list->push_back(property_info);
-		} else {
-			const Ref<ShaderTypeLayoutShape> property_shape = property.get("shape", nullptr);
-			if (const auto structured_shape = cast_to<StructTypeLayoutShape>(property_shape.ptr())) {
+		const FieldShape field = FieldShape::from_dict(properties[property_name]);
+		if (field.property_info) {
+			PropertyInfo property_info = *field.property_info;
+			property_info.name = prefix + property_info.name;
+			if (_can_show_property_info(property_info)) {
+				p_list->push_back(property_info);
+			} else if (const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr())) {
 				_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ prefix, property_name }, structured_shape->get_properties());
 			}
 		}

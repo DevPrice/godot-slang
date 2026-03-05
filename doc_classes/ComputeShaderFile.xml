@@ -42,7 +42,7 @@
 			The kernels declared in this shader file, one for each entry-point.
 		</member>
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
-			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct registers.
+			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct descriptor slots.
 		</member>
 	</members>
 	<constants>
