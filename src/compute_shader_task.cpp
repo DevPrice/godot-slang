@@ -213,14 +213,12 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 	ERR_FAIL_NULL(p_list);
 	for (const StringName property_name : properties.keys()) {
 		const FieldShape field = FieldShape::from_dict(properties[property_name]);
-		if (field.property_info) {
+		if (field.property_info && _can_show_property_info(*field.property_info)) {
 			PropertyInfo property_info = *field.property_info;
 			property_info.name = prefix + property_info.name;
-			if (_can_show_property_info(property_info)) {
-				p_list->push_back(property_info);
-			} else if (const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr())) {
-				_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ prefix, property_name }, structured_shape->get_properties());
-			}
+			p_list->push_back(property_info);
+		} else if (const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr())) {
+			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ prefix, property_name }, structured_shape->get_properties());
 		}
 	}
 }
@@ -254,15 +252,15 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Field
 		int64_t i = 0;
 		bool valid;
 		for (; i < parts.size() - 1; ++i) {
-			const Dictionary property = current.get_named(parts[i], valid);
-			const Ref<ShaderTypeLayoutShape> shape = property.get("shape", nullptr);
-			const auto structured_shape = cast_to<StructTypeLayoutShape>(shape.ptr());
+			const FieldShape field = FieldShape::from_dict(current.get_named(parts[i], valid));
+			const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr());
 			if (!valid || !structured_shape)
 				return false;
 			current = structured_shape->get_properties();
 		}
+		const Variant last = current.get_named(parts[i], valid);
 		if (valid) {
-			r_reflection = FieldShape::from_dict(current.get_named(parts[i], valid));
+			r_reflection = FieldShape::from_dict(last);
 			return true;
 		}
 	}
