@@ -30,6 +30,7 @@ public:
 			if (T* owner = godot::Object::cast_to<T>(godot::ObjectDB::get_instance(owner_id))) {
 				owner->free_rid(rid);
 			}
+			rid = {};
 		}
 	}
 

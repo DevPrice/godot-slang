@@ -50,7 +50,7 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 			const int64_t size = binding["size"];
 			const int64_t alignment = binding.get("alignment", 1);
 			if (binding.has("uniform_type")) {
-				auto buffer_data = std::make_unique<RDBuffer>();
+				auto buffer_data = std::make_unique<RDBuffer>(p_rendering_device);
 				buffer_data->set_alignment(alignment);
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
@@ -61,7 +61,7 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 		} else if (binding.has("uniform_type")) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 			if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-				auto buffer_data = std::make_unique<RDBuffer>();
+				auto buffer_data = std::make_unique<RDBuffer>(p_rendering_device);
 				buffer_data->set_size(256); // TODO: Default sizing behavior?
 				buffer_data->set_is_fixed_size(false);
 				buffers.try_emplace(binding_range_index, std::move(buffer_data));
@@ -231,7 +231,7 @@ RDBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_range_index) {
 	if (it != buffers.end()) {
 		return *it->second;
 	}
-	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index);
+	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<RDBuffer>(rendering_device));
 	return *new_buffer_it->second;
 }
 

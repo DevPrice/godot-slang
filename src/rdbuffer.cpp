@@ -10,18 +10,11 @@
 
 using namespace godot;
 
-RDBuffer::~RDBuffer() {
-	if (rid.is_valid()) {
-		if (const RenderingServer* rendering_server = RenderingServer::get_singleton()) {
-			if (RenderingDevice* rd = rendering_server->get_rendering_device()) {
-				rd->free_rid(rid);
-			}
-		}
-	}
-}
+RDBuffer::RDBuffer(RenderingDevice* p_rendering_device) : rendering_device(p_rendering_device), rid(p_rendering_device) { }
 
 void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
-	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Writing fixed-size buffer before initialize!");
+	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
+	ERR_FAIL_COND_MSG(offset + size > buffer.size(), "Attempt to write past end of buffer!");
 	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, matrix_layout);
 	if (serialized.compare(buffer.ptr(), size)) {
 		serialized.copy(buffer.ptrw() + offset, size);
@@ -52,7 +45,7 @@ void RDBuffer::flush() {
 		if (remote_size < buffer.size() && rid.is_valid()) {
 			// the buffer grew in size, we need to recreate it
 			rd->free_rid(rid);
-			set_rid(RID());
+			rid.reset();
 			dirty_start = 0;
 			dirty_end = buffer.size();
 		} else if (buffer.is_empty()) {
@@ -65,7 +58,7 @@ void RDBuffer::flush() {
 
 	if (!rid.is_valid()) {
 		ERR_FAIL_COND(buffer.is_empty());
-		set_rid(get_is_fixed_size() ? rd->uniform_buffer_create(buffer.size(), buffer) : rd->storage_buffer_create(buffer.size(), buffer));
+		rid = get_is_fixed_size() ? rd->uniform_buffer_create(buffer.size(), buffer) : rd->storage_buffer_create(buffer.size(), buffer);
 	} else if (dirty_start != dirty_end) {
 		rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
 	}
@@ -78,7 +71,10 @@ int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {
 	return alignment * ((size + (alignment - 1)) / alignment);
 }
 
-GET_SET_PROPERTY_IMPL(RDBuffer, RID, rid)
+RID RDBuffer::get_rid() const {
+	return rid;
+}
+
 GET_SET_PROPERTY_IMPL(RDBuffer, PackedByteArray, buffer)
 GET_SET_PROPERTY_IMPL(RDBuffer, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_fixed_size)
