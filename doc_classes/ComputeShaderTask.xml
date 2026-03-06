@@ -62,7 +62,7 @@
 			<param index="0" name="param" type="StringName" />
 			<param index="1" name="callback" type="Callable" />
 			<description>
-				Fetches the data for the buffer associated with [param param]. See: [method buffer_get_data] and [method RenderingDevice.buffer_get_data_async].
+				Fetches the data for the buffer associated with [param param]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
 			</description>
 		</method>
 		<method name="get_rids" qualifiers="const">

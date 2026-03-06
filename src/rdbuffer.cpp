@@ -34,17 +34,10 @@ void ComputeBuffer::set_size(const int64_t size) {
 }
 
 void ComputeBuffer::flush() {
-	RenderingServer* rendering_server = RenderingServer::get_singleton();
-	ERR_FAIL_NULL(rendering_server);
-	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
-	// TODO: Need to use the correct rendering device contextually
-	RenderingDevice* rd = rendering_server->get_rendering_device();
-	ERR_FAIL_NULL(rd);
+	ERR_FAIL_NULL(rendering_device);
 
 	if (!get_is_fixed_size()) {
 		if (remote_size < buffer.size() && rid.is_valid()) {
-			// the buffer grew in size, we need to recreate it
-			rd->free_rid(rid);
 			rid.reset();
 			dirty_start = 0;
 			dirty_end = buffer.size();
@@ -58,9 +51,9 @@ void ComputeBuffer::flush() {
 
 	if (!rid.is_valid()) {
 		ERR_FAIL_COND(buffer.is_empty());
-		rid = get_is_fixed_size() ? rd->uniform_buffer_create(buffer.size(), buffer) : rd->storage_buffer_create(buffer.size(), buffer);
+		rid = get_is_fixed_size() ? rendering_device->uniform_buffer_create(buffer.size(), buffer) : rendering_device->storage_buffer_create(buffer.size(), buffer);
 	} else if (dirty_start != dirty_end) {
-		rd->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
+		rendering_device->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
 	}
 	remote_size = buffer.size();
 	dirty_start = 0;
