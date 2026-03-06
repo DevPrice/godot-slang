@@ -1,8 +1,9 @@
 #include "compute_shader_shape.h"
 
+#include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
 #include "enums.h"
-#include "compute_shader_cursor.h"
+#include "slang.h"
 #include "variant_serializer.h"
 
 using namespace godot;
@@ -125,6 +126,38 @@ FieldShape FieldShape::from_dict(const Dictionary& dict) {
 			: std::nullopt,
 		dict.get("binding_offset", {}),
 		dict.get("offset", {}),
+	};
+}
+
+BindingRange::operator Dictionary() const {
+	Dictionary result;
+	result["binding_type"] = static_cast<int64_t>(type);
+	if (uniform_type) {
+		result["uniform_type"] = *uniform_type;
+	}
+	result["slot_offset"] = slot_offset;
+	result["binding_count"] = binding_count;
+	if (size > 0) {
+		result["size"] = size;
+	}
+	if (alignment > 0) {
+		result["alignment"] = alignment;
+	}
+	if (leaf_shape.is_valid()) {
+		result["leaf_shape"] = leaf_shape;
+	}
+	return result;
+}
+
+BindingRange BindingRange::from_dict(const Dictionary& dict) {
+	return BindingRange{
+		static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(dict.get("binding_type", 0))),
+		static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(dict.get("uniform_type", 0))),
+		dict.get("slot_offset", 0),
+		dict.get("binding_count", 1),
+		dict.get("size", 0),
+		dict.get("alignment", 1),
+		dict.get("leaf_shape", {}),
 	};
 }
 

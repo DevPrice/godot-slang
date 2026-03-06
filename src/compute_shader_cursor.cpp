@@ -45,19 +45,17 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 	bool has_only_parameter_blocks = true;
 	const TypedArray<Dictionary> bindings = p_shape->get_bindings();
 	for (int64_t binding_range_index = 0; binding_range_index < bindings.size(); binding_range_index++) {
-		const Dictionary binding = bindings[binding_range_index];
-		has_only_parameter_blocks = has_only_parameter_blocks && static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
-		if (binding.has("uniform_type") && !binding.has("leaf_shape")) {
-			const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
+		const auto binding = BindingRange::from_dict(bindings[binding_range_index]);
+		has_only_parameter_blocks = has_only_parameter_blocks && binding.type == ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK;
+		if (binding.uniform_type && binding.leaf_shape.is_null()) {
 			Ref<RDUniform> uniform{};
 			uniform.instantiate();
-			const int64_t slot_offset = binding["slot_offset"];
-			uniform->set_binding(first_slot_index + slot_offset);
-			uniform->set_uniform_type(uniform_type);
+			uniform->set_binding(first_slot_index + binding.slot_offset);
+			uniform->set_uniform_type(*binding.uniform_type);
 			uniforms.set(binding_range_index, uniform);
 		}
-		if (static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT)) {
-			push_constants.resize(ComputeBuffer::aligned_size(binding["size"], binding["alignment"]));
+		if (binding.type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
+			push_constants.resize(ComputeBuffer::aligned_size(binding.size, binding.alignment));
 		}
 	}
 	if (has_only_parameter_blocks) {
@@ -66,27 +64,24 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 }
 
 void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, const Variant& data) {
-	ERR_FAIL_NULL(shape);
-	const TypedArray<Dictionary> bindings = shape->get_bindings();
-	ERR_FAIL_INDEX(offset.binding_range_offset, bindings.size());
-	const Dictionary binding = bindings[offset.binding_range_offset];
-	ERR_FAIL_COND(!binding.has("uniform_type"));
+	const auto binding = _get_binding_range(offset.binding_range_offset);
+	ERR_FAIL_COND(!binding);
+	ERR_FAIL_COND(!binding->uniform_type);
+	ERR_FAIL_COND(binding->binding_count <= 0);
 
-	const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
+	const auto uniform_type = *binding->uniform_type;
 	const Ref<RDUniform> uniform = uniforms.get(offset.binding_range_offset, {});
 	ERR_FAIL_NULL(uniform);
 	TypedArray<RID> rids = uniform->get_ids();
 	uniform->clear_ids();
 
-	const int64_t element_count = binding["binding_count"];
-	ERR_FAIL_COND(element_count <= 0);
 	const int64_t elements_per_binding = uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE ? 2 : 1;
 
-	if (rids.size() != element_count * elements_per_binding) {
-		rids.resize(element_count * elements_per_binding);
+	if (rids.size() != binding->binding_count * elements_per_binding) {
+		rids.resize(binding->binding_count * elements_per_binding);
 	}
 
-	ERR_FAIL_INDEX(offset.element_offset, element_count);
+	ERR_FAIL_INDEX(offset.element_offset, binding->binding_count);
 
 	const Variant data_or_default = data == Variant{} ? _get_default_value(uniform_type) : data;
 	if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER || uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
@@ -117,20 +112,18 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 }
 
 void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
-	ERR_FAIL_NULL(shape);
-	const TypedArray<Dictionary> bindings = shape->get_bindings();
-	ERR_FAIL_INDEX(offset.binding_range_offset, bindings.size());
-	const Dictionary binding = bindings[offset.binding_range_offset];
-	if (binding.has("uniform_type")) {
+	const auto binding_range = _get_binding_range(offset.binding_range_offset);
+	ERR_FAIL_COND(!binding_range);
+	if (binding_range->type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
+		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
+		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, matrix_layout);
+		buffer.copy(push_constants.ptrw() + offset.byte_offset, size);
+	} else {
 		ComputeBuffer& buffer = _get_or_create_buffer(offset.binding_range_offset);
 		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
 			buffer.set_size(offset.byte_offset + size);
 		}
 		buffer.write(offset.byte_offset, size, data, matrix_layout);
-	} else {
-		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
-		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, matrix_layout);
-		buffer.copy(push_constants.ptrw() + offset.byte_offset, size);
 	}
 }
 
@@ -195,17 +188,22 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	if (const auto it = subobjects.find(binding_range_index); it != subobjects.end()) {
 		return it->second.get();
 	}
-	ERR_FAIL_NULL_V(shape, nullptr);
-	const TypedArray<Dictionary> bindings = shape->get_bindings();
-	ERR_FAIL_INDEX_V(binding_range_index, bindings.size(), nullptr);
-	const Dictionary binding = bindings[binding_range_index];
-	const Ref<StructTypeLayoutShape> subshape = binding.get("leaf_shape", nullptr);
-	if (subshape.is_null())
+	const auto binding_range = _get_binding_range(binding_range_index);
+	ERR_FAIL_COND_V(!binding_range, nullptr);
+	if (binding_range->leaf_shape.is_null())
 		return nullptr;
-	const bool new_binding_space = static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK);
-	const int64_t subobject_first_slot = (new_binding_space ? 0 : first_slot_index) + static_cast<int64_t>(binding.get("slot_offset", 0));
-	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rendering_device, sampler_cache, subshape, new_binding_space, subobject_first_slot));
+	const bool new_binding_space = binding_range->type == ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK;
+	const int64_t subobject_first_slot = (new_binding_space ? 0 : first_slot_index) + binding_range->slot_offset;
+	auto [it, _] = subobjects.emplace(binding_range_index, std::make_unique<ComputeShaderObject>(rendering_device, sampler_cache, binding_range->leaf_shape, new_binding_space, subobject_first_slot));
 	return it->second.get();
+}
+
+std::optional<BindingRange> ComputeShaderObject::_get_binding_range(const int64_t binding_range_index) const {
+	ERR_FAIL_NULL_V(shape, std::nullopt);
+	const TypedArray<Dictionary> binding_ranges = shape->get_bindings();
+	ERR_FAIL_INDEX_V(binding_range_index, binding_ranges.size(), std::nullopt);
+	const Dictionary binding = binding_ranges[binding_range_index];
+	return BindingRange::from_dict(binding);
 }
 
 ComputeBuffer& ComputeShaderObject::_get_or_create_buffer(const int64_t binding_range_index) {
@@ -218,20 +216,20 @@ ComputeBuffer& ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 	if (shape.is_valid()) {
 		const TypedArray<Dictionary> bindings = shape->get_bindings();
 		if (binding_range_index >= 0 && binding_range_index < bindings.size()) {
-			const Dictionary binding = bindings[binding_range_index];
-			if (binding.has("size")) {
-				const int64_t size = binding["size"];
-				const int64_t alignment = binding.get("alignment", 1);
-				if (binding.has("uniform_type")) {
-					new_buffer.set_alignment(alignment);
-					new_buffer.set_size(size);
-					new_buffer.set_is_fixed_size(true);
-				}
-			} else if (binding.has("uniform_type")) {
-				const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
-				if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-					new_buffer.set_size(256); // TODO: Default sizing behavior?
-					new_buffer.set_is_fixed_size(false);
+			if (const auto binding_range = _get_binding_range(binding_range_index)) {
+				switch (binding_range->type) {
+					case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER:
+						new_buffer.set_alignment(binding_range->alignment);
+						new_buffer.set_size(binding_range->size);
+						new_buffer.set_is_fixed_size(true);
+						break;
+					case ShaderTypeLayoutShape::BindingType::TYPED_BUFFER:
+					case ShaderTypeLayoutShape::BindingType::RAW_BUFFER:
+						new_buffer.set_size(256); // TODO: Default sizing behavior?
+						new_buffer.set_is_fixed_size(false);
+						break;
+					default:
+						break;
 				}
 			}
 		}

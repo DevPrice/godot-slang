@@ -458,18 +458,18 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			shape->set_bindings(bindings);
 
 			if (type_layout->getSize() && implicit_offset) {
-				Dictionary binding{};
-				binding.set("size", static_cast<int64_t>(type_layout->getSize()));
-				binding.set("alignment", type_layout->getAlignment());
-				binding.set("binding_type", static_cast<int64_t>(slang::BindingType::ConstantBuffer));
-				binding.set("uniform_type", RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER);
-				binding.set("slot_offset", 0);
-				binding.set("binding_count", 1);
-				bindings.push_back(binding);
+				BindingRange binding{};
+				binding.size = type_layout->getSize();
+				binding.alignment = type_layout->getAlignment();
+				binding.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(slang::BindingType::ConstantBuffer));
+				binding.uniform_type = RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER;
+				binding.slot_offset = 0;
+				binding.binding_count = 1;
+				bindings.push_back(Dictionary(binding));
 			}
 
 			for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
-				Dictionary binding{};
+				BindingRange binding{};
 				const slang::BindingType binding_type = type_layout->getBindingRangeType(i);
 				const auto leaf_type = type_layout->getBindingRangeLeafTypeLayout(i);
 				const Ref<ShaderTypeLayoutShape> leaf_shape = _get_shape(
@@ -477,25 +477,24 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 					0,
 					0,
 					include_property_info);
-				binding.set("binding_type", static_cast<int64_t>(binding_type));
+				binding.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(binding_type));
 				if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
-					binding.set("uniform_type", *uniform_type);
+					binding.uniform_type = *uniform_type;
 				}
 				if (binding_type == slang::BindingType::PushConstant) {
-					binding.set("size", leaf_shape->get_size());
-					binding.set("alignment", 16);
+					binding.size = leaf_shape->get_size();
+					binding.alignment = 16;
 				}
 
 				const int64_t set_index = type_layout->getBindingRangeDescriptorSetIndex(i);
 				const int64_t range_index = type_layout->getBindingRangeFirstDescriptorRangeIndex(i);
-				binding.set("binding_type", static_cast<int64_t>(binding_type));
-				binding.set("slot_offset", binding_type == slang::BindingType::ParameterBlock
-					? 0 : slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index));
-				binding.set("binding_count", type_layout->getBindingRangeBindingCount(i));
+				binding.slot_offset = binding_type == slang::BindingType::ParameterBlock
+					? 0 : slot_offset + type_layout->getDescriptorSetDescriptorRangeIndexOffset(set_index, range_index);
+				binding.binding_count = type_layout->getBindingRangeBindingCount(i);
 				if (binding_type == slang::BindingType::ConstantBuffer || binding_type == slang::BindingType::ParameterBlock) {
-					binding.set("leaf_shape", leaf_shape);
+					binding.leaf_shape = leaf_shape;
 				}
-				bindings.push_back(binding);
+				bindings.push_back(Dictionary(binding));
 			}
 
 			return shape;

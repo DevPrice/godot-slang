@@ -59,6 +59,7 @@ public:
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 
 private:
+	std::optional<BindingRange> _get_binding_range(int64_t binding_range_index) const;
     ComputeBuffer& _get_or_create_buffer(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 

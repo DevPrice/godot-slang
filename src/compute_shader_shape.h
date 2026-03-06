@@ -9,6 +9,7 @@
 
 class ShaderTypeLayoutShape;
 class ComputeShaderCursor;
+struct BindingRange;
 
 struct FieldShape {
 
@@ -60,6 +61,8 @@ public:
 		UNKNOWN = 0,
 		CONSTANT_BUFFER = 3,
 		PARAMETER_BLOCK = 4,
+		TYPED_BUFFER = 5,
+		RAW_BUFFER = 6,
 		PUSH_CONSTANT = 14,
 	};
 };
@@ -145,3 +148,18 @@ protected:
 
 VARIANT_ENUM_CAST(ShaderTypeLayoutShape::MatrixLayout)
 VARIANT_ENUM_CAST(ResourceTypeLayoutShape::ComputeShaderResourceType)
+
+struct BindingRange {
+
+	ShaderTypeLayoutShape::BindingType type{};
+	std::optional<godot::RenderingDevice::UniformType> uniform_type{};
+	int64_t slot_offset{};
+	int64_t binding_count{};
+	int64_t size{};
+	int64_t alignment{};
+	godot::Ref<ShaderTypeLayoutShape> leaf_shape{};
+
+	operator godot::Dictionary() const;
+
+	static BindingRange from_dict(const godot::Dictionary& dict);
+};
