@@ -12,7 +12,6 @@
 #include "compute_shader_shape.h"
 #include "compute_shader_task.h"
 #include "compute_texture.h"
-#include "rdbuffer.h"
 
 #ifdef TOOLS_ENABLED
 #include "slang_shader_editor_plugin.h"

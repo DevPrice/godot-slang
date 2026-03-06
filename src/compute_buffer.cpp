@@ -6,7 +6,7 @@
 #include "compute_shader_shape.h"
 #include "variant_serializer.h"
 
-#include "rdbuffer.h"
+#include "compute_buffer.h"
 
 using namespace godot;
 

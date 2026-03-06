@@ -8,7 +8,7 @@
 #include "godot_cpp/classes/texture.hpp"
 
 #include "attributes.h"
-#include "rdbuffer.h"
+#include "compute_buffer.h"
 #include "sampler_cache.h"
 #include "variant_serializer.h"
 

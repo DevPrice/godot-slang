@@ -8,8 +8,8 @@
 #include "godot_cpp/classes/rd_uniform.hpp"
 
 #include "attributes.h"
+#include "compute_buffer.h"
 #include "compute_shader_shape.h"
-#include "rdbuffer.h"
 
 class SamplerCache;
 
