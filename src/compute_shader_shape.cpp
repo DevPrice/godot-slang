@@ -3,7 +3,6 @@
 #include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
 #include "enums.h"
-#include "slang.h"
 #include "variant_serializer.h"
 
 using namespace godot;
