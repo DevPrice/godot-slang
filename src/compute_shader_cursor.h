@@ -9,9 +9,9 @@
 
 #include "attributes.h"
 #include "compute_shader_shape.h"
+#include "rdbuffer.h"
 
 class SamplerCache;
-class RDBuffer;
 
 struct ComputeShaderOffset {
     uint32_t binding_range_offset{};
@@ -31,7 +31,7 @@ private:
     SamplerCache* sampler_cache;
     godot::Ref<ShaderTypeLayoutShape> shape{};
     godot::PackedByteArray push_constants{};
-    godot::Dictionary buffers{};
+    std::unordered_map<uint64_t, std::unique_ptr<RDBuffer>> buffers{};
     godot::Dictionary uniforms{};
     bool owns_binding_space{};
     int64_t first_slot_index{};

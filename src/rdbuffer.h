@@ -1,29 +1,20 @@
 #pragma once
 
-#include "godot_cpp/classes/ref_counted.hpp"
-
 #include "binding_macros.h"
-#include "compute_shader_file.h"
 #include "compute_shader_shape.h"
 
-using namespace godot;
+class RDBuffer {
 
-class RDBuffer : public RefCounted {
-    GDCLASS(RDBuffer, RefCounted);
-
-    GET_SET_PROPERTY(RID, rid)
-    GET_SET_PROPERTY(PackedByteArray, buffer)
+    GET_SET_PROPERTY(godot::RID, rid)
+    GET_SET_PROPERTY(godot::PackedByteArray, buffer)
     GET_SET_PROPERTY(int64_t, alignment)
     GET_SET_PROPERTY(bool, is_fixed_size)
 
-protected:
-    static void _bind_methods();
-
 public:
     RDBuffer() = default;
-    ~RDBuffer() override;
+    virtual ~RDBuffer();
 
-    void write(int64_t offset, int64_t size, const Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
+    void write(int64_t offset, int64_t size, const godot::Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
     void set_size(int64_t size);
     void flush();
 

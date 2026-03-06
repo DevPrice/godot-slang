@@ -3,13 +3,12 @@
 #include "godot_cpp/classes/rd_uniform.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
 
-#include "rdbuffer.h"
-
 #include "compute_shader_shape.h"
 #include "variant_serializer.h"
 
-void RDBuffer::_bind_methods() {
-}
+#include "rdbuffer.h"
+
+using namespace godot;
 
 RDBuffer::~RDBuffer() {
 	if (rid.is_valid()) {

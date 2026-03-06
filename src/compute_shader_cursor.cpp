@@ -14,6 +14,8 @@
 
 #include "compute_shader_shape.h"
 
+using namespace godot;
+
 ComputeShaderOffset ComputeShaderOffset::operator+(const ComputeShaderOffset& other) const {
 	return ComputeShaderOffset{
 		binding_range_offset + other.binding_range_offset,
@@ -48,23 +50,21 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 			const int64_t size = binding["size"];
 			const int64_t alignment = binding.get("alignment", 1);
 			if (binding.has("uniform_type")) {
-				Ref<RDBuffer> buffer_data{};
-				buffer_data.instantiate();
+				auto buffer_data = std::make_unique<RDBuffer>();
 				buffer_data->set_alignment(alignment);
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
-				buffers.set(binding_range_index, buffer_data);
+				buffers.try_emplace(binding_range_index, std::move(buffer_data));
 			} else if (static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT)) {
 				push_constants.resize(RDBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 			if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-				Ref<RDBuffer> buffer_data{};
-				buffer_data.instantiate();
+				auto buffer_data = std::make_unique<RDBuffer>();
 				buffer_data->set_size(256); // TODO: Default sizing behavior?
 				buffer_data->set_is_fixed_size(false);
-				buffers.set(binding_range_index, buffer_data);
+				buffers.try_emplace(binding_range_index, std::move(buffer_data));
 			}
 		}
 		if (binding.has("uniform_type") && !binding.has("leaf_shape")) {
@@ -153,15 +153,12 @@ void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const V
 }
 
 void ComputeShaderObject::flush_buffers() {
-	for (const int64_t binding_range_index : buffers.keys()) {
-		const Ref<RDBuffer> buffer = buffers[binding_range_index];
-		if (buffer.is_valid()) {
-			buffer->flush();
-			const Ref<RDUniform> buffer_uniform = uniforms.get(binding_range_index, {});
-			if (buffer_uniform.is_valid()) {
-				buffer_uniform->clear_ids();
-				buffer_uniform->add_id(buffer->get_rid());
-			}
+	for (auto& [binding_range_index, buffer] : buffers) {
+		buffer->flush();
+		const Ref<RDUniform> buffer_uniform = uniforms.get(binding_range_index, {});
+		if (buffer_uniform.is_valid()) {
+			buffer_uniform->clear_ids();
+			buffer_uniform->add_id(buffer->get_rid());
 		}
 	}
 	for (auto it = subobjects.begin(); it != subobjects.end(); ++it) {
@@ -230,16 +227,12 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 }
 
 RDBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_range_index) {
-	if (buffers.has(binding_range_index)) {
-		const Ref<RDBuffer> buffer = buffers[binding_range_index];
-		if (buffer.is_valid()) {
-			return *buffer.ptr();
-		}
+	const auto it = buffers.find(binding_range_index);
+	if (it != buffers.end()) {
+		return *it->second;
 	}
-	Ref<RDBuffer> buffer{};
-	buffer.instantiate();
-	buffers.set(binding_range_index, buffer);
-	return *buffer.ptr();
+	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index);
+	return *new_buffer_it->second;
 }
 
 Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformType type) {
