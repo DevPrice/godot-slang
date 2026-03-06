@@ -59,7 +59,7 @@ public:
     ComputeShaderObject* get_or_create_subobject(uint64_t binding_range_index);
 
 private:
-    ComputeBuffer& _get_buffer(int64_t binding_range_index);
+    ComputeBuffer& _get_or_create_buffer(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 
     void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
