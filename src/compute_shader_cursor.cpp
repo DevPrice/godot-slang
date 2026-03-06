@@ -50,18 +50,18 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 			const int64_t size = binding["size"];
 			const int64_t alignment = binding.get("alignment", 1);
 			if (binding.has("uniform_type")) {
-				auto buffer_data = std::make_unique<RDBuffer>(p_rendering_device);
+				auto buffer_data = std::make_unique<ComputeBuffer>(p_rendering_device);
 				buffer_data->set_alignment(alignment);
 				buffer_data->set_size(size);
 				buffer_data->set_is_fixed_size(true);
 				buffers.try_emplace(binding_range_index, std::move(buffer_data));
 			} else if (static_cast<int64_t>(binding["binding_type"]) == static_cast<int64_t>(ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT)) {
-				push_constants.resize(RDBuffer::aligned_size(size, alignment));
+				push_constants.resize(ComputeBuffer::aligned_size(size, alignment));
 			}
 		} else if (binding.has("uniform_type")) {
 			const auto uniform_type = static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(binding["uniform_type"]));
 			if (uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_STORAGE_BUFFER) {
-				auto buffer_data = std::make_unique<RDBuffer>(p_rendering_device);
+				auto buffer_data = std::make_unique<ComputeBuffer>(p_rendering_device);
 				buffer_data->set_size(256); // TODO: Default sizing behavior?
 				buffer_data->set_is_fixed_size(false);
 				buffers.try_emplace(binding_range_index, std::move(buffer_data));
@@ -140,7 +140,7 @@ void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const V
 	ERR_FAIL_INDEX(offset.binding_range_offset, bindings.size());
 	const Dictionary binding = bindings[offset.binding_range_offset];
 	if (binding.has("uniform_type")) {
-		RDBuffer& buffer = _get_buffer(offset.binding_range_offset);
+		ComputeBuffer& buffer = _get_buffer(offset.binding_range_offset);
 		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
 			buffer.set_size(offset.byte_offset + size);
 		}
@@ -226,12 +226,12 @@ ComputeShaderObject* ComputeShaderObject::get_or_create_subobject(const uint64_t
 	return it->second.get();
 }
 
-RDBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_range_index) {
+ComputeBuffer& ComputeShaderObject::_get_buffer(const int64_t binding_range_index) {
 	const auto it = buffers.find(binding_range_index);
 	if (it != buffers.end()) {
 		return *it->second;
 	}
-	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<RDBuffer>(rendering_device));
+	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
 	return *new_buffer_it->second;
 }
 

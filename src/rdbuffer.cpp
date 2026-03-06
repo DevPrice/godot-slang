@@ -10,9 +10,9 @@
 
 using namespace godot;
 
-RDBuffer::RDBuffer(RenderingDevice* p_rendering_device) : rendering_device(p_rendering_device), rid(p_rendering_device) { }
+ComputeBuffer::ComputeBuffer(RenderingDevice* p_rendering_device) : rendering_device(p_rendering_device), rid(p_rendering_device) { }
 
-void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+void ComputeBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
 	ERR_FAIL_COND_MSG(offset + size > buffer.size(), "Attempt to write past end of buffer!");
 	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, matrix_layout);
@@ -23,7 +23,7 @@ void RDBuffer::write(const int64_t offset, const int64_t size, const Variant& da
 	}
 }
 
-void RDBuffer::set_size(const int64_t size) {
+void ComputeBuffer::set_size(const int64_t size) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size(), "Attempted to change size of fixed size buffer!");
 	const int64_t alignment = get_alignment();
 	if (alignment > 0) {
@@ -33,7 +33,7 @@ void RDBuffer::set_size(const int64_t size) {
 	}
 }
 
-void RDBuffer::flush() {
+void ComputeBuffer::flush() {
 	RenderingServer* rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL(rendering_server);
 	ERR_FAIL_COND(!rendering_server->is_on_render_thread());
@@ -67,14 +67,14 @@ void RDBuffer::flush() {
 	dirty_end = 0;
 }
 
-int64_t RDBuffer::aligned_size(const int64_t size, const int64_t alignment) {
+int64_t ComputeBuffer::aligned_size(const int64_t size, const int64_t alignment) {
 	return alignment * ((size + (alignment - 1)) / alignment);
 }
 
-RID RDBuffer::get_rid() const {
+RID ComputeBuffer::get_rid() const {
 	return rid;
 }
 
-GET_SET_PROPERTY_IMPL(RDBuffer, PackedByteArray, buffer)
-GET_SET_PROPERTY_IMPL(RDBuffer, int64_t, alignment)
-GET_SET_PROPERTY_IMPL(RDBuffer, bool, is_fixed_size)
+GET_SET_PROPERTY_IMPL(ComputeBuffer, PackedByteArray, buffer)
+GET_SET_PROPERTY_IMPL(ComputeBuffer, int64_t, alignment)
+GET_SET_PROPERTY_IMPL(ComputeBuffer, bool, is_fixed_size)

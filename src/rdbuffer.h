@@ -4,14 +4,14 @@
 #include "compute_shader_shape.h"
 #include "rids.h"
 
-class RDBuffer {
+class ComputeBuffer {
 
     GET_SET_PROPERTY(godot::PackedByteArray, buffer)
     GET_SET_PROPERTY(int64_t, alignment)
     GET_SET_PROPERTY(bool, is_fixed_size)
 
 public:
-	explicit RDBuffer(godot::RenderingDevice* p_rendering_device);
+	explicit ComputeBuffer(godot::RenderingDevice* p_rendering_device);
 
 	godot::RID get_rid() const;
 
