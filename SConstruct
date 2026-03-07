@@ -34,6 +34,14 @@ Run the following command to download godot-cpp:
 
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
+if env.get("is_msvc", False):
+    env["CXXFLAGS"].remove("/std:c++17")
+    env["CXXFLAGS"].insert(0, "/std:c++20")
+    env["CXXFLAGS"].insert(0, "/Zc:preprocessor")
+else:
+    env["CXXFLAGS"].remove("-std=c++17")
+    env["CXXFLAGS"].insert(0, "-std=c++20")
+
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 
