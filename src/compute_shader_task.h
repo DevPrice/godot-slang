@@ -22,7 +22,6 @@ protected:
 
 public:
 	ComputeShaderTask();
-	virtual ~ComputeShaderTask();
 
 	[[nodiscard]] TypedArray<ComputeShaderKernel> get_kernels() const;
 
@@ -53,14 +52,13 @@ public:
 
 private:
 	Dictionary _shader_parameters{};
-	Dictionary _kernel_shaders{};
-	Dictionary _kernel_pipelines{};
+	std::vector<UniqueRID<RenderingDevice>> _kernel_shaders{};
+	std::vector<UniqueRID<RenderingDevice>> _kernel_pipelines{};
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
 	std::unique_ptr<ComputeShaderObject> _shader_object;
 
 	void _reset();
-	void _free_rids();
 	void _shader_changed();
 
 	RenderingDevice* _get_active_rendering_device() const;

@@ -33,10 +33,6 @@ void ComputeShaderTask::_bind_methods() {
 ComputeShaderTask::ComputeShaderTask() :
 		_shader_object(nullptr) {}
 
-ComputeShaderTask::~ComputeShaderTask() {
-	_free_rids();
-}
-
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
 		return shader->get_kernels().duplicate();
@@ -68,9 +64,8 @@ RenderingDevice* ComputeShaderTask::get_rendering_device() const {
 void ComputeShaderTask::set_rendering_device(RenderingDevice* p_rendering_device) {
 	ERR_FAIL_COND_MSG(p_rendering_device, "Overriding the rendering_device is not yet supported!");
 	if (p_rendering_device != ObjectDB::get_instance(rendering_device_id)) {
-		_free_rids();
 		rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
-		_reset();
+		RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeShaderTask::_reset));
 	}
 }
 
@@ -268,36 +263,21 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Field
 }
 
 void ComputeShaderTask::_reset() {
-	_free_rids();
-	RenderingDevice* rendering_device = _get_active_rendering_device();
-	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
-	_sampler_cache = std::make_unique<SamplerCache>(rendering_device);
+	const int64_t num_kernels = get_kernels().size();
+	_kernel_pipelines.resize(num_kernels);
+	_kernel_shaders.resize(num_kernels);
+	RenderingDevice* rd = _get_active_rendering_device();
+	ERR_FAIL_NULL_MSG(rd, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
+	for (int64_t i = 0; i < num_kernels; i++) {
+		_kernel_pipelines[i] = UniqueRID(rd);
+		_kernel_shaders[i] = UniqueRID(rd);
+	}
+	_sampler_cache = std::make_unique<SamplerCache>(rd);
 	if (shader.is_valid() && shader->get_base_error().is_empty()) {
-		_shader_object = std::make_unique<ComputeShaderObject>(rendering_device, _sampler_cache.get(), shader->get_parameters());
+		_shader_object = std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), shader->get_parameters());
 	} else {
 		_shader_object = nullptr;
 	}
-}
-
-void ComputeShaderTask::_free_rids() {
-	RenderingDevice* rendering_device = _get_active_rendering_device();
-	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Attempted to free RIDs with null RenderingDevice!");
-
-	for (const Variant& key : _kernel_pipelines.keys()) {
-		const RID rid = _kernel_pipelines[key];
-		if (rid.is_valid()) {
-			rendering_device->free_rid(_kernel_pipelines[key]);
-		}
-	}
-	_kernel_pipelines.clear();
-
-	for (const Variant& key : _kernel_shaders.keys()) {
-		const RID rid = _kernel_shaders[key];
-		if (rid.is_valid()) {
-			rendering_device->free_rid(_kernel_shaders[key]);
-		}
-	}
-	_kernel_shaders.clear();
 }
 
 void ComputeShaderTask::_shader_changed() {
@@ -314,25 +294,31 @@ RenderingDevice* ComputeShaderTask::_get_active_rendering_device() const {
 }
 
 RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index) {
+	ERR_FAIL_INDEX_V(kernel_index, _kernel_shaders.size(), {});
+	UniqueRID<RenderingDevice>& rid = _kernel_shaders[kernel_index];
+	if (rid.is_valid()) {
+		return rid;
+	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_V(rd, {});
 	ERR_FAIL_NULL_V(shader, {});
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
-	if (!_kernel_shaders.has(kernel_index)) {
-		const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-		_kernel_shaders.set(kernel_index, rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file().trim_suffix(".slang")));
-	}
-	return _kernel_shaders.get(kernel_index, RID{});
+	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+	rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
+	return rid;
 }
 
 RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index) {
+	ERR_FAIL_INDEX_V(kernel_index, _kernel_pipelines.size(), {});
+	UniqueRID<RenderingDevice>& rid = _kernel_pipelines[kernel_index];
+	if (rid.is_valid()) {
+		return rid;
+	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_V(rd, {});
-	if (!_kernel_pipelines.has(kernel_index)) {
-		const RID shader_rid = _get_shader_rid(kernel_index);
-		_kernel_pipelines.set(kernel_index, rd->compute_pipeline_create(shader_rid));
-	}
-	return _kernel_pipelines.get(kernel_index, RID{});
+	const RID shader_rid = _get_shader_rid(kernel_index);
+	rid = rd->compute_pipeline_create(shader_rid);
+	return rid;
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
