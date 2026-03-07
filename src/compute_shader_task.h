@@ -8,6 +8,7 @@
 #include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
 #include "compute_shader_shape.h"
+#include "sampler_cache.h"
 
 using namespace godot;
 

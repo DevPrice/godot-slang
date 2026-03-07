@@ -46,15 +46,23 @@ int64_t VariantSerializer::Buffer::compare(const uint8_t* other, const size_t ma
 }
 
 PackedByteArray VariantSerializer::Buffer::as_packed_byte_array() const {
-	return std::visit(overloaded {
-		[](const InlineBuffer& arg) {
-			PackedByteArray result{};
-			result.resize(arg.size);
-			memcpy(result.ptrw(), arg.data.data(), arg.size);
-			return result;
-		},
-		[](const PackedByteArray& arg) { return arg; }
-	}, buffer);
+	return std::visit(overloaded{
+							  [](const InlineBuffer& arg) {
+								  PackedByteArray result{};
+								  result.resize(arg.size);
+								  memcpy(result.ptrw(), arg.data.data(), arg.size);
+								  return result;
+							  },
+							  [](const PackedByteArray& arg) { return arg; } },
+			buffer);
+}
+
+VariantSerializer::Buffer::operator std::span<unsigned char>() {
+	return std::span(data(), size());
+}
+
+VariantSerializer::Buffer::operator std::span<const unsigned char>() const {
+	return std::span(data(), size());
 }
 
 void VariantSerializer::align(const size_t alignment) {
@@ -65,8 +73,8 @@ void VariantSerializer::align(const size_t alignment) {
 }
 
 size_t VariantSerializer::write(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
-	ERR_FAIL_NULL_V(destination, 0);
-	ERR_FAIL_COND_V(max_size < 4, 0);
+	ERR_FAIL_NULL_V(destination.data(), 0);
+	ERR_FAIL_COND_V(destination.empty(), 0);
 	size_t start = offset;
 	switch (data.get_type()) {
 		case Variant::NIL:

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <variant>
 
 #include "compute_shader_shape.h"
@@ -43,24 +44,26 @@ public:
 
         void copy(uint8_t* destination, size_t max_size) const;
         int64_t compare(const uint8_t* other, size_t max_size) const;
-        godot::PackedByteArray as_packed_byte_array() const;
-    };
+    	godot::PackedByteArray as_packed_byte_array() const;
+    	operator std::span<uint8_t>();
+    	operator std::span<const uint8_t>() const;
+	};
 
 private:
-    uint8_t* destination{};
+    std::span<uint8_t> destination{};
     size_t offset{};
-    size_t max_size{};
 
     template<typename T>
     size_t write(T value) {
         static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable");
-        ERR_FAIL_COND_V(max_size - offset < sizeof(T), 0);
-        memcpy(destination + offset, &value, sizeof(T));
+        ERR_FAIL_COND_V(destination.size() - offset < sizeof(T), 0);
+        memcpy(destination.data() + offset, &value, sizeof(T));
         offset += sizeof(T);
         return sizeof(T);
     }
 
-    explicit VariantSerializer(uint8_t* p_destination, const size_t p_max_size) : destination(p_destination), max_size(p_max_size) { }
+	explicit VariantSerializer(const std::span<uint8_t>& p_destination) : destination(p_destination) { }
+    explicit VariantSerializer(uint8_t* p_destination, const size_t p_max_size) : destination(p_destination, p_max_size) { }
 
     size_t write(const godot::Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
     void align(size_t alignment);
