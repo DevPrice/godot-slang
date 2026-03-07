@@ -51,9 +51,14 @@ public:
 	bool _property_get_reflection(const StringName& p_name, FieldShape& r_reflection) const;
 
 private:
+	struct KernelData {
+		Dictionary parameters{};
+		UniqueRID<RenderingDevice> shader_rid{};
+		UniqueRID<RenderingDevice> pipeline_rid{};
+		std::unique_ptr<ComputeShaderObject> shader_object;
+	};
 	Dictionary _shader_parameters{};
-	std::vector<UniqueRID<RenderingDevice>> _kernel_shaders{};
-	std::vector<UniqueRID<RenderingDevice>> _kernel_pipelines{};
+	std::vector<std::unique_ptr<KernelData>> _kernel_data{};
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
 	std::unique_ptr<ComputeShaderObject> _shader_object;
@@ -62,8 +67,7 @@ private:
 	void _shader_changed();
 
 	RenderingDevice* _get_active_rendering_device() const;
-	RID _get_shader_rid(int64_t kernel_index);
-	RID _get_shader_pipeline_rid(int64_t kernel_index);
+	KernelData* _get_or_create_kernel(int64_t kernel_index);
 
 	void _dispatch(int64_t kernel_index, Vector3i thread_groups, const Object* context = nullptr);
 };

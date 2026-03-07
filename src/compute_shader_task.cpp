@@ -264,14 +264,12 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Field
 
 void ComputeShaderTask::_reset() {
 	const int64_t num_kernels = get_kernels().size();
-	_kernel_pipelines.resize(num_kernels);
-	_kernel_shaders.resize(num_kernels);
+	_kernel_data.resize(num_kernels);
+	for (int64_t i = 0; i < num_kernels; i++) {
+		_kernel_data[i] = nullptr;
+	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rd, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
-	for (int64_t i = 0; i < num_kernels; i++) {
-		_kernel_pipelines[i] = UniqueRID(rd);
-		_kernel_shaders[i] = UniqueRID(rd);
-	}
 	_sampler_cache = std::make_unique<SamplerCache>(rd);
 	if (shader.is_valid() && shader->get_base_error().is_empty()) {
 		_shader_object = std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), shader->get_parameters());
@@ -293,32 +291,25 @@ RenderingDevice* ComputeShaderTask::_get_active_rendering_device() const {
 	return rendering_server ? rendering_server->get_rendering_device() : nullptr;
 }
 
-RID ComputeShaderTask::_get_shader_rid(const int64_t kernel_index) {
-	ERR_FAIL_INDEX_V(kernel_index, _kernel_shaders.size(), {});
-	UniqueRID<RenderingDevice>& rid = _kernel_shaders[kernel_index];
-	if (rid.is_valid()) {
-		return rid;
+ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const int64_t kernel_index) {
+	ERR_FAIL_INDEX_V(kernel_index, _kernel_data.size(), nullptr);
+	std::unique_ptr<KernelData>& kernel_data = _kernel_data[kernel_index];
+	if (kernel_data) {
+		return kernel_data.get();
 	}
 	RenderingDevice* rd = _get_active_rendering_device();
-	ERR_FAIL_NULL_V(rd, {});
-	ERR_FAIL_NULL_V(shader, {});
+	ERR_FAIL_NULL_V(rd, nullptr);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	ERR_FAIL_INDEX_V(kernel_index, kernels.size(), nullptr);
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
-	rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
-	return rid;
-}
-
-RID ComputeShaderTask::_get_shader_pipeline_rid(const int64_t kernel_index) {
-	ERR_FAIL_INDEX_V(kernel_index, _kernel_pipelines.size(), {});
-	UniqueRID<RenderingDevice>& rid = _kernel_pipelines[kernel_index];
-	if (rid.is_valid()) {
-		return rid;
-	}
-	RenderingDevice* rd = _get_active_rendering_device();
-	ERR_FAIL_NULL_V(rd, {});
-	const RID shader_rid = _get_shader_rid(kernel_index);
-	rid = rd->compute_pipeline_create(shader_rid);
-	return rid;
+	const RID shader_rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
+	kernel_data = std::make_unique<KernelData>(KernelData{
+		{},
+		UniqueRID(rd, shader_rid),
+		UniqueRID(rd, rd->compute_pipeline_create(shader_rid)),
+		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters()),
+	});
+	return kernel_data.get();
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
@@ -334,18 +325,19 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	RenderingDevice* rendering_device = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "ComputeShaderTask: Couldn't obtain rendering device for dispatch!");
 
+	const KernelData* kernel_data = _get_or_create_kernel(kernel_index);
+	ERR_FAIL_NULL_MSG(kernel_data, "ComputeShaderTask: Couldn't obtain kernel data!");
+
 	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
 	_shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
-	const RID pipeline = _get_shader_pipeline_rid(kernel_index);
-	rendering_device->compute_list_bind_compute_pipeline(compute_list, pipeline);
+	rendering_device->compute_list_bind_compute_pipeline(compute_list, kernel_data->pipeline_rid);
 
 	const ComputeShaderObject::DescriptorSets descriptor_sets = _shader_object->get_descriptor_sets();
-	const RID shader_rid = _get_shader_rid(kernel_index);
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
 		if (kernel->get_used_binding_sets().get(space_index, false)) {
 			// TODO: UniformSetCacheRD only works with the default rendering device
-			const RID uniform_set = UniformSetCacheRD::get_cache(shader_rid, space_index, uniforms);
+			const RID uniform_set = UniformSetCacheRD::get_cache(kernel_data->shader_rid, space_index, uniforms);
 			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
 		}
 	}
