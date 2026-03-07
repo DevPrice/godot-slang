@@ -55,7 +55,7 @@ private:
 		Dictionary parameters{};
 		UniqueRID<RenderingDevice> shader_rid{};
 		UniqueRID<RenderingDevice> pipeline_rid{};
-		std::unique_ptr<ComputeShaderObject> shader_object;
+		std::unique_ptr<ComputeShaderObject> shader_object{};
 	};
 	Dictionary _shader_parameters{};
 	std::vector<std::unique_ptr<KernelData>> _kernel_data{};

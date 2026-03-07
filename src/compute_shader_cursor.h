@@ -44,6 +44,7 @@ public:
     virtual ~ComputeShaderObject() = default;
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
+    [[nodiscard]] const godot::PackedByteArray& get_push_constants() const { return push_constants; }
 
     void write_resource(const ComputeShaderOffset& offset, const godot::Variant& data);
     void write_bytes(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
@@ -51,7 +52,7 @@ public:
     void flush_buffers();
 
     DescriptorSets get_descriptor_sets();
-    const godot::PackedByteArray& get_push_constants() const { return push_constants; }
+    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
 	godot::TypedArray<godot::RID> get_rids(const ComputeShaderOffset& offset) const;
 	godot::PackedByteArray get_buffer_data(const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
 	godot::Error get_buffer_data_async(const godot::Callable& callback, const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
@@ -62,8 +63,6 @@ private:
 	std::optional<BindingRange> _get_binding_range(int64_t binding_range_index) const;
     ComputeBuffer& _get_or_create_buffer(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
-
-    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
 
     [[nodiscard]] static godot::Variant _get_default_value(godot::RenderingDevice::UniformType type);
 };

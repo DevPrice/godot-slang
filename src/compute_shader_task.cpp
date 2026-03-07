@@ -329,7 +329,9 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	ERR_FAIL_NULL_MSG(kernel_data, "ComputeShaderTask: Couldn't obtain kernel data!");
 
 	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
+	ComputeShaderCursor(kernel_data->shader_object.get(), context).write(kernel_data->parameters);
 	_shader_object->flush_buffers();
+	kernel_data->shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, kernel_data->pipeline_rid);
 
