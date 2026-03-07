@@ -61,7 +61,7 @@ public:
 
 private:
 	std::optional<BindingRange> _get_binding_range(int64_t binding_range_index) const;
-    ComputeBuffer& _get_or_create_buffer(int64_t binding_range_index);
+    ComputeBuffer* _get_or_create_buffer(int64_t binding_range_index);
     [[nodiscard]] godot::RID _get_resource_rid(const godot::Variant& data) const;
 
     [[nodiscard]] static godot::Variant _get_default_value(godot::RenderingDevice::UniformType type);

@@ -94,6 +94,10 @@ void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const V
 					cursor.element(i++).write(value);
 				}
 			} while (data.iter_next(key, is_valid) && is_valid);
+		} else {
+			// TODO: Is there a better way to handle an empty buffer param?
+			// this will ensure a buffer is at least created with the default sizing
+			cursor.write_bytes({}, 0);
 		}
 	}
 }

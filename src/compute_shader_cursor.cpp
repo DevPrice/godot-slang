@@ -112,7 +112,6 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 }
 
 void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
-	// TODO: I think this breaks if an empty array is written to a structured buffer
 	const auto binding_range = _get_binding_range(offset.binding_range_offset);
 	ERR_FAIL_COND(!binding_range);
 	if (binding_range->type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
@@ -120,11 +119,12 @@ void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const V
 		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, BufferLayout::STD430, matrix_layout);
 		buffer.copy(push_constants.ptrw() + offset.byte_offset, size);
 	} else {
-		ComputeBuffer& buffer = _get_or_create_buffer(offset.binding_range_offset);
-		if (!buffer.get_is_fixed_size() && offset.byte_offset + size > buffer.get_buffer().size()) {
-			buffer.set_size(offset.byte_offset + size);
+		ComputeBuffer* buffer = _get_or_create_buffer(offset.binding_range_offset);
+		ERR_FAIL_NULL(buffer);
+		if (!buffer->get_is_fixed_size() && offset.byte_offset + size > buffer->get_buffer().size()) {
+			buffer->set_size(offset.byte_offset + size);
 		}
-		buffer.write(offset.byte_offset, size, data, matrix_layout);
+		buffer->write(offset.byte_offset, size, data, matrix_layout);
 	}
 }
 
@@ -207,35 +207,36 @@ std::optional<BindingRange> ComputeShaderObject::_get_binding_range(const int64_
 	return BindingRange::from_dict(binding);
 }
 
-ComputeBuffer& ComputeShaderObject::_get_or_create_buffer(const int64_t binding_range_index) {
+ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_range_index) {
 	const auto it = buffers.find(binding_range_index);
 	if (it != buffers.end()) {
-		return *it->second;
+		return it->second.get();
 	}
-	auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
-	ComputeBuffer& new_buffer = *new_buffer_it->second;
-	if (shape.is_valid()) {
-		const TypedArray<Dictionary> bindings = shape->get_bindings();
-		if (binding_range_index >= 0 && binding_range_index < bindings.size()) {
-			if (const auto binding_range = _get_binding_range(binding_range_index)) {
-				switch (binding_range->type) {
-					case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER:
-						new_buffer.set_alignment(binding_range->alignment);
-						new_buffer.set_size(binding_range->size);
-						new_buffer.set_is_fixed_size(true);
-						break;
-					case ShaderTypeLayoutShape::BindingType::TYPED_BUFFER:
-					case ShaderTypeLayoutShape::BindingType::RAW_BUFFER:
-						new_buffer.set_size(256); // TODO: Default sizing behavior?
-						new_buffer.set_is_fixed_size(false);
-						break;
-					default:
-						break;
-				}
+	ERR_FAIL_NULL_V(shape, nullptr);
+	if (const auto binding_range = _get_binding_range(binding_range_index)) {
+		if (binding_range->leaf_shape.is_valid()) return nullptr;
+		switch (binding_range->type) {
+			case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER: {
+				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
+				ComputeBuffer& new_buffer = *new_buffer_it->second;
+				new_buffer.set_alignment(binding_range->alignment);
+				new_buffer.set_size(binding_range->size);
+				new_buffer.set_is_fixed_size(true);
+				return &new_buffer;
 			}
+			case ShaderTypeLayoutShape::BindingType::TYPED_BUFFER:
+			case ShaderTypeLayoutShape::BindingType::RAW_BUFFER: {
+				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
+				ComputeBuffer& new_buffer = *new_buffer_it->second;
+				new_buffer.set_size(256); // TODO: Default sizing behavior?
+				new_buffer.set_is_fixed_size(false);
+				return &new_buffer;
+			}
+			default:
+				break;
 		}
 	}
-	return new_buffer;
+	return nullptr;
 }
 
 Variant ComputeShaderObject::_get_default_value(const RenderingDevice::UniformType type) {

@@ -45,22 +45,22 @@ int64_t VariantSerializer::Buffer::compare(const uint8_t* other, const size_t ma
 }
 
 PackedByteArray VariantSerializer::Buffer::as_packed_byte_array() const {
-	return std::visit(overloaded{
-							  [](const InlineBuffer& arg) {
-								  PackedByteArray result{};
-								  result.resize(arg.size);
-								  memcpy(result.ptrw(), arg.data.data(), arg.size);
-								  return result;
-							  },
-							  [](const PackedByteArray& arg) { return arg; } },
-			buffer);
+	return std::visit(overloaded {
+		[](const InlineBuffer& arg) {
+			PackedByteArray result{};
+			result.resize(arg.size);
+			memcpy(result.ptrw(), arg.data.data(), arg.size);
+			return result;
+		},
+		[](const PackedByteArray& arg) { return arg; } },
+	buffer);
 }
 
-VariantSerializer::Buffer::operator std::span<unsigned char>() {
+VariantSerializer::Buffer::operator std::span<uint8_t>() {
 	return std::span(data(), size());
 }
 
-VariantSerializer::Buffer::operator std::span<const unsigned char>() const {
+VariantSerializer::Buffer::operator std::span<const uint8_t>() const {
 	return std::span(data(), size());
 }
 
