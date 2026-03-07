@@ -60,7 +60,7 @@ private:
 
 	slang::ProgramLayout* program_layout;
 
-	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = {}) const;
+	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions{}) const;
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
