@@ -54,7 +54,7 @@ GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uni
 
 void ResourceTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     if (get_resource_type() == RAW_BYTES) {
-        const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data);
+        const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, BufferLayout::STD430);
         const PackedByteArray bytes = buffer.as_packed_byte_array();
         cursor.write_bytes(bytes, bytes.size());
     } else {

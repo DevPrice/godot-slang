@@ -64,7 +64,7 @@ VariantSerializer::Buffer::operator std::span<const unsigned char>() const {
 	return std::span(data(), size());
 }
 
-VariantSerializer::Buffer VariantSerializer::serialize(const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+VariantSerializer::Buffer VariantSerializer::serialize(const Variant& data, const BufferLayout layout, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
 	switch (data.get_type()) {
 		case Variant::STRING:
 		case Variant::NODE_PATH: {
@@ -119,7 +119,15 @@ VariantSerializer::Buffer VariantSerializer::serialize(const Variant& data, cons
 			break;
 	}
 	Buffer buffer{};
-	const size_t size = Cursor(buffer.data(), Buffer::max_size).write(data, matrix_layout);
-	buffer.set_inline_size(size);
+	switch (layout) {
+		case BufferLayout::STD140:
+			buffer.set_inline_size(Cursor<BufferLayout::STD140>(buffer.data(), Buffer::max_size).write(data, matrix_layout));
+			break;
+		case BufferLayout::STD430:
+			buffer.set_inline_size(Cursor<BufferLayout::STD430>(buffer.data(), Buffer::max_size).write(data, matrix_layout));
+			break;
+		default:
+			ERR_FAIL_V_MSG(buffer, "Invalid buffer layout for serialization!");
+	}
 	return buffer;
 }

@@ -112,11 +112,12 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 }
 
 void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
+	// TODO: I think this breaks if an empty array is written to a structured buffer
 	const auto binding_range = _get_binding_range(offset.binding_range_offset);
 	ERR_FAIL_COND(!binding_range);
 	if (binding_range->type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
 		ERR_FAIL_COND(offset.byte_offset + size > push_constants.size());
-		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, matrix_layout);
+		const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, BufferLayout::STD430, matrix_layout);
 		buffer.copy(push_constants.ptrw() + offset.byte_offset, size);
 	} else {
 		ComputeBuffer& buffer = _get_or_create_buffer(offset.binding_range_offset);
