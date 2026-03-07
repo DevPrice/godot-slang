@@ -51,9 +51,16 @@ public:
 	}
 
 private:
+	struct ShapeOptions {
+		int64_t implicit_offset = 0;
+		int64_t slot_offset = 0;
+		bool include_property_info = true;
+		bool include_bindings = false;
+	};
+
 	slang::ProgramLayout* program_layout;
 
-	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, int64_t implicit_offset = 0, int64_t slot_offset = 0, bool include_property_info = true, bool include_bindings = false) const;
+	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = {}) const;
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
