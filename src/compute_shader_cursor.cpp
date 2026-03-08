@@ -166,19 +166,24 @@ void ComputeShaderObject::flush_buffers() {
 ComputeShaderObject::DescriptorSets ComputeShaderObject::get_descriptor_sets() {
 	DescriptorSets result{};
 	uint64_t next_space_index = 0;
-	get_descriptor_sets(result, 0, next_space_index);
+	get_descriptor_sets(result, next_space_index);
 	return result;
 }
 
-void ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) {
-	const int64_t active_space_index = owns_binding_space ? next_space_index++ : current_space_index;
+uint64_t ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t& next_space_index) {
+	return get_descriptor_sets(descriptor_sets, next_space_index, next_space_index);
+}
+
+uint64_t ComputeShaderObject::get_descriptor_sets(DescriptorSets& descriptor_sets, const uint64_t current_space_index, uint64_t& next_space_index) {
+	const uint64_t active_space_index = owns_binding_space ? next_space_index++ : current_space_index;
 	descriptor_sets[active_space_index].append_array(uniforms.values());
-	ERR_FAIL_NULL(shape);
+	ERR_FAIL_NULL_V(shape, active_space_index);
 	for (int64_t i = 0; i < shape->get_bindings().size(); i++) {
 		if (ComputeShaderObject* subobject = get_or_create_subobject(i)) {
 			subobject->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
 		}
 	}
+	return active_space_index;
 }
 
 TypedArray<RID> ComputeShaderObject::get_rids(const ComputeShaderOffset& offset) const {

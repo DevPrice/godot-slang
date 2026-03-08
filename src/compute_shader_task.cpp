@@ -316,7 +316,7 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const in
 		{},
 		UniqueRID(rd, shader_rid),
 		UniqueRID(rd, rd->compute_pipeline_create(shader_rid)),
-		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters()),
+		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters(), kernel->get_space_offset(), kernel->get_slot_offset()),
 	});
 	return kernel_data.get();
 }
@@ -344,14 +344,20 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const int64_t compute_list = rendering_device->compute_list_begin();
 	rendering_device->compute_list_bind_compute_pipeline(compute_list, kernel_data->pipeline_rid);
 
-	const ComputeShaderObject::DescriptorSets descriptor_sets = _shader_object->get_descriptor_sets();
+	ComputeShaderObject::DescriptorSets descriptor_sets{};
+	uint64_t next_space_index = 0;
+	const uint64_t active_space_index = _shader_object->get_descriptor_sets(descriptor_sets, next_space_index);
+	kernel_data->shader_object->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
+
+	const Dictionary used_binding_sets = kernel->get_used_binding_sets();
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
-		if (kernel->get_used_binding_sets().get(space_index, false)) {
+		if (used_binding_sets.get(space_index, false)) {
 			// TODO: UniformSetCacheRD only works with the default rendering device
 			const RID uniform_set = UniformSetCacheRD::get_cache(kernel_data->shader_rid, space_index, uniforms);
 			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
 		}
 	}
+
 	const PackedByteArray& push_constants = _shader_object->get_push_constants();
 	if (push_constants.size() > 0) {
 		rendering_device->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());

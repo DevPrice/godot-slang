@@ -178,9 +178,9 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 		const Dictionary version_info = Engine::get_singleton()->get_version_info();
 		static const CharString major_version_string = String::num_int64(version_info.get("major", 0)).utf8();
 		static const CharString minor_version_string = String::num_int64(version_info.get("minor", 0)).utf8();
-		static const std::array<slang::PreprocessorMacroDesc, 2> macros = {
-			slang::PreprocessorMacroDesc{godot_major_version_key, major_version_string.get_data()},
-			slang::PreprocessorMacroDesc{godot_minor_version_key, minor_version_string.get_data()}
+		static const std::array macros = {
+			slang::PreprocessorMacroDesc{ .name = godot_major_version_key, .value = major_version_string.get_data() },
+			slang::PreprocessorMacroDesc{ .name = godot_minor_version_key, .value = minor_version_string.get_data() },
 		};
 		session_desc.preprocessorMacroCount = macros.size();
 		session_desc.preprocessorMacros = macros.data();
@@ -313,18 +313,27 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		}
 	}
 
+	const SlangReflectionContext reflection_context(program_layout);
+	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
+	const Ref<StructTypeLayoutShape> entry_point_params_shape = reflection_context.get_entry_point_params_shape(entry_point_layout);
+	kernel->set_parameters(entry_point_params_shape);
+
+	if (slang::VariableLayoutReflection* var_layout = entry_point_layout->getVarLayout()) {
+		kernel->set_space_offset(static_cast<int64_t>(var_layout->getOffset(slang::ParameterCategory::SubElementRegisterSpace)));
+		kernel->set_slot_offset(static_cast<int64_t>(var_layout->getOffset(slang::ParameterCategory::DescriptorTableSlot)));
+	}
+
 	slang::IMetadata* metadata;
 	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		const SlangResult result = linked_program->getEntryPointMetadata(
-				0, 0, &metadata, diagnostics_blob.writeRef());
+		const SlangResult result = linked_program->getEntryPointMetadata(0, 0, &metadata, diagnostics_blob.writeRef());
 		if (SLANG_FAILED(result)) {
 			compile_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
 		} else if (diagnostics_blob) {
 			UtilityFunctions::push_warning("Slang (metadata): ", String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 		} else {
 			Dictionary used_binding_sets{};
-			_get_used_bindings_sets(metadata, global_params_shape, used_binding_sets);
+			_get_used_bindings_sets(metadata, global_params_shape, entry_point_params_shape, used_binding_sets, kernel->get_space_offset(), kernel->get_slot_offset());
 			kernel->set_used_binding_sets(used_binding_sets);
 		}
 	}
@@ -345,23 +354,24 @@ Ref<ComputeShaderKernel> SlangShaderImporter::_slang_compile_kernel(slang::ISess
 		kernel->set_thread_group_size(Vector3i(sizes[0], sizes[1], sizes[2]));
 	}
 
-	const SlangReflectionContext reflection_context(program_layout);
-	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_function));
-	kernel->set_parameters(reflection_context.get_entry_point_params_shape(entry_point_layout));
 	return kernel;
 }
 
-void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets) {
+void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, const Ref<ShaderTypeLayoutShape>& entry_point_params_shape, Dictionary& out_used_binding_sets, const int64_t kernel_space_offset, const int64_t kernel_slot_offset) {
 	ERR_FAIL_NULL(metadata);
-	ERR_FAIL_NULL(global_params_shape);
-	ComputeShaderObject object(nullptr, nullptr, global_params_shape);
-	const auto descriptor_sets = object.get_descriptor_sets();
+	ComputeShaderObject global_object(nullptr, nullptr, global_params_shape);
+	ComputeShaderObject entry_point_object(nullptr, nullptr, entry_point_params_shape, kernel_space_offset, kernel_slot_offset);
+	ComputeShaderObject::DescriptorSets descriptor_sets;
+	uint64_t next_space_index = 0;
+	const uint64_t active_space_index = global_object.get_descriptor_sets(descriptor_sets, next_space_index);
+	entry_point_object.get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
-		bool set_used = false;
+		bool set_used = out_used_binding_sets.get(space_index, false);
+		if (set_used)
+			continue;
 		for (const Ref<RDUniform> uniform : uniforms) {
 			if (uniform.is_valid()) {
-				bool slot_used{};
-				if (SLANG_SUCCEEDED(metadata->isParameterLocationUsed(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT, space_index, uniform->get_binding(), slot_used)) && slot_used) {
+				if (_is_location_used(metadata, space_index, uniform->get_binding())) {
 					set_used = true;
 					break;
 				}
@@ -369,6 +379,17 @@ void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, co
 		}
 		out_used_binding_sets.set(space_index, set_used);
 	}
+}
+
+bool SlangShaderImporter::_is_location_used(slang::IMetadata* metadata, const int64_t space, const int64_t binding_index) {
+	// TODO: This isn't working for entry-point parameters
+	bool slot_used{};
+	for (int64_t category = 0; category < SLANG_PARAMETER_CATEGORY_COUNT; category++) {
+		if (SLANG_SUCCEEDED(metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), space, binding_index, slot_used)) && slot_used) {
+			return true;
+		}
+	}
+	return false;
 }
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
@@ -443,6 +464,10 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			shape->set_size(static_cast<int64_t>(type_layout->getSize()));
 			shape->set_alignment(type_layout->getAlignment());
 			shape->set_bindings(bindings);
+			const StringName type_name(type_layout->getName());
+			if (!type_name.is_empty()) {
+				shape->set_meta(StringName("type_name"), type_name);
+			}
 
 			Dictionary field_shapes{};
 			for (int i = 0; i < type_layout->getFieldCount(); i++) {
@@ -554,8 +579,10 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				.implicit_offset = element_type->getSize() > 0,
 				.slot_offset = static_cast<int64_t>(element_var->getOffset(slang::ParameterCategory::DescriptorTableSlot)),
 				.include_property_info = shape_options.include_property_info,
-				.include_bindings = true
+				.include_bindings = true,
 			});
+			ERR_FAIL_NULL_V(element_shape, nullptr);
+			element_shape->set_meta(StringName("container_kind"), static_cast<int64_t>(type_layout->getKind()));
 			return element_shape;
 		}
 		default:

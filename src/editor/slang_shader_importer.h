@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "attributes.h"
+#include "compute_shader_cursor.h"
 #include "compute_shader_shape.h"
 
 struct ShapeOptions {
@@ -91,6 +92,7 @@ private:
 	static SlangResult _create_session(slang::ISession** out_session, const godot::Dictionary& options, bool enable_glsl = false);
 	static godot::Error _slang_compile_kernels(slang::IModule* slang_module, godot::TypedArray<ComputeShaderKernel>& out_kernels, const godot::PackedStringArray& additional_entry_points, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
 	static godot::Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
-	static void _get_used_bindings_sets(slang::IMetadata* metadata, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, godot::Dictionary& out_used_binding_sets);
+	static void _get_used_bindings_sets(slang::IMetadata* metadata, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::Ref<ShaderTypeLayoutShape>& entry_point_params_shape, godot::Dictionary& out_used_binding_sets, int64_t kernel_space_offset, int64_t kernel_slot_offset);
+	static bool _is_location_used(slang::IMetadata* metadata, int64_t space, int64_t binding_index);
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 };

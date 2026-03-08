@@ -12,6 +12,8 @@ class ComputeShaderKernel : public godot::Resource {
 	GET_SET_PROPERTY(godot::StringName, kernel_name)
 	GET_SET_PROPERTY(godot::Ref<godot::RDShaderSPIRV>, spirv)
 	GET_SET_PROPERTY(godot::Vector3i, thread_group_size)
+	GET_SET_PROPERTY(int64_t, space_offset)
+	GET_SET_PROPERTY(int64_t, slot_offset)
 	GET_SET_PROPERTY(godot::Dictionary, user_attributes)
 	GET_SET_PROPERTY(godot::Dictionary, used_binding_sets)
 	GET_SET_PROPERTY(godot::Ref<StructTypeLayoutShape>, parameters)

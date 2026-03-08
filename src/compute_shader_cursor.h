@@ -53,8 +53,9 @@ public:
 
     void flush_buffers();
 
-    DescriptorSets get_descriptor_sets();
-    void get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
+	DescriptorSets get_descriptor_sets();
+	uint64_t get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t& next_space_index);
+	uint64_t get_descriptor_sets(DescriptorSets& descriptor_sets, uint64_t current_space_index, uint64_t& next_space_index);
 	godot::TypedArray<godot::RID> get_rids(const ComputeShaderOffset& offset) const;
 	godot::PackedByteArray get_buffer_data(const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
 	godot::Error get_buffer_data_async(const godot::Callable& callback, const ComputeShaderOffset& offset, uint32_t size_bytes = 0) const;
