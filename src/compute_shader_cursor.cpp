@@ -235,7 +235,8 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 	}
 	ERR_FAIL_NULL_V(shape, nullptr);
 	if (const auto binding_range = _get_binding_range(binding_range_index)) {
-		if (binding_range->leaf_shape.is_valid()) return nullptr;
+		if (binding_range->leaf_shape.is_valid())
+			return nullptr;
 		switch (binding_range->base_binding_type()) {
 			case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER: {
 				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
@@ -289,37 +290,44 @@ RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 	return data;
 }
 
-ComputeShaderCursor ComputeShaderCursor::field(const StringName& path) const {
+ComputeShaderCursor ComputeShaderCursor::path(const StringName& path) const {
+	// TODO: Support element access
 	const PackedStringArray parts = path.split("/");
 	ComputeShaderCursor current(*this);
 	for (const String& field_name : parts) {
-		ERR_FAIL_NULL_V(current.shape, ComputeShaderCursor(nullptr));
-		const std::optional<FieldShape> property = current.shape->field(field_name);
-		ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
-		const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
-		ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
-
-		current.shape = property_shape;
-		current.offset += ComputeShaderOffset::from_field(*property);
-
-		current.write_handlers.clear();
-		const Dictionary attributes = property->user_attributes;
-		for (auto attribute_name : attributes.keys()) {
-			const Dictionary attribute_arguments = attributes[attribute_name];
-			if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-				if (const auto handler = factory->factory(attribute_arguments, *property)) {
-					current.write_handlers.insert(WriteHandlerWithPriority{ handler, factory->priority });
-				}
-			}
-		}
-		current.default_value = property->default_value;
-
-		if (ComputeShaderObject* subobject = current.object->get_or_create_subobject(current.offset.binding_range_offset)) {
-			current.object = subobject;
-			current.offset = {};
-		}
+		current = field(field_name);
 	}
 	return current;
+}
+
+ComputeShaderCursor ComputeShaderCursor::field(const StringName& field_name) const {
+	ComputeShaderCursor result(*this);
+	ERR_FAIL_NULL_V(result.shape, ComputeShaderCursor(nullptr));
+	const std::optional<FieldShape> property = result.shape->field(field_name);
+	ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
+	const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
+	ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
+
+	result.shape = property_shape;
+	result.offset += ComputeShaderOffset::from_field(*property);
+
+	result.write_handlers.clear();
+	const Dictionary attributes = property->user_attributes;
+	for (auto attribute_name : attributes.keys()) {
+		const Dictionary attribute_arguments = attributes[attribute_name];
+		if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
+			if (const auto handler = factory->factory(attribute_arguments, *property)) {
+				result.write_handlers.insert(WriteHandlerWithPriority{ handler, factory->priority });
+			}
+		}
+	}
+	result.default_value = property->default_value;
+
+	if (ComputeShaderObject* subobject = result.object->get_or_create_subobject(result.offset.binding_range_offset)) {
+		result.object = subobject;
+		result.offset = {};
+	}
+	return result;
 }
 
 ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {

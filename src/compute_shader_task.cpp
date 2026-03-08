@@ -152,17 +152,17 @@ void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vecto
 
 TypedArray<RID> ComputeShaderTask::get_rids(const StringName& param) const {
 	ERR_FAIL_NULL_V(_shader_object, {});
-	return ComputeShaderCursor(_shader_object.get()).field(param).get_rids();
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_rids();
 }
 
 PackedByteArray ComputeShaderTask::get_buffer_data(const StringName& param) const {
 	ERR_FAIL_NULL_V(_shader_object, {});
-	return ComputeShaderCursor(_shader_object.get()).field(param).get_buffer_data();
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_buffer_data();
 }
 
 Error ComputeShaderTask::get_buffer_data_async(const StringName& param, const Callable& callback) const {
 	ERR_FAIL_NULL_V(_shader_object, {});
-	return ComputeShaderCursor(_shader_object.get()).field(param).get_buffer_data_async(callback);
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_buffer_data_async(callback);
 }
 
 Dictionary ComputeShaderTask::get_shader_parameters() const {

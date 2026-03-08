@@ -93,7 +93,8 @@ public:
     explicit ComputeShaderCursor(ComputeShaderObject* p_object, const godot::Object* p_context = nullptr)
         : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context) {}
 
-    [[nodiscard]] ComputeShaderCursor field(const godot::StringName& path) const;
+	ComputeShaderCursor path(const godot::StringName& path) const;
+    [[nodiscard]] ComputeShaderCursor field(const godot::StringName& field_name) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
 
 	void write_bytes(const std::span<const uint8_t>& data) const;
