@@ -291,11 +291,20 @@ RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 }
 
 ComputeShaderCursor ComputeShaderCursor::path(const StringName& path) const {
-	// TODO: Support element access
+	if (path.is_empty())
+		return *this;
 	const PackedStringArray parts = path.split("/");
 	ComputeShaderCursor current(*this);
-	for (const String& field_name : parts) {
-		current = field(field_name);
+	for (const String& field_path : parts) {
+		if (field_path.is_empty())
+			continue;
+		const PackedStringArray element_parts = field_path.split(":");
+		current = current.field(element_parts[0]);
+		for (int64_t i = 1; i < element_parts.size(); i++) {
+			const String& part = element_parts[i];
+			ERR_FAIL_COND_V_MSG(!part.is_valid_int(), ComputeShaderCursor(nullptr), String("Invalid path: \"%s\"") % path);
+			current = current.element(part.to_int());
+		}
 	}
 	return current;
 }
