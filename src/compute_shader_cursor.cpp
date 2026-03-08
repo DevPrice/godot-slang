@@ -64,6 +64,11 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 }
 
 void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, const Variant& data) {
+	if (const RDUniform* uniform = Object::cast_to<RDUniform>(data)) {
+		uniforms.set(offset.binding_range_offset, uniform);
+		return;
+	}
+
 	const auto binding = _get_binding_range(offset.binding_range_offset);
 	ERR_FAIL_COND(!binding);
 	ERR_FAIL_COND(!binding->uniform_type);
@@ -338,8 +343,12 @@ void ComputeShaderCursor::write(Variant data) const {
 			write_resource(data);
 			break;
 		default:
-			ERR_FAIL_NULL(shape);
-			shape->write_into(*this, data);
+			if (const Ref<RDUniform> uniform = data; uniform.is_valid()) {
+				write_resource(uniform);
+			} else {
+				ERR_FAIL_NULL(shape);
+				shape->write_into(*this, data);
+			}
 			break;
 	}
 }

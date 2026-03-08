@@ -197,12 +197,6 @@ public struct Quaternion {
 }
 
 /**
- Marks an attribute as an autobinding, which means that the user should not set it manually and it will be readonly in the property inspector.
-*/
-[__AttributeUsage(_AttributeTargets.Struct)]
-public struct gd_AutobindAttribute {};
-
-/**
  Indicates that a struct is represented by a global Godot class.
 */
 [__AttributeUsage(_AttributeTargets.Struct)]
@@ -238,7 +232,6 @@ public struct gd_PropertyHintAttribute {
  Binds a parameter to the current time in seconds.
  Must be applied to a variable of type `float`.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_TimeAttribute {};
 
@@ -246,7 +239,6 @@ public struct gd_TimeAttribute {};
  Binds a parameter to the current frame number.
  Must be applied to a variable of type `int`.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_FrameIdAttribute {};
 
@@ -254,7 +246,6 @@ public struct gd_FrameIdAttribute {};
  Binds a parameter to the current mouse position.
  Must be applied to a variable of type `int2`.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_MousePositionAttribute {};
 
@@ -275,7 +266,6 @@ public struct gd_DefaultBlackAttribute {};
 /**
  Binds a parameter to a Godot [global shader parameter](https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms).
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_GlobalParamAttribute {
     let name: string;
@@ -311,7 +301,6 @@ public struct gd_KernelGroupAttribute {
  Must be applied to a variable of type `int2`.
  Only available for `ComputeTexture`s.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_texture_OutputSizeAttribute {};
 
@@ -320,7 +309,6 @@ public struct gd_texture_OutputSizeAttribute {};
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for `ComputeTexture`s.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_texture_OutputTextureAttribute {};
 
@@ -329,7 +317,6 @@ public struct gd_texture_OutputTextureAttribute {};
  Must be applied to a ConstantBuffer of type `gd::compositor::SceneDataBlock`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_SceneDataAttribute {};
 
@@ -338,7 +325,6 @@ public struct gd_compositor_SceneDataAttribute {};
  Must be applied to a variable of type `int2`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_InternalSizeAttribute {};
 
@@ -347,7 +333,6 @@ public struct gd_compositor_InternalSizeAttribute {};
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_ColorTextureAttribute {};
 
@@ -356,7 +341,6 @@ public struct gd_compositor_ColorTextureAttribute {};
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_DepthTextureAttribute {};
 
@@ -365,7 +349,6 @@ public struct gd_compositor_DepthTextureAttribute {};
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_VelocityTextureAttribute {};
 
@@ -374,7 +357,6 @@ public struct gd_compositor_VelocityTextureAttribute {};
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_CreateTextureAttribute {
     let format : gd::compositor::DataFormat = gd::compositor::DataFormat.R16G16B16A16_SNORM;
@@ -386,7 +368,6 @@ public struct gd_compositor_CreateTextureAttribute {
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_TextureSizeAttribute {
     let size : int2;
@@ -397,7 +378,6 @@ public struct gd_compositor_TextureSizeAttribute {
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_ContextAttribute {
     let context : string = "render_buffers";
@@ -408,7 +388,6 @@ public struct gd_compositor_ContextAttribute {
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
  Only available for compositor effects.
 */
-[gd::Autobind]
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_compositor_TextureNameAttribute {
     let name : string;
