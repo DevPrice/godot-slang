@@ -565,20 +565,6 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 	return nullptr;
 }
 
-bool SlangReflectionContext::_is_autobind(slang::VariableReflection* var) const {
-	for (size_t attribute_index = 0; attribute_index < var->getUserAttributeCount(); ++attribute_index) {
-		if (slang::Attribute* attribute = var->getUserAttributeByIndex(attribute_index)) {
-			if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
-				static CharString autobind_str = String(GodotAttributes::autobind()).utf8();
-				if (attribute_type->findUserAttributeByName(autobind_str.get_data())) {
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
 // TODO: Surely there is a better way to do this
 slang::TypeReflection* SlangReflectionContext::_get_attribute_type(slang::Attribute* attribute) const {
 	ERR_FAIL_NULL_V(attribute, nullptr);

@@ -58,7 +58,6 @@ private:
 	slang::ProgramLayout* program_layout;
 
 	godot::Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions{}) const;
-	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	godot::String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
 	bool _get_godot_type(slang::TypeReflection* type, const godot::Dictionary& attributes, godot::Variant::Type& out_type, godot::PropertyHint& out_hint, godot::String& out_hint_string) const;
