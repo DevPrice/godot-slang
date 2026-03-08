@@ -15,6 +15,14 @@
 
 using namespace godot;
 
+constexpr auto shader_param_prefix_chars = "shader_parameter/";
+constexpr int64_t shader_param_prefix_length = std::char_traits<char>::length(shader_param_prefix_chars);
+
+const StringName& shader_param_prefix() {
+	static const StringName prefix(shader_param_prefix_chars);
+	return prefix;
+}
+
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
 	BIND_GET_SET_OBJECT(ComputeShaderTask, rendering_device, RenderingDevice)
@@ -169,8 +177,8 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 }
 
 bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
-	if (p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
 		set_shader_parameter(param_name, p_value);
 		return true;
 	}
@@ -178,8 +186,8 @@ bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
 }
 
 bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
-	if (p_name.begins_with("shader_parameter/")) {
-		const StringName param_name = p_name.substr(17);
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
 		const Dictionary params = get_shader_parameters();
 		FieldShape field;
 		if (_property_get_reflection(p_name, field)) {
@@ -201,7 +209,7 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	ERR_FAIL_NULL(p_list);
-	_get_property_list(p_list, "shader_parameter/", get_shader_parameters());
+	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
 }
 
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties) {
@@ -241,8 +249,9 @@ bool ComputeShaderTask::_property_get_revert(const StringName& p_name, Variant& 
 }
 
 bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, FieldShape& r_reflection) const {
-	if (p_name.begins_with("shader_parameter/")) {
-		const PackedStringArray parts = p_name.substr(17).split("/");
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
+		const PackedStringArray parts = param_name.split("/");
 		Variant current = get_shader_parameters();
 		int64_t i = 0;
 		bool valid;
