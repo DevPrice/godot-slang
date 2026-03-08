@@ -64,7 +64,18 @@ public:
 		TYPED_BUFFER = 5,
 		RAW_BUFFER = 6,
 		PUSH_CONSTANT = 14,
+		MUTABLE_FLAG = 0x100,
+		BASE_MASK = 0x00FF,
+		EXT_MASK = 0xFF00,
 	};
+
+	static BindingType base_binding_type(BindingType binding_type) {
+		return static_cast<BindingType>(static_cast<int64_t>(binding_type) & static_cast<int64_t>(BindingType::BASE_MASK));
+	}
+
+	static BindingType ext_binding_type(BindingType binding_type) {
+		return static_cast<BindingType>(static_cast<int64_t>(binding_type) & static_cast<int64_t>(BindingType::EXT_MASK));
+	}
 };
 
 class VariantTypeLayoutShape : public ShaderTypeLayoutShape {
@@ -158,6 +169,14 @@ struct BindingRange {
 	int64_t size{};
 	int64_t alignment{};
 	godot::Ref<ShaderTypeLayoutShape> leaf_shape{};
+
+	ShaderTypeLayoutShape::BindingType base_binding_type() const {
+		return ShaderTypeLayoutShape::base_binding_type(type);
+	}
+
+	ShaderTypeLayoutShape::BindingType ext_binding_type() const {
+		return ShaderTypeLayoutShape::ext_binding_type(type);
+	}
 
 	operator godot::Dictionary() const;
 

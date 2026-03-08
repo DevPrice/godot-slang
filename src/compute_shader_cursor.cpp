@@ -215,7 +215,7 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 	ERR_FAIL_NULL_V(shape, nullptr);
 	if (const auto binding_range = _get_binding_range(binding_range_index)) {
 		if (binding_range->leaf_shape.is_valid()) return nullptr;
-		switch (binding_range->type) {
+		switch (binding_range->base_binding_type()) {
 			case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER: {
 				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
 				ComputeBuffer& new_buffer = *new_buffer_it->second;
