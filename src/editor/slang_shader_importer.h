@@ -9,12 +9,16 @@
 #include "attributes.h"
 #include "compute_shader_shape.h"
 
-using namespace godot;
+struct ShapeOptions {
+	int64_t implicit_offset = 0;
+	int64_t slot_offset = 0;
+	bool include_property_info = true;
+	bool include_bindings = false;
+};
 
 class SlangReflectionContext {
 
 public:
-
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
 	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
@@ -51,16 +55,9 @@ public:
 	}
 
 private:
-	struct ShapeOptions {
-		int64_t implicit_offset = 0;
-		int64_t slot_offset = 0;
-		bool include_property_info = true;
-		bool include_bindings = false;
-	};
-
 	slang::ProgramLayout* program_layout;
 
-	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions()) const;
+	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions{}) const;
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
 	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
