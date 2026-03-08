@@ -15,6 +15,7 @@ public:
 
 	godot::RID get_rid() const;
 
+	void write(int64_t offset, std::span<const uint8_t> data);
     void write(int64_t offset, int64_t size, const godot::Variant& data, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
     void set_size(int64_t size);
     void flush();

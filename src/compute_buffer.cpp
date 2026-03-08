@@ -12,14 +12,24 @@ using namespace godot;
 
 ComputeBuffer::ComputeBuffer(RenderingDevice* p_rendering_device) : rendering_device(p_rendering_device), rid(p_rendering_device) { }
 
-void ComputeBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+void ComputeBuffer::write(const int64_t offset, const std::span<const uint8_t> data) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
-	ERR_FAIL_COND_MSG(offset + size > buffer.size(), "Attempt to write past end of buffer!");
-	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, get_is_fixed_size() ? BufferLayout::STD140 : BufferLayout::STD430, matrix_layout);
-	if (serialized.compare(buffer.ptr(), size)) {
-		serialized.copy(buffer.ptrw() + offset, size);
+	ERR_FAIL_COND_MSG(offset + data.size() > buffer.size(), "Attempt to write past end of buffer!");
+	const int64_t size = Math::min<size_t>(data.size(), buffer.size() - offset);
+	if (memcmp(buffer.ptr(), data.data(), size)) {
+		memcpy(buffer.ptrw() + offset, data.data(), size);
 		dirty_start = Math::min(offset, dirty_start);
-		dirty_end = Math::max(offset + size, dirty_end);
+		dirty_end = Math::max<int64_t>(offset + data.size(), dirty_end);
+	}
+}
+
+void ComputeBuffer::write(const int64_t offset, const int64_t size, const Variant& data, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) {
+	const VariantSerializer::Buffer serialized = VariantSerializer::serialize(data, get_is_fixed_size() ? BufferLayout::STD140 : BufferLayout::STD430, matrix_layout);
+	const std::span<const uint8_t> span = serialized;
+	if (span.size() > size) {
+		write(offset, span.subspan(0, size));
+	} else {
+		write(offset, span);
 	}
 }
 

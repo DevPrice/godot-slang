@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <span>
 
 #include "godot_cpp/classes/placeholder_texture2d.hpp"
 #include "godot_cpp/classes/rd_sampler_state.hpp"
@@ -47,6 +48,7 @@ public:
     [[nodiscard]] const godot::PackedByteArray& get_push_constants() const { return push_constants; }
 
     void write_resource(const ComputeShaderOffset& offset, const godot::Variant& data);
+    void write_bytes(const ComputeShaderOffset& offset, const std::span<const uint8_t>& data);
     void write_bytes(const ComputeShaderOffset& offset, const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout);
 
     void flush_buffers();
@@ -94,6 +96,7 @@ public:
     [[nodiscard]] ComputeShaderCursor field(const godot::StringName& path) const;
     [[nodiscard]] ComputeShaderCursor element(int64_t index) const;
 
+	void write_bytes(const std::span<const uint8_t>& data) const;
     void write_bytes(const godot::Variant& data, int64_t size, ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) const;
     void write_resource(const godot::Variant& data) const;
     void write(godot::Variant data) const;

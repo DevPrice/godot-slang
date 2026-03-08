@@ -116,6 +116,22 @@ void ComputeShaderObject::write_resource(const ComputeShaderOffset& offset, cons
 	}
 }
 
+void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const std::span<const uint8_t>& data) {
+	const auto binding_range = _get_binding_range(offset.binding_range_offset);
+	ERR_FAIL_COND(!binding_range);
+	if (binding_range->type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
+		ERR_FAIL_COND(offset.byte_offset + data.size() > push_constants.size());
+		memcpy(push_constants.ptrw() + offset.byte_offset, data.data(), data.size());
+	} else {
+		ComputeBuffer* buffer = _get_or_create_buffer(offset.binding_range_offset);
+		ERR_FAIL_NULL(buffer);
+		if (!buffer->get_is_fixed_size() && offset.byte_offset + data.size() > buffer->get_buffer().size()) {
+			buffer->set_size(offset.byte_offset + data.size());
+		}
+		buffer->write(offset.byte_offset, data);
+	}
+}
+
 void ComputeShaderObject::write_bytes(const ComputeShaderOffset& offset, const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) {
 	const auto binding_range = _get_binding_range(offset.binding_range_offset);
 	ERR_FAIL_COND(!binding_range);
@@ -316,6 +332,11 @@ ComputeShaderCursor ComputeShaderCursor::element(const int64_t index) const {
 	result.offset.element_offset *= array_shape->get_element_count();
 	result.offset.element_offset += index;
 	return result;
+}
+
+void ComputeShaderCursor::write_bytes(const std::span<const uint8_t>& data) const {
+	ERR_FAIL_NULL(object);
+	object->write_bytes(offset, data);
 }
 
 void ComputeShaderCursor::write_bytes(const Variant& data, const int64_t size, const ShaderTypeLayoutShape::MatrixLayout matrix_layout) const {

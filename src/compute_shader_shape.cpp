@@ -55,8 +55,7 @@ GET_SET_PROPERTY_IMPL(ResourceTypeLayoutShape, RenderingDevice::UniformType, uni
 void ResourceTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     if (get_resource_type() == RAW_BYTES) {
         const VariantSerializer::Buffer buffer = VariantSerializer::serialize(data, BufferLayout::STD430);
-        const PackedByteArray bytes = buffer.as_packed_byte_array();
-        cursor.write_bytes(bytes, bytes.size());
+        cursor.write_bytes(buffer);
     } else {
         cursor.write_resource(data);
     }
@@ -97,7 +96,7 @@ void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const V
 		} else {
 			// TODO: Is there a better way to handle an empty buffer param?
 			// this will ensure a buffer is at least created with the default sizing
-			cursor.write_bytes({}, 0);
+			cursor.write_bytes(std::span<const uint8_t>());
 		}
 	}
 }
