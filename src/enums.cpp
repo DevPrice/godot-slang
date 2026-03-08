@@ -3,6 +3,8 @@
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
+using namespace godot;
+
 PropertyInfo Enums::get_enum_property_info(const StringName& p_class, const StringName& p_enum, const StringName& p_name) {
     return {Variant::Type::INT, p_name, PROPERTY_HINT_ENUM, get_enum_hint_string(p_class, p_enum)};
 }

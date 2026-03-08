@@ -1,5 +1,7 @@
 #include "compute_shader_kernel.h"
 
+using namespace godot;
+
 void ComputeShaderKernel::_bind_methods() {
 	BIND_GET_SET(ComputeShaderKernel, kernel_name, Variant::STRING);
 	BIND_GET_SET(ComputeShaderKernel, thread_group_size, Variant::VECTOR3);

@@ -21,19 +21,19 @@ class SlangReflectionContext {
 public:
 	explicit SlangReflectionContext(slang::ProgramLayout* program_layout) : program_layout(program_layout) {}
 
-	[[nodiscard]] Ref<StructTypeLayoutShape> get_params_shape() const;
-	[[nodiscard]] Ref<StructTypeLayoutShape> get_entry_point_params_shape(slang::EntryPointReflection* entry_point_reflection) const;
-	[[nodiscard]] Variant to_json() const;
+	[[nodiscard]] godot::Ref<StructTypeLayoutShape> get_params_shape() const;
+	[[nodiscard]] godot::Ref<StructTypeLayoutShape> get_entry_point_params_shape(slang::EntryPointReflection* entry_point_reflection) const;
+	[[nodiscard]] godot::Variant to_json() const;
 
 	template<typename T>
-	Dictionary get_attributes(T* reflection) const {
+	godot::Dictionary get_attributes(T* reflection) const {
 		ERR_FAIL_NULL_V(reflection, {});
-		Dictionary param_attributes{};
+		godot::Dictionary param_attributes{};
 		for (size_t attribute_index = 0; attribute_index < reflection->getUserAttributeCount(); ++attribute_index) {
 			if (slang::Attribute* attribute = reflection->getUserAttributeByIndex(attribute_index)) {
-				Dictionary arguments{};
+				godot::Dictionary arguments{};
 				for (size_t argument_index = 0; argument_index < attribute->getArgumentCount(); ++argument_index) {
-					String argument_name = _get_attribute_argument_name(attribute, argument_index);
+					godot::String argument_name = _get_attribute_argument_name(attribute, argument_index);
 					arguments.set(argument_name, _to_godot_value(attribute, argument_index));
 				}
 				param_attributes.set(attribute->getName(), arguments);
@@ -42,13 +42,13 @@ public:
 		return param_attributes;
 	}
 
-	static Variant get_default_value(slang::VariableReflection* var);
+	static godot::Variant get_default_value(slang::VariableReflection* var);
 
 	template<typename T>
-	static StringName get_name(T* reflection, const Dictionary& attributes) {
+	static godot::StringName get_name(T* reflection, const godot::Dictionary& attributes) {
 		ERR_FAIL_NULL_V(reflection, {});
 		if (attributes.has(GodotAttributes::name())) {
-			const Dictionary& name_attribute = attributes[GodotAttributes::name()];
+			const godot::Dictionary& name_attribute = attributes[GodotAttributes::name()];
 			return name_attribute["name"];
 		}
 		return reflection->getName();
@@ -57,41 +57,41 @@ public:
 private:
 	slang::ProgramLayout* program_layout;
 
-	Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions{}) const;
+	godot::Ref<ShaderTypeLayoutShape> _get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options = ShapeOptions{}) const;
 	bool _is_autobind(slang::VariableReflection* var) const;
 	slang::TypeReflection* _get_attribute_type(slang::Attribute* attribute) const;
-	String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
-	bool _get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
-	bool _get_godot_array_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const;
-	Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
+	godot::String _get_attribute_argument_name(slang::Attribute* attribute, unsigned int argument_index) const;
+	bool _get_godot_type(slang::TypeReflection* type, const godot::Dictionary& attributes, godot::Variant::Type& out_type, godot::PropertyHint& out_hint, godot::String& out_hint_string) const;
+	bool _get_godot_array_type(slang::TypeReflection* type, const godot::Dictionary& attributes, godot::Variant::Type& out_type, godot::PropertyHint& out_hint, godot::String& out_hint_string) const;
+	godot::Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
-	static std::optional<RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type);
+	static std::optional<godot::RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type);
 };
 
-class SlangShaderImporter final : public EditorImportPlugin {
+class SlangShaderImporter final : public godot::EditorImportPlugin {
 	GDCLASS(SlangShaderImporter, EditorImportPlugin)
 
 protected:
 	static void _bind_methods();
 
 public:
-	[[nodiscard]] String _get_importer_name() const override;
-	[[nodiscard]] String _get_visible_name() const override;
+	[[nodiscard]] godot::String _get_importer_name() const override;
+	[[nodiscard]] godot::String _get_visible_name() const override;
 	[[nodiscard]] int32_t _get_preset_count() const override;
-	[[nodiscard]] String _get_preset_name(int32_t p_preset_index) const override;
-	[[nodiscard]] PackedStringArray _get_recognized_extensions() const override;
-	[[nodiscard]] TypedArray<Dictionary> _get_import_options(const String& p_path, int32_t p_preset_index) const override;
-	[[nodiscard]] String _get_save_extension() const override;
-	[[nodiscard]] String _get_resource_type() const override;
+	[[nodiscard]] godot::String _get_preset_name(int32_t p_preset_index) const override;
+	[[nodiscard]] godot::PackedStringArray _get_recognized_extensions() const override;
+	[[nodiscard]] godot::TypedArray<godot::Dictionary> _get_import_options(const godot::String& p_path, int32_t p_preset_index) const override;
+	[[nodiscard]] godot::String _get_save_extension() const override;
+	[[nodiscard]] godot::String _get_resource_type() const override;
 	[[nodiscard]] float _get_priority() const override;
 	[[nodiscard]] int32_t _get_import_order() const override;
-	[[nodiscard]] bool _get_option_visibility(const String& p_path, const StringName& p_option_name, const Dictionary& p_options) const override;
-	[[nodiscard]] Error _import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const override;
+	[[nodiscard]] bool _get_option_visibility(const godot::String& p_path, const godot::StringName& p_option_name, const godot::Dictionary& p_options) const override;
+	[[nodiscard]] godot::Error _import(const godot::String& p_source_file, const godot::String& p_save_path, const godot::Dictionary& p_options, const godot::TypedArray<godot::String>& p_platform_variants, const godot::TypedArray<godot::String>& p_gen_files) const override;
 
 private:
-	static SlangResult _create_session(slang::ISession** out_session, const Dictionary& options, bool enable_glsl = false);
-	static Error _slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points, const Ref<ShaderTypeLayoutShape>& global_params_shape);
-	static Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape);
-	static void _get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, Dictionary& out_used_binding_sets);
+	static SlangResult _create_session(slang::ISession** out_session, const godot::Dictionary& options, bool enable_glsl = false);
+	static godot::Error _slang_compile_kernels(slang::IModule* slang_module, godot::TypedArray<ComputeShaderKernel>& out_kernels, const godot::PackedStringArray& additional_entry_points, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
+	static godot::Ref<ComputeShaderKernel> _slang_compile_kernel(slang::ISession* session, slang::IModule* slang_module, slang::IEntryPoint* entry_point, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
+	static void _get_used_bindings_sets(slang::IMetadata* metadata, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, godot::Dictionary& out_used_binding_sets);
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 };

@@ -6,14 +6,12 @@
 #include "compute_shader_file.h"
 #include "compute_shader_task.h"
 
-using namespace godot;
-
-class ComputeTexture final : public Texture2D {
+class ComputeTexture final : public godot::Texture2D {
     GDCLASS(ComputeTexture, Texture2D)
 
-    GET_SET_PROPERTY(Ref<ComputeShaderTask>, task)
-    GET_SET_PROPERTY(Size2i, size)
-    GET_SET_PROPERTY(RenderingDevice::DataFormat, data_format)
+    GET_SET_PROPERTY(godot::Ref<ComputeShaderTask>, task)
+    GET_SET_PROPERTY(godot::Size2i, size)
+    GET_SET_PROPERTY(godot::RenderingDevice::DataFormat, data_format)
     GET_SET_PROPERTY(bool, is_animated)
 
 protected:
@@ -25,16 +23,16 @@ public:
 
     [[nodiscard]] int _get_width() const override;
     [[nodiscard]] int _get_height() const override;
-    [[nodiscard]] RID _get_rid() const override;
+    [[nodiscard]] godot::RID _get_rid() const override;
     [[nodiscard]] bool _has_alpha() const override;
 
     void render();
 
 private:
-    UniqueRID<RenderingServer> texture_rid;
-    UniqueRID<RenderingDevice> texture_rd_rid;
-    Size2i remote_size{};
-    RenderingDevice::DataFormat remote_data_format{};
+    UniqueRID<godot::RenderingServer> texture_rid;
+    UniqueRID<godot::RenderingDevice> texture_rd_rid;
+    godot::Size2i remote_size{};
+    godot::RenderingDevice::DataFormat remote_data_format{};
     bool updated_queued{};
 
     void _queue_update();

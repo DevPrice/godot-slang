@@ -1,5 +1,7 @@
 #include "compute_shader_file.h"
 
+using namespace godot;
+
 void ComputeShaderFile::_bind_methods() {
 	BIND_ENUM_CONSTANT(UNKNOWN)
 	BIND_ENUM_CONSTANT(ROW_MAJOR)

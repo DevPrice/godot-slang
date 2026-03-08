@@ -10,6 +10,8 @@
 #include "godot_cpp/classes/rd_texture_format.hpp"
 #include "godot_cpp/classes/rd_texture_view.hpp"
 
+using namespace godot;
+
 void ComputeTexture::_bind_methods() {
     BIND_METHOD(ComputeTexture, render)
     BIND_GET_SET(ComputeTexture, size, Variant::VECTOR2I)

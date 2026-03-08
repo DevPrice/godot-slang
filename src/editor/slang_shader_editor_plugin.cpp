@@ -1,5 +1,7 @@
 #include "slang_shader_editor_plugin.h"
 
+using namespace godot;
+
 void SlangShaderEditorPlugin::_bind_methods() {
 }
 

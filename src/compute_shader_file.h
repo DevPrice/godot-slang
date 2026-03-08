@@ -7,14 +7,12 @@
 #include "compute_shader_kernel.h"
 #include "compute_shader_shape.h"
 
-using namespace godot;
-
-class ComputeShaderFile : public Resource {
+class ComputeShaderFile : public godot::Resource {
 	GDCLASS(ComputeShaderFile, Resource)
 
-	GET_SET_PROPERTY(TypedArray<ComputeShaderKernel>, kernels)
-	GET_SET_PROPERTY(String, base_error)
-	GET_SET_PROPERTY(Ref<StructTypeLayoutShape>, parameters)
+	GET_SET_PROPERTY(godot::TypedArray<ComputeShaderKernel>, kernels)
+	GET_SET_PROPERTY(godot::String, base_error)
+	GET_SET_PROPERTY(godot::Ref<StructTypeLayoutShape>, parameters)
 
 protected:
 	static void _bind_methods();
@@ -23,9 +21,9 @@ public:
 	ComputeShaderFile() = default;
 	~ComputeShaderFile() override = default;
 
-	void set_bytecode(const Ref<RDShaderSPIRV> &p_bytecode, const StringName &p_version = StringName(), int64_t kernel_index = 0);
-	[[nodiscard]] Ref<RDShaderSPIRV> get_spirv(const StringName &p_version = StringName(), int64_t kernel_index = 0) const;
-	[[nodiscard]] TypedArray<StringName> get_version_list(int64_t kernel_index = 0) const;
+	void set_bytecode(const godot::Ref<godot::RDShaderSPIRV> &p_bytecode, const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0);
+	[[nodiscard]] godot::Ref<godot::RDShaderSPIRV> get_spirv(const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0) const;
+	[[nodiscard]] godot::TypedArray<godot::StringName> get_version_list(int64_t kernel_index = 0) const;
 
 	enum MatrixLayout {
 		UNKNOWN = ShaderTypeLayoutShape::MatrixLayout::UNKNOWN,

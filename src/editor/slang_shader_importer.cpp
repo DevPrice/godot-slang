@@ -28,6 +28,8 @@
 
 #include "compute_shader_cursor.h"
 
+using namespace godot;
+
 void SlangShaderImporter::_bind_methods() {
 }
 

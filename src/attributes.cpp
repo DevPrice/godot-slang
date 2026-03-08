@@ -14,6 +14,8 @@
 #include "godot_cpp/classes/time.hpp"
 #include "godot_cpp/classes/window.hpp"
 
+using namespace godot;
+
 bool is_null(const Variant& value) {
 	return value.get_type() == Variant::Type::NIL || (value.get_type() == Variant::Type::OBJECT && value.operator Object*() == nullptr);
 }

@@ -4,16 +4,14 @@
 
 #include "slang_shader_importer.h"
 
-using namespace godot;
-
-class SlangShaderEditorPlugin : public EditorPlugin {
+class SlangShaderEditorPlugin : public godot::EditorPlugin {
 	GDCLASS(SlangShaderEditorPlugin, EditorPlugin)
 
 protected:
 	static void _bind_methods();
 
 private:
-	Ref<SlangShaderImporter> import_plugin;
+	godot::Ref<SlangShaderImporter> import_plugin;
 
 public:
 	void _enter_tree() override;
