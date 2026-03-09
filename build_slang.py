@@ -81,8 +81,6 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     if env["platform"] == "windows":
         slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang-compiler.lib")]
-    else:
-        slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/libslang-compiler.a")]
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
