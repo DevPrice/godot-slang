@@ -84,6 +84,23 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
+    if env["platform"] in ["linux", "macos"]:
+        prefix = env.subst("$SHLIBPREFIX")
+        suffix = env["SHLIBSUFFIX"]
+        lib_dir = f"slang/build/RelWithDebInfo/lib"
+        unversioned = os.path.join(lib_dir, f"{prefix}slang-compiler{suffix}")
+
+        def create_symlink(target, source, env):
+            if not os.path.exists(unversioned):
+                os.symlink(slang_lib_file, unversioned)
+
+        symlink_action = env.Command(
+            unversioned, slang_lib_output,
+            env.Action(create_symlink, "Creating slang symlink...")
+        )
+        env.Depends(symlink_action, slang_build)
+        env.AlwaysBuild(symlink_action)
+
     slang_install_command = env.InstallAs(os.path.join(output_dir, slang_lib_file), slang_lib_output)
 
     env.Depends(slang_install_command, slang_build)
