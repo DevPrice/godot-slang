@@ -884,13 +884,6 @@ Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, con
 		}
 		// TODO: Support the other types
 		UtilityFunctions::push_warning("Slang: Failed to make Godot value for attribute: ", type_reflection->getName(), String(" (%s)") % static_cast<int64_t>(type_reflection->getKind()));
-	} else {
-		int value{};
-		if (attribute->getArgumentValueInt(argument_index, &value) == SLANG_OK) {
-			// TODO: This happens for enum types? Look into this
-			return value;
-		}
-		UtilityFunctions::push_error("Slang: Got null type pointer for attribute ", attribute->getName());
 	}
 	return Variant{};
 }
