@@ -69,13 +69,15 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
     slang_sources += env.Glob("slang/source/slang/*.h")
 
     slang_lib_dir = "bin" if env["platform"] == "windows" else "lib"
+    slang_lib_path = f"slang/build/RelWithDebInfo/{slang_lib_dir}"
 
-    base_lib_name = f"slang/build/RelWithDebInfo/{slang_lib_dir}/{env.subst('$SHLIBPREFIX')}slang-compiler"
-    slang_lib_files = [env.File(f"{base_lib_name}{env["SHLIBSUFFIX"]}")]
-    if env["platform"] != "windows":
-        slang_lib_files += [file for file in env.Glob(f"{base_lib_name}{env["SHLIBSUFFIX"]}.0.*") if not str(file).endswith(".dwarf")]
+    match env["platform"]:
+        case "linux": slang_lib_file = f"{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version()}"
+        case "macos": slang_lib_file = f"{env.subst('$SHLIBPREFIX')}slang-compiler{get_slang_version()}{env["SHLIBSUFFIX"]}"
+        case _: slang_lib_file = f"{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}"
 
-    slang_outputs = slang_lib_files[:]
+    slang_lib_output = os.path.join(slang_lib_path, slang_lib_file)
+    slang_outputs = [env.File(slang_lib_output)]
 
     if env["platform"] == "windows":
         slang_outputs += [env.File("slang/build/RelWithDebInfo/lib/slang-compiler.lib")]
@@ -84,10 +86,7 @@ def slang(env, output_dir, build_preset = "default", build_type = "releaseWithDe
 
     slang_build = env.Command(slang_outputs, slang_sources, env.Action(build_slang, "Building Slang..."))
 
-    match env["platform"]:
-        case "linux": slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{env["SHLIBSUFFIX"]}{get_slang_version()}", slang_lib_files)
-        case "macos": slang_install_command = env.InstallAs(output_dir + f"/{env.subst('$SHLIBPREFIX')}slang-compiler{get_slang_version()}{env["SHLIBSUFFIX"]}", slang_lib_files)
-        case _: slang_install_command = env.Install(output_dir, slang_lib_files)
+    slang_install_command = env.InstallAs(os.path.join(output_dir, slang_lib_file), slang_lib_output)
 
     env.Depends(slang_install_command, slang_build)
 
