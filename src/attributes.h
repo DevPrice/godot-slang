@@ -28,6 +28,7 @@ struct GodotAttributes {
     DECLARE_GODOT_ATTRIBUTE(color, Color)
     DECLARE_GODOT_ATTRIBUTE(default_black, DefaultBlack)
     DECLARE_GODOT_ATTRIBUTE(default_white, DefaultWhite)
+    DECLARE_GODOT_ATTRIBUTE(export_param, ExportParam)
     DECLARE_GODOT_ATTRIBUTE(export_property, Export)
     DECLARE_GODOT_ATTRIBUTE(frame_id, FrameId)
     DECLARE_GODOT_ATTRIBUTE(global_param, GlobalParam)

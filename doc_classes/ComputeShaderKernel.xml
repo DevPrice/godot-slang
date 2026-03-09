@@ -14,6 +14,12 @@
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
 			Get the reflection information of the parameters for this kernel. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct descriptor slots.
 		</member>
+		<member name="slot_offset" type="int" setter="set_slot_offset" getter="get_slot_offset" default="0">
+			The slot offset of this kernel's parameters, relative to the global parameters.
+		</member>
+		<member name="space_offset" type="int" setter="set_space_offset" getter="get_space_offset" default="0">
+			The space offset of this kernel's parameters, relative to the global parameters.
+		</member>
 		<member name="spirv" type="RDShaderSPIRV" setter="set_spirv" getter="get_spirv">
 			The SPIR-V intermediate representation of this kernel.
 		</member>

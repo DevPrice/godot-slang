@@ -28,6 +28,9 @@ public:
 	void set_shader_parameter(const godot::StringName& param, const godot::Variant& value);
 	void clear_shader_parameters();
 
+	[[nodiscard]] godot::Variant get_kernel_parameter(const godot::StringName& kernel, const godot::StringName& param) const;
+	void set_kernel_parameter(const godot::StringName& kernel, const godot::StringName& param, const godot::Variant& value);
+
 	void dispatch_all(godot::Vector3i thread_groups, const Object* context = nullptr);
 	void dispatch(const godot::StringName& kernel_name, godot::Vector3i thread_groups, const Object* context = nullptr);
 	void dispatch_at(int64_t kernel_index, godot::Vector3i thread_groups, const Object* context = nullptr);
@@ -38,6 +41,11 @@ public:
 	godot::Error get_buffer_data_async(const godot::StringName& param, const godot::Callable& callback) const;
 
 	[[nodiscard]] godot::Dictionary get_shader_parameters() const;
+	[[nodiscard]] godot::Dictionary get_kernel_parameters(const godot::StringName& kernel_name) const;
+
+	godot::TypedArray<godot::RID> get_kernel_rids(const godot::StringName& kernel, const godot::StringName& param) const;
+	godot::PackedByteArray get_kernel_buffer_data(const godot::StringName& kernel, const godot::StringName& param) const;
+	godot::Error get_kernel_buffer_data_async(const godot::StringName& kernel, const godot::StringName& param, const godot::Callable& callback) const;
 
 	bool _set(const godot::StringName& p_name, const godot::Variant& p_value);
 	bool _get(const godot::StringName& p_name, godot::Variant &r_ret) const;
@@ -51,12 +59,12 @@ public:
 
 private:
 	struct KernelData {
-		godot::Dictionary parameters{};
 		UniqueRID<godot::RenderingDevice> shader_rid{};
 		UniqueRID<godot::RenderingDevice> pipeline_rid{};
 		std::unique_ptr<ComputeShaderObject> shader_object{};
 	};
 	godot::Dictionary _shader_parameters{};
+	godot::HashMap<godot::StringName, godot::Dictionary> _kernel_parameters{};
 	std::vector<std::unique_ptr<KernelData>> _kernel_data{};
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
@@ -67,6 +75,7 @@ private:
 
 	godot::RenderingDevice* _get_active_rendering_device() const;
 	KernelData* _get_or_create_kernel(int64_t kernel_index);
+	KernelData* _get_kernel_data(const godot::StringName& kernel_name) const;
 
 	void _dispatch(int64_t kernel_index, godot::Vector3i thread_groups, const Object* context = nullptr);
 };

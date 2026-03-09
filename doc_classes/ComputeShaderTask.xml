@@ -65,6 +65,39 @@
 				Fetches the data for the buffer associated with [param param]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
 			</description>
 		</method>
+		<method name="get_kernel_buffer_data" qualifiers="const">
+			<return type="PackedByteArray" />
+			<param index="0" name="kernel" type="StringName" />
+			<param index="1" name="param" type="StringName" />
+			<description>
+				Fetch the raw bytes for [param param] in [param kernel]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param. See: [method RenderingDevice.buffer_get_data].
+			</description>
+		</method>
+		<method name="get_kernel_buffer_data_async" qualifiers="const">
+			<return type="int" enum="Error" />
+			<param index="0" name="kernel" type="StringName" />
+			<param index="1" name="param" type="StringName" />
+			<param index="2" name="callback" type="Callable" />
+			<description>
+				Fetches the data for the buffer associated with [param param] in [param kernel]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
+			</description>
+		</method>
+		<method name="get_kernel_parameter" qualifiers="const">
+			<return type="Variant" />
+			<param index="0" name="kernel" type="StringName" />
+			<param index="1" name="param" type="StringName" />
+			<description>
+				Gets a kernel parameter by name.
+			</description>
+		</method>
+		<method name="get_kernel_rids" qualifiers="const">
+			<return type="RID[]" />
+			<param index="0" name="kernel" type="StringName" />
+			<param index="1" name="param" type="StringName" />
+			<description>
+				Gets the uniform [RID]s associated with [param param] in [param kernel] for the most recent dispatch.
+			</description>
+		</method>
 		<method name="get_rids" qualifiers="const">
 			<return type="RID[]" />
 			<param index="0" name="param" type="StringName" />
@@ -76,7 +109,16 @@
 			<return type="Variant" />
 			<param index="0" name="param" type="StringName" />
 			<description>
-				Gets the shader parameter value by name.
+				Gets a shader parameter value by name.
+			</description>
+		</method>
+		<method name="set_kernel_parameter">
+			<return type="void" />
+			<param index="0" name="kernel" type="StringName" />
+			<param index="1" name="param" type="StringName" />
+			<param index="2" name="value" type="Variant" />
+			<description>
+				Set's a parameter value of the entry-point [param kernel] by name. See [method set_shader_parameter] for more information.
 			</description>
 		</method>
 		<method name="set_shader_parameter">
@@ -84,7 +126,7 @@
 			<param index="0" name="param" type="StringName" />
 			<param index="1" name="value" type="Variant" />
 			<description>
-				Sets the shader parameter value by name.
+				Sets a global shader parameter value by name.
 				If [param value] is a [PackedByteArray], the bytes will be copied directly without any additional interpretation.
 				If [param value] is an [RID] or [RDUniform], the resource (e.g., texture or sampler) will be bound directly to the descriptor slot associated with the [param param].
 				For other parameter types, this will make a best effort to convert [param value] to the expected format of [param param].

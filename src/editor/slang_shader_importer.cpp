@@ -474,7 +474,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				slang::VariableLayoutReflection* field = type_layout->getFieldByIndex(i);
 				FieldShape field_info{};
 				const Dictionary field_attributes = get_attributes(field->getVariable());
-				const bool is_exported = field_attributes.has(GodotAttributes::export_property());
+				const bool is_exported = field_attributes.has(GodotAttributes::export_property()) || field_attributes.has(GodotAttributes::export_param());
 				if (field->getCategory() == slang::ParameterCategory::None) {
 					continue;
 				}

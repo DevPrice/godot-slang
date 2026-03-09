@@ -214,10 +214,16 @@ public struct gd_NameAttribute {
 };
 
 /**
- Marks a variable or function as exported, making it visible in the Godot editor.
+ Marks a variable as exported, making it visible in the Godot editor.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_ExportAttribute {};
+
+/**
+ Marks a function parameter as exported, making it visible in the Godot editor.
+*/
+[__AttributeUsage(_AttributeTargets.Param)]
+public struct gd_ExportParamAttribute {};
 
 /**
  Sets the property hint and hint string for an exported parameter.

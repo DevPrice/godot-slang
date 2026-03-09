@@ -23,11 +23,21 @@ const StringName& shader_param_prefix() {
 	return prefix;
 }
 
+constexpr auto kernel_param_prefix_chars = "kernel_parameter/";
+constexpr int64_t kernel_param_prefix_length = std::char_traits<char>::length(kernel_param_prefix_chars);
+
+const StringName& kernel_param_prefix() {
+	static const StringName prefix(kernel_param_prefix_chars);
+	return prefix;
+}
+
 void ComputeShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
 	BIND_GET_SET_OBJECT(ComputeShaderTask, rendering_device, RenderingDevice)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
+	BIND_METHOD(ComputeShaderTask, get_kernel_parameter, "kernel", "param")
+	BIND_METHOD(ComputeShaderTask, set_kernel_parameter, "kernel", "param", "value")
 	BIND_METHOD(ComputeShaderTask, clear_shader_parameters)
 	ClassDB::bind_method(D_METHOD("dispatch", "kernel_name", "thread_groups", "context"), &ComputeShaderTask::dispatch, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &ComputeShaderTask::dispatch_at, DEFVAL(nullptr));
@@ -36,6 +46,9 @@ void ComputeShaderTask::_bind_methods() {
 	BIND_METHOD(ComputeShaderTask, get_rids, "param")
 	BIND_METHOD(ComputeShaderTask, get_buffer_data, "param")
 	BIND_METHOD(ComputeShaderTask, get_buffer_data_async, "param", "callback")
+	BIND_METHOD(ComputeShaderTask, get_kernel_rids, "kernel", "param")
+	BIND_METHOD(ComputeShaderTask, get_kernel_buffer_data, "kernel", "param")
+	BIND_METHOD(ComputeShaderTask, get_kernel_buffer_data_async, "kernel", "param", "callback")
 }
 
 ComputeShaderTask::ComputeShaderTask() :
@@ -108,6 +121,42 @@ void ComputeShaderTask::set_shader_parameter(const StringName& param, const Vari
 
 void ComputeShaderTask::clear_shader_parameters() {
 	_shader_parameters.clear();
+	_kernel_parameters.clear();
+}
+
+Variant ComputeShaderTask::get_kernel_parameter(const StringName& kernel, const StringName& param) const {
+	const PackedStringArray parts = param.split("/");
+	const Dictionary* params_ptr = _kernel_parameters.getptr(kernel);
+	if (!params_ptr)
+		return {};
+	Variant current = *params_ptr;
+	int64_t i = 0;
+	bool valid;
+	for (; i < parts.size() - 1; ++i) {
+		current = current.get_named(parts[i], valid);
+		if (!valid || current.get_type() == Variant::NIL)
+			return {};
+	}
+	return current.get_named(parts[i], valid);
+}
+
+void ComputeShaderTask::set_kernel_parameter(const StringName& kernel, const StringName& param, const Variant& value) {
+	const PackedStringArray parts = param.split("/");
+	if (!_kernel_parameters.has(kernel)) {
+		_kernel_parameters[kernel] = Dictionary();
+	}
+	Variant current = _kernel_parameters[kernel];
+	int64_t i = 0;
+	bool valid;
+	for (; i < parts.size() - 1; ++i) {
+		Variant next = current.get_named(parts[i], valid);
+		if (!valid || next.get_type() == Variant::NIL) {
+			next = Dictionary();
+			current.set_named(parts[i], next, valid);
+		}
+		current = next;
+	}
+	current.set_named(parts[i], value, valid);
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
@@ -176,11 +225,58 @@ Dictionary ComputeShaderTask::get_shader_parameters() const {
 	return params_shape->get_properties().duplicate();
 }
 
+Dictionary ComputeShaderTask::get_kernel_parameters(const StringName& kernel_name) const {
+	if (shader.is_null()) {
+		return {};
+	}
+	for (const Ref<ComputeShaderKernel> kernel : shader->get_kernels()) {
+		if (kernel->get_kernel_name() == kernel_name) {
+			const Ref<StructTypeLayoutShape> params_shape = kernel->get_parameters();
+			if (params_shape.is_null()) {
+				return {};
+			}
+			return params_shape->get_properties().duplicate();
+		}
+	}
+	return {};
+}
+
+TypedArray<RID> ComputeShaderTask::get_kernel_rids(const StringName& kernel, const StringName& param) const {
+	const KernelData* kernel_data = _get_kernel_data(kernel);
+	ERR_FAIL_NULL_V(kernel_data, {});
+	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
+	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_rids();
+}
+
+PackedByteArray ComputeShaderTask::get_kernel_buffer_data(const StringName& kernel, const StringName& param) const {
+	const KernelData* kernel_data = _get_kernel_data(kernel);
+	ERR_FAIL_NULL_V(kernel_data, {});
+	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
+	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_buffer_data();
+}
+
+Error ComputeShaderTask::get_kernel_buffer_data_async(const StringName& kernel, const StringName& param, const Callable& callback) const {
+	const KernelData* kernel_data = _get_kernel_data(kernel);
+	ERR_FAIL_NULL_V(kernel_data, {});
+	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
+	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_buffer_data_async(callback);
+}
+
 bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
 	if (p_name.begins_with(shader_param_prefix())) {
 		const StringName param_name = p_name.substr(shader_param_prefix_length);
 		set_shader_parameter(param_name, p_value);
 		return true;
+	}
+	if (p_name.begins_with(kernel_param_prefix())) {
+		const StringName path = p_name.substr(kernel_param_prefix_length);
+		const int64_t first_slash_index = path.find("/");
+		if (first_slash_index >= 0) {
+			const StringName kernel_name = path.substr(0, first_slash_index);
+			const StringName param_name = path.substr(first_slash_index + 1);
+			set_kernel_parameter(kernel_name, param_name, p_value);
+			return true;
+		}
 	}
 	return false;
 }
@@ -188,7 +284,6 @@ bool ComputeShaderTask::_set(const StringName& p_name, const Variant& p_value) {
 bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 	if (p_name.begins_with(shader_param_prefix())) {
 		const StringName param_name = p_name.substr(shader_param_prefix_length);
-		const Dictionary params = get_shader_parameters();
 		FieldShape field;
 		if (_property_get_reflection(p_name, field)) {
 			const Variant value = get_shader_parameter(param_name);
@@ -203,6 +298,28 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 			r_ret = value;
 			return true;
 		}
+	} else if (p_name.begins_with(kernel_param_prefix())) {
+		const StringName path = p_name.substr(kernel_param_prefix_length);
+		const int64_t first_slash_index = path.find("/");
+		if (first_slash_index >= 0) {
+			const StringName kernel_name = path.substr(0, first_slash_index);
+			const StringName param_name = path.substr(first_slash_index + 1);
+			FieldShape field;
+			if (_property_get_reflection(p_name, field)) {
+				const Variant value = get_kernel_parameter(kernel_name, param_name);
+				if (value.get_type() == Variant::NIL && field.default_value.get_type() != Variant::NIL) {
+					r_ret = field.default_value;
+					return true;
+				}
+				if (field.property_info) {
+					r_ret = UtilityFunctions::type_convert(value, field.property_info->type);
+					return true;
+				}
+				r_ret = value;
+				return true;
+			}
+			return true;
+		}
 	}
 	return false;
 }
@@ -210,6 +327,11 @@ bool ComputeShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	ERR_FAIL_NULL(p_list);
 	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
+	if (shader.is_valid()) {
+		for (const Ref<ComputeShaderKernel> kernel : shader->get_kernels()) {
+			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ kernel_param_prefix(), kernel->get_kernel_name() }, get_kernel_parameters(kernel->get_kernel_name()));
+		}
+	}
 }
 
 void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties) {
@@ -267,6 +389,29 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Field
 			r_reflection = FieldShape::from_dict(last);
 			return true;
 		}
+	} else if (p_name.begins_with(kernel_param_prefix())) {
+		const StringName path = p_name.substr(kernel_param_prefix_length);
+		const int64_t first_slash_index = path.find("/");
+		if (first_slash_index >= 0) {
+			const StringName kernel_name = path.substr(0, first_slash_index);
+			const StringName param_name = path.substr(first_slash_index + 1);
+			const PackedStringArray parts = param_name.split("/");
+			Variant current = get_kernel_parameters(kernel_name);
+			int64_t i = 0;
+			bool valid;
+			for (; i < parts.size() - 1; ++i) {
+				const FieldShape field = FieldShape::from_dict(current.get_named(parts[i], valid));
+				const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr());
+				if (!valid || !structured_shape)
+					return false;
+				current = structured_shape->get_properties();
+			}
+			const Variant last = current.get_named(parts[i], valid);
+			if (valid) {
+				r_reflection = FieldShape::from_dict(last);
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -313,12 +458,25 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const in
 	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
 	const RID shader_rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
 	kernel_data = std::make_unique<KernelData>(KernelData{
-		{},
 		UniqueRID(rd, shader_rid),
 		UniqueRID(rd, rd->compute_pipeline_create(shader_rid)),
 		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters(), kernel->get_space_offset(), kernel->get_slot_offset()),
 	});
 	return kernel_data.get();
+}
+
+ComputeShaderTask::KernelData* ComputeShaderTask::_get_kernel_data(const StringName& kernel_name) const {
+	if (shader.is_null())
+		return nullptr;
+	TypedArray<ComputeShaderKernel> kernels = shader->get_kernels();
+	for (int64_t i = 0; i < kernels.size(); i++) {
+		Ref<ComputeShaderKernel> kernel = kernels[i];
+		if (kernel.is_valid() && kernel->get_kernel_name() == kernel_name) {
+			ERR_FAIL_INDEX_V(i, _kernel_data.size(), {});
+			return _kernel_data[i].get();
+		}
+	}
+	return nullptr;
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
@@ -337,8 +495,9 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const KernelData* kernel_data = _get_or_create_kernel(kernel_index);
 	ERR_FAIL_NULL_MSG(kernel_data, "ComputeShaderTask: Couldn't obtain kernel data!");
 
+	const Dictionary kernel_params = _kernel_parameters.has(kernel->get_kernel_name()) ? _kernel_parameters[kernel->get_kernel_name()] : Dictionary{};
 	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
-	ComputeShaderCursor(kernel_data->shader_object.get(), context).write(kernel_data->parameters);
+	ComputeShaderCursor(kernel_data->shader_object.get(), context).write(kernel_params);
 	_shader_object->flush_buffers();
 	kernel_data->shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
