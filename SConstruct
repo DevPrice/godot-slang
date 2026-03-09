@@ -59,7 +59,7 @@ if env["target"] == "editor":
     env.Append(
         CPPPATH=[
             "src/editor",
-            "slang/build/RelWithDebInfo/include",
+            "slang/include",
         ],
         LIBPATH=["slang/build/RelWithDebInfo/lib"],
         LIBS=["slang-compiler"],
