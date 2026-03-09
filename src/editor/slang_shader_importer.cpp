@@ -731,12 +731,20 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 			}
 			const Dictionary class_args = type_attributes.get(GodotAttributes::class_name(), Dictionary());
 			const StringName class_name = class_args.get("class_name", StringName());
-			// TODO: Verify the class_name is a Resource subtype
 			if (!class_name.is_empty()) {
-				out_type = Variant::OBJECT;
-				out_hint = PROPERTY_HINT_RESOURCE_TYPE;
-				out_hint_string = class_name;
-				return true;
+				if (ClassDB::is_parent_class(class_name, Resource::get_class_static())) {
+					out_type = Variant::OBJECT;
+					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
+					out_hint_string = class_name;
+					return true;
+				}
+				if (ClassDB::is_parent_class(class_name, Node::get_class_static())) {
+					out_type = Variant::OBJECT;
+					out_hint = PROPERTY_HINT_NODE_TYPE;
+					out_hint_string = class_name;
+					return true;
+				}
+				UtilityFunctions::push_warning("Exported class should be a Resource or Node type: ", class_name);
 			}
 			return false;
 		}

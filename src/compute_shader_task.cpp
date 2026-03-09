@@ -349,7 +349,7 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list, const Str
 }
 
 bool ComputeShaderTask::_can_show_property_info(const PropertyInfo& property_info) {
-	return property_info.type != Variant::NIL && property_info.type != Variant::RID && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE);
+	return property_info.type != Variant::NIL && property_info.type != Variant::RID && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE || property_info.hint == PROPERTY_HINT_NODE_TYPE);
 }
 
 bool ComputeShaderTask::_property_can_revert(const StringName& p_name) const {
