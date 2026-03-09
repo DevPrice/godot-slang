@@ -382,7 +382,6 @@ void SlangShaderImporter::_get_used_bindings_sets(slang::IMetadata* metadata, co
 }
 
 bool SlangShaderImporter::_is_location_used(slang::IMetadata* metadata, const int64_t space, const int64_t binding_index) {
-	// TODO: This isn't working for entry-point parameters
 	bool slot_used{};
 	for (int64_t category = 0; category < SLANG_PARAMETER_CATEGORY_COUNT; category++) {
 		if (SLANG_SUCCEEDED(metadata->isParameterLocationUsed(static_cast<SlangParameterCategory>(category), space, binding_index, slot_used)) && slot_used) {
