@@ -101,65 +101,88 @@ void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const V
 	}
 }
 
+#define STR_NAME_KEY(name) const StringName& key_##name() { \
+static StringName key(#name); \
+return key; \
+}
+
+STR_NAME_KEY(name)
+STR_NAME_KEY(shape)
+STR_NAME_KEY(user_attributes)
+STR_NAME_KEY(binding_offset)
+STR_NAME_KEY(offset)
+STR_NAME_KEY(default_value)
+STR_NAME_KEY(property_info)
+
+STR_NAME_KEY(binding_type)
+STR_NAME_KEY(uniform_type)
+STR_NAME_KEY(slot_offset)
+STR_NAME_KEY(binding_count)
+STR_NAME_KEY(size)
+STR_NAME_KEY(alignment)
+STR_NAME_KEY(leaf_shape)
+
+#undef STR_NAME_KEY
+
 FieldShape::operator Dictionary() const {
 	Dictionary result;
-	result["name"] = name;
-	result["shape"] = shape;
-	result["user_attributes"] = user_attributes;
-	result["binding_offset"] = binding_offset;
-	result["offset"] = byte_offset;
+	result[key_name()] = name;
+	result[key_shape()] = shape;
+	result[key_user_attributes()] = user_attributes;
+	result[key_binding_offset()] = binding_offset;
+	result[key_offset()] = byte_offset;
 	if (default_value.get_type() != Variant::NIL) {
-		result["default_value"] = default_value;
+		result[key_default_value()] = default_value;
 	}
 	if (property_info) {
-		result["property_info"] = Dictionary(*property_info);
+		result[key_property_info()] = Dictionary(*property_info);
 	}
 	return result;
 }
 
 FieldShape FieldShape::from_dict(const Dictionary& dict) {
 	return FieldShape{
-		dict.get("name", {}),
-		dict.get("shape", {}),
-		dict.get("user_attributes", {}),
-		dict.get("default_value", {}),
-		dict.has("property_info")
-			? std::make_optional(PropertyInfo::from_dict(dict["property_info"]))
+		dict.get(key_name(), {}),
+		dict.get(key_shape(), {}),
+		dict.get(key_user_attributes(), {}),
+		dict.get(key_default_value(), {}),
+		dict.has(key_property_info())
+			? std::make_optional(PropertyInfo::from_dict(dict[key_property_info()]))
 			: std::nullopt,
-		dict.get("binding_offset", {}),
-		dict.get("offset", {}),
+		dict.get(key_binding_offset(), {}),
+		dict.get(key_offset(), {}),
 	};
 }
 
 BindingRange::operator Dictionary() const {
 	Dictionary result;
-	result["binding_type"] = static_cast<int64_t>(type);
+	result[key_binding_type()] = static_cast<int64_t>(type);
 	if (uniform_type) {
-		result["uniform_type"] = *uniform_type;
+		result[key_uniform_type()] = *uniform_type;
 	}
-	result["slot_offset"] = slot_offset;
-	result["binding_count"] = binding_count;
+	result[key_slot_offset()] = slot_offset;
+	result[key_binding_count()] = binding_count;
 	if (size > 0) {
-		result["size"] = size;
+		result[key_size()] = size;
 	}
 	if (alignment > 0) {
-		result["alignment"] = alignment;
+		result[key_alignment()] = alignment;
 	}
 	if (leaf_shape.is_valid()) {
-		result["leaf_shape"] = leaf_shape;
+		result[key_leaf_shape()] = leaf_shape;
 	}
 	return result;
 }
 
 BindingRange BindingRange::from_dict(const Dictionary& dict) {
 	return BindingRange{
-		static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(dict.get("binding_type", 0))),
-		static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(dict.get("uniform_type", 0))),
-		dict.get("slot_offset", 0),
-		dict.get("binding_count", 1),
-		dict.get("size", 0),
-		dict.get("alignment", 1),
-		dict.get("leaf_shape", {}),
+		static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(dict.get(key_binding_type(), 0))),
+		static_cast<RenderingDevice::UniformType>(static_cast<int64_t>(dict.get(key_uniform_type(), 0))),
+		dict.get(key_slot_offset(), 0),
+		dict.get(key_binding_count(), 1),
+		dict.get(key_size(), 0),
+		dict.get(key_alignment(), 1),
+		dict.get(key_leaf_shape(), {}),
 	};
 }
 
