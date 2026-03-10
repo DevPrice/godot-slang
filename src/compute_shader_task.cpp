@@ -517,6 +517,7 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 		}
 	}
 
+	// TODO: The kernel can also have push constants (and is more likely, really), need to rethink this
 	const PackedByteArray& push_constants = _shader_object->get_push_constants();
 	if (push_constants.size() > 0) {
 		rendering_device->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());

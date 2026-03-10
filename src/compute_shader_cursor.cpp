@@ -47,15 +47,14 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 	for (int64_t binding_range_index = 0; binding_range_index < bindings.size(); binding_range_index++) {
 		const auto binding = BindingRange::from_dict(bindings[binding_range_index]);
 		has_only_parameter_blocks = has_only_parameter_blocks && binding.type == ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK;
-		if (binding.uniform_type && binding.leaf_shape.is_null()) {
+		if (binding.type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
+			push_constants.resize(ComputeBuffer::aligned_size(binding.size, binding.alignment));
+		} else if (binding.uniform_type && binding.leaf_shape.is_null()) {
 			Ref<RDUniform> uniform{};
 			uniform.instantiate();
 			uniform->set_binding(first_slot_index + binding.slot_offset);
 			uniform->set_uniform_type(*binding.uniform_type);
 			uniforms.set(binding_range_index, uniform);
-		}
-		if (binding.type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
-			push_constants.resize(ComputeBuffer::aligned_size(binding.size, binding.alignment));
 		}
 	}
 	if (has_only_parameter_blocks) {
@@ -318,7 +317,7 @@ ComputeShaderCursor ComputeShaderCursor::field(const StringName& field_name) con
 	ComputeShaderCursor result(*this);
 	ERR_FAIL_NULL_V(result.shape, ComputeShaderCursor(nullptr));
 	const std::optional<FieldShape> property = result.shape->field(field_name);
-	ERR_FAIL_COND_V(!property, ComputeShaderCursor(nullptr));
+	ERR_FAIL_COND_V_MSG(!property, ComputeShaderCursor(nullptr), String("No such field '%s'!") % field_name);
 	const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
 	ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
 

@@ -398,7 +398,11 @@ Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_entry_point_params_shape(slang::EntryPointReflection* entry_point_reflection) const {
 	ERR_FAIL_NULL_V(entry_point_reflection, {});
-	return _get_shape(entry_point_reflection->getTypeLayout(), { .include_bindings = true });
+	return _get_shape(entry_point_reflection->getTypeLayout(), {
+		.implicit_offset = entry_point_reflection->getTypeLayout()->getSize() > 0,
+		.include_bindings = true,
+		.implicit_buffer_type = slang::BindingType::PushConstant
+	});
 }
 
 Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutReflection* type_layout, const ShapeOptions& shape_options) const {
@@ -408,14 +412,16 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 
 	if (shape_options.include_bindings) {
 		if (shape_options.implicit_offset) {
-			BindingRange binding{};
-			binding.size = type_layout->getSize();
-			binding.alignment = 16;
-			binding.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(slang::BindingType::ConstantBuffer));
-			binding.uniform_type = RenderingDevice::UniformType::UNIFORM_TYPE_UNIFORM_BUFFER;
-			binding.slot_offset = 0;
-			binding.binding_count = 1;
-			bindings.push_back(Dictionary(binding));
+			BindingRange binding_range{};
+			binding_range.size = type_layout->getSize();
+			binding_range.alignment = 16;
+			binding_range.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(shape_options.implicit_buffer_type));
+			if (const auto uniform_type = _to_godot_uniform_type(shape_options.implicit_buffer_type)) {
+				binding_range.uniform_type = *uniform_type;
+			}
+			binding_range.slot_offset = 0;
+			binding_range.binding_count = 1;
+			bindings.push_back(Dictionary(binding_range));
 		}
 
 		for (int i = 0; i < type_layout->getBindingRangeCount(); i++) {
@@ -579,6 +585,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				.slot_offset = static_cast<int64_t>(element_var->getOffset(slang::ParameterCategory::DescriptorTableSlot)),
 				.include_property_info = shape_options.include_property_info,
 				.include_bindings = true,
+				.implicit_buffer_type = shape_options.implicit_buffer_type,
 			});
 			ERR_FAIL_NULL_V(element_shape, nullptr);
 			element_shape->set_meta(StringName("container_kind"), static_cast<int64_t>(type_layout->getKind()));

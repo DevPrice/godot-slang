@@ -15,6 +15,7 @@ struct ShapeOptions {
 	int64_t slot_offset = 0;
 	bool include_property_info = true;
 	bool include_bindings = false;
+	slang::BindingType implicit_buffer_type = slang::BindingType::ConstantBuffer;
 };
 
 class SlangReflectionContext {
