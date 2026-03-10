@@ -517,10 +517,13 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 		}
 	}
 
-	// TODO: The kernel can also have push constants (and is more likely, really), need to rethink this
-	const PackedByteArray& push_constants = _shader_object->get_push_constants();
-	if (push_constants.size() > 0) {
-		rendering_device->compute_list_set_push_constant(compute_list, push_constants, push_constants.size());
+	// from the docs:
+	// the Slang compiler only supports having a single ConstantBuffer<> with the [[vk::push_constant]] attribute being in scope for each entry point
+	// (meaning either a single global buffer for all stages, or distinct per-entry-point buffers).
+	if (const PackedByteArray& global_push_constants = _shader_object->get_push_constants(); global_push_constants.size() > 0) {
+		rendering_device->compute_list_set_push_constant(compute_list, global_push_constants, global_push_constants.size());
+	} else if (const PackedByteArray& kernel_push_constants = kernel_data->shader_object->get_push_constants(); kernel_push_constants.size() > 0) {
+		rendering_device->compute_list_set_push_constant(compute_list, kernel_push_constants, kernel_push_constants.size());
 	}
 
 	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
