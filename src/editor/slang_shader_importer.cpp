@@ -549,6 +549,19 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				shape->set_bindings(bindings);
 				return shape;
 			}
+			if (base_resource_shape == SLANG_TEXTURE_BUFFER) {
+				Ref<VariantTypeLayoutShape> element_shape;
+				auto element_type = type_layout->getResourceResultType();
+				ERR_FAIL_NULL_V(element_type, nullptr);
+				element_shape.instantiate();
+				element_shape->set_size(_get_scalar_size(element_type->getScalarType()) * element_type->getColumnCount() * element_type->getRowCount());
+				element_shape->set_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(type_layout->getMatrixLayoutMode()));
+				Ref<ArrayTypeLayoutShape> shape;
+				shape.instantiate();
+				shape->set_element_shape(element_shape);
+				shape->set_bindings(bindings);
+				return shape;
+			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
 				Ref<ResourceTypeLayoutShape> shape;
 				shape.instantiate();
@@ -621,26 +634,26 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 	switch (type->getKind()) {
 		case slang::TypeReflection::Kind::Scalar:
 			switch (type->getScalarType()) {
-			case slang::TypeReflection::ScalarType::Bool:
-				out_type = Variant::BOOL;
-				return true;
-			case slang::TypeReflection::ScalarType::Float16:
-			case slang::TypeReflection::ScalarType::Float32:
-			case slang::TypeReflection::ScalarType::Float64:
-				out_type = Variant::FLOAT;
-				return true;
-			case slang::TypeReflection::ScalarType::Int32:
-			case slang::TypeReflection::ScalarType::UInt32:
-			case slang::TypeReflection::ScalarType::Int64:
-			case slang::TypeReflection::ScalarType::UInt64:
-			case slang::TypeReflection::ScalarType::Int8:
-			case slang::TypeReflection::ScalarType::UInt8:
-			case slang::TypeReflection::ScalarType::Int16:
-			case slang::TypeReflection::ScalarType::UInt16:
-				out_type = Variant::INT;
-				return true;
-			default:
-				break;
+				case slang::TypeReflection::ScalarType::Bool:
+					out_type = Variant::BOOL;
+					return true;
+				case slang::TypeReflection::ScalarType::Float16:
+				case slang::TypeReflection::ScalarType::Float32:
+				case slang::TypeReflection::ScalarType::Float64:
+					out_type = Variant::FLOAT;
+					return true;
+				case slang::TypeReflection::ScalarType::Int32:
+				case slang::TypeReflection::ScalarType::UInt32:
+				case slang::TypeReflection::ScalarType::Int64:
+				case slang::TypeReflection::ScalarType::UInt64:
+				case slang::TypeReflection::ScalarType::Int8:
+				case slang::TypeReflection::ScalarType::UInt8:
+				case slang::TypeReflection::ScalarType::Int16:
+				case slang::TypeReflection::ScalarType::UInt16:
+					out_type = Variant::INT;
+					return true;
+				default:
+					break;
 			}
 		case slang::TypeReflection::Kind::Enum: {
 			out_type = Variant::INT;
@@ -706,10 +719,11 @@ String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* at
 					out_hint = PROPERTY_HINT_RESOURCE_TYPE;
 					out_hint_string = Cubemap::get_class_static();
 					return true;
-				case SLANG_BYTE_ADDRESS_BUFFER: {
+				case SLANG_BYTE_ADDRESS_BUFFER:
 					out_type = Variant::PACKED_BYTE_ARRAY;
 					return true;
-				}
+				case SLANG_TEXTURE_BUFFER:
+					return _get_godot_array_type(type->getResourceResultType(), attributes, out_type, out_hint, out_hint_string);
 				case SLANG_STRUCTURED_BUFFER:
 					return _get_godot_array_type(type->getElementType(), attributes, out_type, out_hint, out_hint_string);
 				default:
@@ -874,7 +888,8 @@ Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, con
 						}
 						break;
 					}
-					default: break;
+					default:
+						break;
 				}
 			}
 			case slang::TypeReflection::Kind::Struct: {
@@ -893,6 +908,21 @@ Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, con
 		UtilityFunctions::push_warning("Slang: Failed to make Godot value for attribute: ", type_reflection->getName(), String(" (%s)") % static_cast<int64_t>(type_reflection->getKind()));
 	}
 	return Variant{};
+}
+
+int64_t SlangReflectionContext::_get_scalar_size(const slang::TypeReflection::ScalarType scalar_type) {
+	switch (scalar_type) {
+		case slang::TypeReflection::ScalarType::Float16:
+		case slang::TypeReflection::ScalarType::Int16:
+		case slang::TypeReflection::ScalarType::UInt16:
+			return 2;
+		case slang::TypeReflection::ScalarType::Float64:
+		case slang::TypeReflection::ScalarType::Int64:
+		case slang::TypeReflection::ScalarType::UInt64:
+			return 8;
+		default:
+			return 4;
+	}
 }
 
 Variant SlangReflectionContext::get_default_value(slang::VariableReflection* var) {
@@ -963,7 +993,9 @@ std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_un
 		case SLANG_BINDING_TYPE_INPUT_RENDER_TARGET:
 		case SLANG_BINDING_TYPE_INLINE_UNIFORM_DATA:
 		case SLANG_BINDING_TYPE_RAY_TRACING_ACCELERATION_STRUCTURE:
+			return {};
 		default:
+			UtilityFunctions::push_warning("Slang: Unknown binding type: ", base_type);
 			return {};
 	}
 }

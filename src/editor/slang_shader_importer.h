@@ -66,6 +66,7 @@ private:
 	bool _get_godot_array_type(slang::TypeReflection* type, const godot::Dictionary& attributes, godot::Variant::Type& out_type, godot::PropertyHint& out_hint, godot::String& out_hint_string) const;
 	godot::Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
+	static int64_t _get_scalar_size(slang::TypeReflection::ScalarType scalar_type);
 	static std::optional<godot::RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type);
 };
 
