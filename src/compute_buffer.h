@@ -4,6 +4,12 @@
 #include "compute_shader_shape.h"
 #include "rids.h"
 
+enum class ComputeBufferType {
+	CONSTANT_BUFFER,
+	TEXTURE_BUFFER,
+	STORAGE_BUFFER,
+};
+
 class ComputeBuffer {
 
     GET_SET_PROPERTY(godot::PackedByteArray, buffer)
@@ -11,7 +17,7 @@ class ComputeBuffer {
     GET_SET_PROPERTY(bool, is_fixed_size)
 
 public:
-	explicit ComputeBuffer(godot::RenderingDevice* p_rendering_device);
+	ComputeBuffer(godot::RenderingDevice* p_rendering_device, ComputeBufferType p_type);
 
 	godot::RID get_rid() const;
 
@@ -25,7 +31,11 @@ public:
 private:
 	godot::RenderingDevice* rendering_device;
 	UniqueRID<godot::RenderingDevice> rid;
+	ComputeBufferType type;
     int64_t remote_size = 0;
     int64_t dirty_start = 0;
     int64_t dirty_end = 0;
+
+	godot::RID _create_buffer();
+	void _update_buffer();
 };

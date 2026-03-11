@@ -67,7 +67,7 @@ private:
 	godot::Variant _to_godot_value(slang::Attribute* attribute, uint32_t argument_index) const;
 
 	static int64_t _get_scalar_size(slang::TypeReflection::ScalarType scalar_type);
-	static std::optional<godot::RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type);
+	static std::optional<godot::RenderingDevice::UniformType> _to_godot_uniform_type(slang::BindingType type, SlangResourceShape resource_shape);
 };
 
 class SlangShaderImporter final : public godot::EditorImportPlugin {

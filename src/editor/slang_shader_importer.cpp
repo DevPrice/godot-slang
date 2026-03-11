@@ -416,7 +416,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			binding_range.size = type_layout->getSize();
 			binding_range.alignment = 16;
 			binding_range.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(shape_options.implicit_buffer_type));
-			if (const auto uniform_type = _to_godot_uniform_type(shape_options.implicit_buffer_type)) {
+			if (const auto uniform_type = _to_godot_uniform_type(shape_options.implicit_buffer_type, type_layout->getResourceShape())) {
 				binding_range.uniform_type = *uniform_type;
 			}
 			binding_range.slot_offset = 0;
@@ -429,8 +429,9 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			const slang::BindingType binding_type = type_layout->getBindingRangeType(i);
 			const auto leaf_type = type_layout->getBindingRangeLeafTypeLayout(i);
 			const Ref<ShaderTypeLayoutShape> leaf_shape = _get_shape(leaf_type);
+			ERR_FAIL_NULL_V(leaf_type, nullptr);
 			binding_range.type = static_cast<ShaderTypeLayoutShape::BindingType>(static_cast<int64_t>(binding_type));
-			if (const auto uniform_type = _to_godot_uniform_type(binding_type)) {
+			if (const auto uniform_type = _to_godot_uniform_type(binding_type, leaf_type->getResourceShape())) {
 				binding_range.uniform_type = *uniform_type;
 			}
 			if (binding_type == slang::BindingType::PushConstant) {
@@ -537,7 +538,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			const SlangResourceShapeIntegral base_resource_shape = type_layout->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK;
 			// TODO: We probably don't need to know the type in the shape
 			const slang::BindingType binding_type = type_layout->getBindingRangeType(0);
-			const auto uniform_type = _to_godot_uniform_type(binding_type);
+			const auto uniform_type = _to_godot_uniform_type(binding_type, type_layout->getResourceShape());
 			if (!uniform_type) {
 				UtilityFunctions::push_warning("Unknown binding type: ", static_cast<int64_t>(binding_type));
 			}
@@ -553,13 +554,15 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				Ref<VariantTypeLayoutShape> element_shape;
 				auto element_type = type_layout->getResourceResultType();
 				ERR_FAIL_NULL_V(element_type, nullptr);
+				const int64_t stride = _get_scalar_size(element_type->getScalarType()) * element_type->getColumnCount() * element_type->getRowCount();
 				element_shape.instantiate();
-				element_shape->set_size(_get_scalar_size(element_type->getScalarType()) * element_type->getColumnCount() * element_type->getRowCount());
+				element_shape->set_size(stride);
 				element_shape->set_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(type_layout->getMatrixLayoutMode()));
 				Ref<ArrayTypeLayoutShape> shape;
 				shape.instantiate();
 				shape->set_element_shape(element_shape);
 				shape->set_bindings(bindings);
+				shape->set_stride(stride);
 				return shape;
 			}
 			if (base_resource_shape != SLANG_STRUCTURED_BUFFER) {
@@ -970,7 +973,7 @@ Variant SlangReflectionContext::to_json() const {
 	return nullptr;
 }
 
-std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_uniform_type(slang::BindingType type) {
+std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_uniform_type(const slang::BindingType type, const SlangResourceShape resource_shape) {
 	const int64_t base_type = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_BASE_MASK;
 	const int64_t type_ext = static_cast<int64_t>(type) & SLANG_BINDING_TYPE_EXT_MASK;
 	switch (base_type) {
@@ -987,6 +990,10 @@ std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_un
 			return RenderingDevice::UNIFORM_TYPE_UNIFORM_BUFFER;
 		case SLANG_BINDING_TYPE_TYPED_BUFFER:
 		case SLANG_BINDING_TYPE_RAW_BUFFER:
+			// TODO: This is weird, do we really need both BindingType and ResourceShape?
+			if (resource_shape == SLANG_TEXTURE_BUFFER) {
+				return RenderingDevice::UNIFORM_TYPE_TEXTURE_BUFFER;
+			}
 			return RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER;
 		case SLANG_BINDING_TYPE_PARAMETER_BLOCK:
 		case SLANG_BINDING_TYPE_PUSH_CONSTANT:

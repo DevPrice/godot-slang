@@ -243,7 +243,7 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 			return nullptr;
 		switch (binding_range->base_binding_type()) {
 			case ShaderTypeLayoutShape::BindingType::CONSTANT_BUFFER: {
-				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
+				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device, ComputeBufferType::CONSTANT_BUFFER));
 				ComputeBuffer& new_buffer = *new_buffer_it->second;
 				new_buffer.set_alignment(binding_range->alignment);
 				new_buffer.set_size(binding_range->size);
@@ -252,7 +252,8 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 			}
 			case ShaderTypeLayoutShape::BindingType::TYPED_BUFFER:
 			case ShaderTypeLayoutShape::BindingType::RAW_BUFFER: {
-				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device));
+				const ComputeBufferType buffer_type = binding_range->uniform_type == RenderingDevice::UniformType::UNIFORM_TYPE_TEXTURE_BUFFER ? ComputeBufferType::TEXTURE_BUFFER : ComputeBufferType::STORAGE_BUFFER;
+				auto [new_buffer_it, _] = buffers.try_emplace(binding_range_index, std::make_unique<ComputeBuffer>(rendering_device, buffer_type));
 				ComputeBuffer& new_buffer = *new_buffer_it->second;
 				new_buffer.set_size(256); // TODO: Default sizing behavior?
 				new_buffer.set_is_fixed_size(false);

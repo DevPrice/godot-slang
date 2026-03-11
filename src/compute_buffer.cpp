@@ -10,7 +10,7 @@
 
 using namespace godot;
 
-ComputeBuffer::ComputeBuffer(RenderingDevice* p_rendering_device) : rendering_device(p_rendering_device), rid(p_rendering_device) { }
+ComputeBuffer::ComputeBuffer(RenderingDevice* p_rendering_device, const ComputeBufferType p_type) : rendering_device(p_rendering_device), rid(p_rendering_device), type(p_type) { }
 
 void ComputeBuffer::write(const int64_t offset, const std::span<const uint8_t> data) {
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
@@ -61,9 +61,9 @@ void ComputeBuffer::flush() {
 
 	if (!rid.is_valid()) {
 		ERR_FAIL_COND(buffer.is_empty());
-		rid = get_is_fixed_size() ? rendering_device->uniform_buffer_create(buffer.size(), buffer) : rendering_device->storage_buffer_create(buffer.size(), buffer);
+		rid = _create_buffer();
 	} else if (dirty_start != dirty_end) {
-		rendering_device->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
+		_update_buffer();
 	}
 	remote_size = buffer.size();
 	dirty_start = 0;
@@ -72,6 +72,28 @@ void ComputeBuffer::flush() {
 
 int64_t ComputeBuffer::aligned_size(const int64_t size, const int64_t alignment) {
 	return alignment * ((size + (alignment - 1)) / alignment);
+}
+
+RID ComputeBuffer::_create_buffer() {
+	switch (type) {
+		case ComputeBufferType::CONSTANT_BUFFER:
+			return rendering_device->uniform_buffer_create(buffer.size(), buffer);
+		case ComputeBufferType::STORAGE_BUFFER:
+			return rendering_device->storage_buffer_create(buffer.size(), buffer);
+		case ComputeBufferType::TEXTURE_BUFFER:
+			// TODO: Format?
+			return rendering_device->texture_buffer_create(buffer.size() / 16, RenderingDevice::DATA_FORMAT_R32G32B32A32_SFLOAT, buffer);
+	}
+	ERR_FAIL_V_MSG({}, String("Invalid buffer type %s!") % static_cast<int64_t>(type));
+}
+
+void ComputeBuffer::_update_buffer() {
+	if (type == ComputeBufferType::TEXTURE_BUFFER) {
+		// TODO: buffer_update and texture_update both fail?
+		rid = rendering_device->texture_buffer_create(buffer.size() / 16, RenderingDevice::DATA_FORMAT_R32G32B32A32_SFLOAT, buffer);
+	} else {
+		rendering_device->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
+	}
 }
 
 RID ComputeBuffer::get_rid() const {
