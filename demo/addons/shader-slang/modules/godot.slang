@@ -5,7 +5,7 @@ __include "data_format";
 
 namespace gd {
 
-enum VariantType {
+public enum VariantType {
     NIL,
 
     // atomic types
@@ -130,11 +130,14 @@ public func normal_roughness_compatibility(float4 normal_roughness) -> float4 {
 	roughness /= (127.0 / 255.0);
     return float4(normalize(normal_roughness.xyz * 2.0 - 1.0) * 0.5 + 0.5, roughness);
 }
+}
 
 [__AttributeUsage(_AttributeTargets.Struct)]
 struct gd_TypeAttribute {
-    let type : VariantType;
+    let type : gd::VariantType;
 };
+
+namespace gd {
 
 [gd::Type(VariantType.RECT2I)]
 public struct IntRect {

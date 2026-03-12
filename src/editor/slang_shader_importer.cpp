@@ -617,17 +617,16 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 // TODO: Surely there is a better way to do this
 slang::TypeReflection* SlangReflectionContext::_get_attribute_type(slang::Attribute* attribute) const {
 	ERR_FAIL_NULL_V(attribute, nullptr);
-	return program_layout->findTypeByName((String(attribute->getName()) + "Attribute").utf8().get_data());
+	const auto type_name = (String(attribute->getName()) + "Attribute").utf8();
+	return program_layout->findTypeByName(type_name.get_data());
 }
 
 String SlangReflectionContext::_get_attribute_argument_name(slang::Attribute* attribute, const unsigned int argument_index) const {
-	if (attribute) {
-		if (slang::TypeReflection* attribute_type = _get_attribute_type(attribute)) {
-			slang::VariableReflection* field = attribute_type->getFieldByIndex(argument_index);
-			return get_name(field, get_attributes(field));
-		}
-	}
-	return String("argument") + String::num_int64(argument_index);
+	ERR_FAIL_NULL_V(attribute, String("argument") + String::num_int64(argument_index));
+	slang::TypeReflection* attribute_type = _get_attribute_type(attribute);
+	ERR_FAIL_NULL_V(attribute_type, String("argument") + String::num_int64(argument_index));
+	slang::VariableReflection* field = attribute_type->getFieldByIndex(argument_index);
+	return get_name(field, get_attributes(field));
 }
 
  bool SlangReflectionContext::_get_godot_type(slang::TypeReflection* type, const Dictionary& attributes, Variant::Type& out_type, PropertyHint& out_hint, String& out_hint_string) const {
@@ -909,6 +908,13 @@ Variant SlangReflectionContext::_to_godot_value(slang::Attribute* attribute, con
 		}
 		// TODO: Support the other types
 		UtilityFunctions::push_warning("Slang: Failed to make Godot value for attribute: ", type_reflection->getName(), String(" (%s)") % static_cast<int64_t>(type_reflection->getKind()));
+	} else {
+		int value{};
+		if (SLANG_SUCCEEDED(attribute->getArgumentValueInt(argument_index, &value))) {
+			// this sometimes happens for enum values for some reason
+			return value;
+		}
+		UtilityFunctions::push_error("Slang: Got null type pointer for attribute ", attribute->getName());
 	}
 	return Variant{};
 }
