@@ -27,6 +27,7 @@
 #include <compute_shader_kernel.h>
 
 #include "compute_shader_cursor.h"
+#include "slang_shader_editor_plugin.h"
 
 using namespace godot;
 
@@ -168,9 +169,19 @@ SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, 
 
 	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
 	const CharString modules_path = extension_path.get_base_dir().path_join("modules").utf8();
-	char const* search_paths = { modules_path.get_data() };
-	session_desc.searchPaths = &search_paths;
-	session_desc.searchPathCount = 1;
+	const PackedStringArray search_paths = SlangShaderEditorPlugin::get_search_paths();
+	std::vector<CharString> search_paths_char_strings;
+	search_paths_char_strings.reserve(search_paths.size() + 1);
+	search_paths_char_strings.push_back(modules_path);
+	for (const String& search_path : search_paths) {
+		search_paths_char_strings.push_back(search_path.utf8());
+	}
+	std::vector<const char*> search_paths_vector;
+	search_paths_vector.resize(search_paths_char_strings.size());
+	std::ranges::transform(search_paths_char_strings, search_paths_vector.begin(),
+		[](const CharString &s) { return s.get_data(); });
+	session_desc.searchPaths = search_paths_vector.data();
+	session_desc.searchPathCount = search_paths_vector.size();
 
 	{
 		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
