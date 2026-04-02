@@ -72,6 +72,12 @@ void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
 		shader = p_shader;
 		if (p_shader.is_valid()) {
 			p_shader->connect("changed", changed_callable);
+			if (p_shader->has_meta("godot_version")) {
+				const String version = p_shader->get_meta("godot_version");
+				if (version != ComputeShaderFile::get_godot_version_string()) {
+					UtilityFunctions::push_error(String("'%s' was compiled for a different version of Godot (%s). Reimport this resource.") % Array { p_shader->get_path().get_file(), version });
+				}
+			}
 		}
 		RenderingServer::get_singleton()->call_on_render_thread(changed_callable);
 		emit_changed();
@@ -425,7 +431,7 @@ void ComputeShaderTask::_reset() {
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rd, "ComputeShaderTask: Couldn't obtain rendering device for reset!");
 	_sampler_cache = std::make_unique<SamplerCache>(rd);
-	if (shader.is_valid() && shader->get_base_error().is_empty()) {
+	if (shader.is_valid() && shader->get_base_error().is_empty() && shader->get_parameters().is_valid()) {
 		_shader_object = std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), shader->get_parameters());
 	} else {
 		_shader_object = nullptr;
@@ -480,8 +486,8 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_kernel_data(const StringN
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
-	ERR_FAIL_NULL(shader);
-	ERR_FAIL_NULL(_shader_object);
+	if (shader.is_null() || !_shader_object)
+		return;
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 
