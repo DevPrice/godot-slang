@@ -146,6 +146,8 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		slang_shader->set_base_error(slang_error);
 	}
 
+	slang_shader->set_meta("godot_version", ComputeShaderFile::get_godot_version_string());
+
 	const String out_filename = p_save_path + String(".") + _get_save_extension();
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
 }

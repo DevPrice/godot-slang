@@ -30,6 +30,8 @@ public:
 		ROW_MAJOR = ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR,
 		COLUMN_MAJOR = ShaderTypeLayoutShape::MatrixLayout::COLUMN_MAJOR,
 	};
+
+	static godot::String get_godot_version_string();
 };
 
 VARIANT_ENUM_CAST(ComputeShaderFile::MatrixLayout)

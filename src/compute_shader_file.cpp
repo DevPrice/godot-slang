@@ -1,5 +1,7 @@
 #include "compute_shader_file.h"
 
+#include "godot_cpp/classes/engine.hpp"
+
 using namespace godot;
 
 void ComputeShaderFile::_bind_methods() {
@@ -32,6 +34,14 @@ TypedArray<StringName> ComputeShaderFile::get_version_list(const int64_t kernel_
 	TypedArray<StringName> version_list{};
 	ERR_FAIL_INDEX_V(kernel_index, kernels.size(), version_list);
 	return version_list;
+}
+
+String ComputeShaderFile::get_godot_version_string() {
+	const Dictionary version_info = Engine::get_singleton()->get_version_info();
+	static const auto major_version_string = String::num_int64(version_info.get("major", 0));
+	static const auto minor_version_string = String::num_int64(version_info.get("minor", 0));
+	static auto version_string = String("%s.%s") % Array { major_version_string, minor_version_string };
+	return version_string;
 }
 
 GET_SET_PROPERTY_IMPL(ComputeShaderFile, TypedArray<ComputeShaderKernel>, kernels)
