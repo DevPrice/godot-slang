@@ -44,7 +44,7 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
 
 .. _gd_NameAttribute:
 
-Name
+gd::Name
 ---------------------
 
 Indicates that a variable should use the specified name within Godot.
@@ -76,6 +76,16 @@ In the below example, you would set the value of ``my_parameter.internal_name`` 
     var task: ComputeShaderTask = get_task()
     task.set_shader_parameter("exposed_parameter/exposed_name")
 
+ .. code-tab:: hlsl
+
+    struct MyStruct {
+        [gd::Class("exposed_name")]
+        float internal_name;
+    };
+
+    [gd::Class("exposed_parameter")]
+    uniform MyStruct my_parameter;
+
 .. code-block:: hlsl
     struct MyStruct {
         [gd::Class("exposed_name")]
@@ -84,6 +94,21 @@ In the below example, you would set the value of ``my_parameter.internal_name`` 
 
     [gd::Class("exposed_parameter")]
     uniform MyStruct my_parameter;
+
+.. _gd_ExportAttribute:
+
+gd::Export
+---------------------
+
+Indicates that a variable should be exported within Godot. This will expose it within a ``ComputeShaderTask``'s property inspector and allow its value to be serialized with that task.
+
+**Target:** ``Var``
+
+**Example:**
+
+.. code-block:: hlsl
+    [gd::Export]
+    uniform float my_parameter;
 
 .. _gd_PropertyHintAttribute:
 
