@@ -77,6 +77,22 @@ Is only valid on parameters of an entry-point function parameter.
         // ...
     }
 
+.. _gd_FrameIDAttribute:
+
+gd::FrameID
+---------------------
+
+When used within a ``ComputeShaderTask``, will automatically bind the current frame (fetched via `get_frames_drawn <https://docs.godotengine.org/en/4.4/classes/class_engine.html#class-engine-method-get-frames-drawn>`_).
+
+**Target:** ``Var``
+
+**Example:**
+
+.. code-block:: hlsl
+
+    [gd::FrameID]
+    uniform int frame_id;
+
 .. _gd_NameAttribute:
 
 gd::Name
@@ -119,7 +135,7 @@ In the below example, you would set the value of ``my_parameter.internal_name`` 
  .. code-tab:: gdscript
 
     var task: ComputeShaderTask = get_task()
-    task.set_shader_parameter("exposed_parameter/exposed_name")
+    task.set_shader_parameter("exposed_parameter/exposed_name", 1234.0)
 
 .. _gd_PropertyHintAttribute:
 
@@ -155,3 +171,19 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
 
     [gd::PropertyHint(PropertyHint.Range, "0,1,0.01")]
     uniform float my_param;
+
+.. _gd_TimeAttribute:
+
+gd::Time
+---------------------
+
+When used within a ``ComputeShaderTask``, will automatically bind the current time in seconds (fetched via `get_ticks_msec <https://docs.godotengine.org/en/stable/classes/class_time.html#class-time-method-get-ticks-msec>`_).
+
+**Target:** ``Var``
+
+**Example:**
+
+.. code-block:: hlsl
+
+    [gd::Time]
+    uniform float time;
