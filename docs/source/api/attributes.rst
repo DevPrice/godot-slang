@@ -1,13 +1,52 @@
 Attributes
 ==========
 
-The included `godot` Slang module exposes many useful attributes that effect the behavior of shaders within Godot.
+The included ``godot`` Slang module exposes many useful attributes that effect the behavior of shaders within Godot.
 
 ----
 
+.. _gd_ClassAttribute:
+
+Class
+---------------------
+
+Indicates that a struct is represented by a global Godot class. This will, for example, expose fields of the
+type as the corresponding Godot class in the property inspector.
+
+See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_exports.html#export-custom>`__ for more information.
+
+**Target:** ``Var``
+
+**Fields:**
+
+.. list-table::
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Name
+     - Type
+     - Description
+   * - ``class_name``
+     - ``String``
+     - The Godot class name to associate with this struct. Must be the name of a `named class <https://docs.godotengine.org/en/4.4/tutorials/scripting/gdscript/gdscript_basics.html#registering-named-classes>`_
+
+**Example:**
+
+.. code-block:: hlsl
+
+    [gd::Class("MyGDScriptClass")]
+    struct MyStruct {
+        float some_value;
+    };
+
+    // will appear as an instance of MyGDScriptClass in the inspector
+    uniform MyStruct my_struct;
+
+
+
 .. _gd_PropertyHintAttribute:
 
-``[gd::PropertyHint]``
+PropertyHint
 ---------------------
 
 Sets the property hint and hint string for an exported parameter, controlling
