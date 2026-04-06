@@ -182,13 +182,14 @@ if not on_rtd:
     html_css_files.append("css/dev.css")
 
 html_js_files = [
-    "js/custom.js",
+    # "js/custom.js",
     ('https://plausible.godot.foundation/js/script.file-downloads.outbound-links.js',
      {'defer': 'defer', 'data-domain': 'godotengine.org'}),
 ]
 
 # Output file base name for HTML help builder
 htmlhelp_basename = "GodotEnginedoc"
+html_baseurl = "https://devprice.github.io/godot-slang/"
 
 # -- Options for reStructuredText parser ----------------------------------
 

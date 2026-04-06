@@ -1,8 +1,7 @@
 Attributes
 ==========
 
-The included `godot` Slang module exposes many useful attributes that effect the behavior
-of shaders within Godot.
+The included `godot` Slang module exposes many useful attributes that effect the behavior of shaders within Godot.
 
 ----
 
@@ -13,6 +12,8 @@ of shaders within Godot.
 
 Sets the property hint and hint string for an exported parameter, controlling
 how Godot displays it in the property inspector.
+
+See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_exports.html#export-custom>`__ for more information.
 
 **Target:** ``Var``
 
@@ -34,7 +35,7 @@ how Godot displays it in the property inspector.
 
 **Example:**
 
-.. code-block:: slang
+.. code-block:: hlsl
 
-    [gd_PropertyHint(PropertyHint.Range, "0,1,0.01")]
+    [gd::PropertyHint(PropertyHint.Range, "0,1,0.01")]
     uniform float my_param;
