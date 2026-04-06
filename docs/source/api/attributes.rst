@@ -7,7 +7,7 @@ The included ``godot`` Slang module exposes many useful attributes that effect t
 
 .. _gd_ClassAttribute:
 
-Class
+gd::Class
 ---------------------
 
 Indicates that a struct is represented by a global Godot class. This will, for example, expose fields of the
@@ -42,6 +42,41 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
     // will appear as an instance of MyGDScriptClass in the inspector
     uniform MyStruct my_struct;
 
+.. _gd_ExportAttribute:
+
+gd::Export
+---------------------
+
+Indicates that a variable should be exported within Godot. This will expose it within a ``ComputeShaderTask``'s property inspector and allow its value to be serialized with that task.
+
+**Target:** ``Var``
+
+**Example:**
+
+.. code-block:: hlsl
+    [gd::Export]
+    uniform float my_parameter;
+
+.. _gd_ExportParamAttribute:
+
+gd::ExportParam
+---------------------
+
+Indicates that a variable should be exported within Godot. This is the same as :ref:`_gd_ExportAttribute` except it may be applied to function parameters.
+Is only valid on parameters of an entry-point function parameter.
+
+**Target:** ``Var``
+
+**Example:**
+
+.. code-block:: hlsl
+
+    [shader("compute")]
+    [numthreads(8, 8, 1)]
+    void compute_main(uint3 threadId: SV_DispatchThreadID, [gd::ExportParam] float my_parameter) {
+        // ...
+    }
+
 .. _gd_NameAttribute:
 
 gd::Name
@@ -71,11 +106,6 @@ In the below example, you would set the value of ``my_parameter.internal_name`` 
 
 .. tabs::
 
- .. code-tab:: gdscript
-
-    var task: ComputeShaderTask = get_task()
-    task.set_shader_parameter("exposed_parameter/exposed_name")
-
  .. code-tab:: hlsl
 
     struct MyStruct {
@@ -86,33 +116,14 @@ In the below example, you would set the value of ``my_parameter.internal_name`` 
     [gd::Class("exposed_parameter")]
     uniform MyStruct my_parameter;
 
-.. code-block:: hlsl
-    struct MyStruct {
-        [gd::Class("exposed_name")]
-        float internal_name;
-    };
+ .. code-tab:: gdscript
 
-    [gd::Class("exposed_parameter")]
-    uniform MyStruct my_parameter;
-
-.. _gd_ExportAttribute:
-
-gd::Export
----------------------
-
-Indicates that a variable should be exported within Godot. This will expose it within a ``ComputeShaderTask``'s property inspector and allow its value to be serialized with that task.
-
-**Target:** ``Var``
-
-**Example:**
-
-.. code-block:: hlsl
-    [gd::Export]
-    uniform float my_parameter;
+    var task: ComputeShaderTask = get_task()
+    task.set_shader_parameter("exposed_parameter/exposed_name")
 
 .. _gd_PropertyHintAttribute:
 
-PropertyHint
+gd::PropertyHint
 ---------------------
 
 Sets the property hint and hint string for an exported parameter, controlling
