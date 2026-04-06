@@ -133,6 +133,7 @@
 				For example, if you declare a [code]float3[/code] parameter in your shader, You can bind it via [code]set_shader_parameter(Vector3.ONE)[/code] or [code]set_shader_parameter(Color.RED)[/code]. The value will be written to appropriate offset in the buffer associated with the parameter.
 				For array types and structured buffers, you may pass in an [Array] and it will be written with the correct element stride and alignment.
 				For [code]Texture2D[/code] and [code]Sampler2D[/code] parameters, you may pass a [Texture2D] resource for the [param value].
+				For [code]SamplerState[/code] parameters, you may pass an [RDSamplerState] instance for the [param value].
 				[codeblocks]
 				[gdscript]
 				var buffer_rid := RenderingServer.get_rendering_device().storage_buffer_create(256)

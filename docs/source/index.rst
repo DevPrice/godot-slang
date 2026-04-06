@@ -12,7 +12,21 @@ Get involved
 Submit an issue or pull request on the `GitHub repository <https://github.com/DevPrice/godot-slang/issues>`_,
 or start a `discussion <https://github.com/DevPrice/godot-slang/discussions/>`_!
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Tutorials
+   :name: sec-tutorials
 
+   tutorials/using_godot_slang
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Slang API Reference
+   :glob:
+
+   api/*
+
+   tutorials/index
 .. toctree::
    :maxdepth: 1
    :caption: Class reference
