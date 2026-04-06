@@ -42,7 +42,48 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
     // will appear as an instance of MyGDScriptClass in the inspector
     uniform MyStruct my_struct;
 
+.. _gd_NameAttribute:
 
+Name
+---------------------
+
+Indicates that a variable should use the specified name within Godot.
+The specified name will be emitted in the reflection metadata instead of the name declared in the shader code.
+
+**Target:** ``Var``
+
+**Fields:**
+
+.. list-table::
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Name
+     - Type
+     - Description
+   * - ``name``
+     - ``String``
+     - The identifier/name to use for this variable within Godot.
+
+**Example:**
+
+In the below example, you would set the value of ``my_parameter.internal_name`` in godot via:
+
+.. tabs::
+
+ .. code-tab:: gdscript
+
+    var task: ComputeShaderTask = get_task()
+    task.set_shader_parameter("exposed_parameter/exposed_name")
+
+.. code-block:: hlsl
+    struct MyStruct {
+        [gd::Class("exposed_name")]
+        float internal_name;
+    };
+
+    [gd::Class("exposed_parameter")]
+    uniform MyStruct my_parameter;
 
 .. _gd_PropertyHintAttribute:
 
