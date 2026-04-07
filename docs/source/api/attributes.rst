@@ -272,11 +272,11 @@ The specified name will be emitted in the reflection metadata instead of the nam
  .. code-tab:: hlsl
 
     struct MyStruct {
-        [gd::Class("exposed_name")]
+        [gd::Name("exposed_name")]
         float internal_name;
     };
 
-    [gd::Class("exposed_parameter")]
+    [gd::Name("exposed_parameter")]
     uniform MyStruct my_parameter;
 
  .. code-tab:: gdscript
