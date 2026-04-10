@@ -15,7 +15,6 @@
 
 #include "godot_cpp/classes/cubemap.hpp"
 #include "godot_cpp/classes/cubemap_array.hpp"
-#include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/image_texture_layered.hpp"
 #include "godot_cpp/classes/json.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
@@ -27,6 +26,7 @@
 #include <compute_shader_kernel.h>
 
 #include "compute_shader_cursor.h"
+#include "slang_session.h"
 #include "slang_shader_editor_plugin.h"
 
 using namespace godot;
@@ -94,17 +94,23 @@ bool SlangShaderImporter::_get_option_visibility(const String& p_path, const Str
 }
 
 Error SlangShaderImporter::_import(const String& p_source_file, const String& p_save_path, const Dictionary& p_options, const TypedArray<String>& p_platform_variants, const TypedArray<String>& p_gen_files) const {
-	Slang::ComPtr<slang::ISession> session;
-	if (SLANG_FAILED(_create_session(session.writeRef(), p_options, p_source_file.ends_with(".glsl")))) {
-		return FAILED;
-	}
-
 	const Ref<FileAccess> shader_file = FileAccess::open(p_source_file, FileAccess::READ);
 	if (shader_file.is_null()) {
 		return ERR_FILE_CANT_OPEN;
 	}
 
 	const String shader_source = shader_file->get_as_text(true);
+
+	gdslang::SlangSession* slang_session = memnew(gdslang::SlangSession);
+	slang_session->set_enable_glsl(p_source_file.ends_with(".glsl"));
+	const int64_t default_matrix_layout = p_options["default_matrix_layout"];
+	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
+		slang_session->set_default_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(default_matrix_layout));
+	}
+
+	slang::ISession* session = slang_session->get_or_create_session();
+	ERR_FAIL_NULL_V(session, FAILED);
+
 	String slang_error{};
 
 	Slang::ComPtr<slang::IModule> slang_module;
@@ -150,58 +156,6 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 
 	const String out_filename = p_save_path + String(".") + _get_save_extension();
 	return ResourceSaver::get_singleton()->save(slang_shader, out_filename);
-}
-
-SlangResult SlangShaderImporter::_create_session(slang::ISession** out_session, const Dictionary& options, const bool enable_glsl) {
-	slang::IGlobalSession* global_session = _get_global_session(enable_glsl);
-	ERR_FAIL_NULL_V_MSG(global_session, SLANG_FAIL, "Failed to initialize global Slang session!");
-
-	slang::SessionDesc session_desc = {};
-	slang::TargetDesc target_desc = {};
-	target_desc.format = SLANG_SPIRV;
-	target_desc.profile = global_session->findProfile("spirv_1_5");
-
-	session_desc.targets = &target_desc;
-	session_desc.targetCount = 1;
-
-	const int64_t default_matrix_layout = options["default_matrix_layout"];
-	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
-		session_desc.defaultMatrixLayoutMode = static_cast<SlangMatrixLayoutMode>(default_matrix_layout);
-	}
-
-	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
-	const CharString modules_path = extension_path.get_base_dir().path_join("modules").utf8();
-	const PackedStringArray search_paths = SlangShaderEditorPlugin::get_search_paths();
-	std::vector<CharString> search_paths_char_strings;
-	search_paths_char_strings.reserve(search_paths.size() + 1);
-	search_paths_char_strings.push_back(modules_path);
-	for (const String& search_path : search_paths) {
-		search_paths_char_strings.push_back(search_path.utf8());
-	}
-	std::vector<const char*> search_paths_vector;
-	search_paths_vector.resize(search_paths_char_strings.size());
-	std::ranges::transform(search_paths_char_strings, search_paths_vector.begin(),
-		[](const CharString &s) { return s.get_data(); });
-	session_desc.searchPaths = search_paths_vector.data();
-	session_desc.searchPathCount = search_paths_vector.size();
-
-	{
-		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
-		static auto godot_minor_version_key = "GODOT_MINOR_VERSION";
-		const Dictionary version_info = Engine::get_singleton()->get_version_info();
-		static const CharString major_version_string = String::num_int64(version_info.get("major", 0)).utf8();
-		static const CharString minor_version_string = String::num_int64(version_info.get("minor", 0)).utf8();
-		static const std::array macros = {
-			slang::PreprocessorMacroDesc{ .name = godot_major_version_key, .value = major_version_string.get_data() },
-			slang::PreprocessorMacroDesc{ .name = godot_minor_version_key, .value = minor_version_string.get_data() },
-		};
-		session_desc.preprocessorMacroCount = macros.size();
-		session_desc.preprocessorMacros = macros.data();
-	}
-
-	session_desc.allowGLSLSyntax = enable_glsl;
-
-	return global_session->createSession(session_desc, out_session);
 }
 
 Error SlangShaderImporter::_slang_compile_kernels(slang::IModule* slang_module, TypedArray<ComputeShaderKernel>& out_kernels, const PackedStringArray& additional_entry_points, const Ref<ShaderTypeLayoutShape>& global_params_shape) {
@@ -1024,24 +978,4 @@ std::optional<RenderingDevice::UniformType> SlangReflectionContext::_to_godot_un
 			UtilityFunctions::push_warning("Slang: Unknown binding type: ", base_type);
 			return {};
 	}
-}
-
-slang::IGlobalSession* SlangShaderImporter::_get_global_session(const bool enable_glsl) {
-	static bool glsl_initialized = enable_glsl;
-	static Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {
-		Slang::ComPtr<slang::IGlobalSession> ptr;
-		SlangGlobalSessionDesc desc = {};
-		desc.enableGLSL = enable_glsl;
-		slang::createGlobalSession(&desc, ptr.writeRef());
-		return ptr;
-	}();
-
-	if (!glsl_initialized && enable_glsl) {
-		SlangGlobalSessionDesc desc = {};
-		desc.enableGLSL = true;
-		slang::createGlobalSession(&desc, global_session.writeRef());
-		glsl_initialized = true;
-	}
-
-	return global_session;
 }
