@@ -27,6 +27,7 @@ public:
 	slang::ISession* get_or_create_session();
 
 	godot::Ref<SlangModule> load_module_from_source_string(const godot::String& module_name, const godot::String& path, const godot::String& source_text);
+	godot::Ref<SlangModule> load_module_from_source_file(const godot::String& module_name, const godot::String& path);
 
 private:
 	Slang::ComPtr<slang::ISession> session;

@@ -2,6 +2,7 @@
 
 #include "enums.h"
 #include "godot_cpp/classes/engine.hpp"
+#include "godot_cpp/classes/file_access.hpp"
 #include "godot_cpp/classes/project_settings.hpp"
 #include "slang_shader_editor_plugin.h"
 
@@ -93,6 +94,12 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const Str
 		}
 	}
 	return module;
+}
+
+Ref<SlangModule> gdslang::SlangSession::load_module_from_source_file(const String& module_name, const String& path) {
+	const Ref<FileAccess> shader_file = FileAccess::open(path, FileAccess::READ);
+	ERR_FAIL_NULL_V_MSG(shader_file, nullptr, String("Failed to open shader file: ") + path);
+	return load_module_from_source_string(module_name, path, shader_file->get_as_text(true));
 }
 
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {
