@@ -24,6 +24,9 @@ public:
 	slang::ProgramLayout* get_layout() const;
 	godot::String get_file_path() const;
 
+	godot::Ref<StructTypeLayoutShape> get_params_shape() const;
+	godot::Variant to_json() const;
+
 private:
 	Slang::ComPtr<slang::IModule> module{};
 };
