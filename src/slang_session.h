@@ -1,12 +1,13 @@
 #pragma once
 
 #include "slang.h"
+#include "slang-com-ptr.h"
 
 #include "godot_cpp/classes/ref_counted.hpp"
 
 #include "binding_macros.h"
 #include "compute_shader_shape.h"
-#include "slang-com-ptr.h"
+#include "slang_module.h"
 
 namespace gdslang {
 
@@ -24,6 +25,8 @@ public:
 	SlangSession();
 
 	slang::ISession* get_or_create_session();
+
+	godot::Ref<SlangModule> load_module_from_source_string(const godot::String& module_name, const godot::String& path, const godot::String& source_text);
 
 private:
 	Slang::ComPtr<slang::ISession> session;

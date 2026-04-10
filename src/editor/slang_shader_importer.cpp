@@ -101,38 +101,30 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 
 	const String shader_source = shader_file->get_as_text(true);
 
-	gdslang::SlangSession* slang_session = memnew(gdslang::SlangSession);
+	const Ref slang_session = memnew(gdslang::SlangSession);
 	slang_session->set_enable_glsl(p_source_file.ends_with(".glsl"));
 	const int64_t default_matrix_layout = p_options["default_matrix_layout"];
 	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
 		slang_session->set_default_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(default_matrix_layout));
 	}
 
-	slang::ISession* session = slang_session->get_or_create_session();
+	const slang::ISession* session = slang_session->get_or_create_session();
 	ERR_FAIL_NULL_V(session, FAILED);
 
 	String slang_error{};
 
-	Slang::ComPtr<slang::IModule> slang_module;
-	{
-		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		slang_module = session->loadModuleFromSourceString(
-				"__main_module",
-				p_source_file.get_file().utf8().get_data(),
-				shader_source.utf8().get_data(),
-				diagnostics_blob.writeRef());
-		if (!slang_module) {
-			slang_error = String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize());
-		}
+	const Ref<gdslang::SlangModule> module = slang_session->load_module_from_source_string("__main_module", p_source_file.get_file(), shader_source);
+	if (!module->get_diagnostic().is_empty()) {
+		slang_error = module->get_diagnostic();
 	}
 
 	const Ref slang_shader = memnew(ComputeShaderFile);
-	if (slang_module && slang_error.is_empty()) {
-		const SlangReflectionContext reflection_context(slang_module->getLayout());
+	if (module.is_valid() && slang_error.is_empty()) {
+		const SlangReflectionContext reflection_context(module->get_layout());
 		const Ref<StructTypeLayoutShape> params_shape = reflection_context.get_params_shape();
 		slang_shader->set_parameters(params_shape);
 		TypedArray<ComputeShaderKernel> kernels;
-		if (const Error compile_error = _slang_compile_kernels(slang_module, kernels, p_options.get("entry_points", {}), params_shape.ptr())) {
+		if (const Error compile_error = _slang_compile_kernels(module->get_module(), kernels, p_options.get("entry_points", {}), params_shape.ptr())) {
 			ERR_FAIL_V_MSG(compile_error, "Failed to compile Slang shader!");
 		}
 		slang_shader->set_kernels(kernels);
@@ -144,7 +136,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		for (const Ref<ComputeShaderKernel> kernel : kernels) {
 			const String compile_error = kernel->get_compile_error().trim_suffix("\n");
 			if (!compile_error.is_empty()) {
-				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ slang_module->getFilePath(), compile_error }));
+				UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ module->get_file_path(), compile_error }));
 			}
 		}
 	} else {

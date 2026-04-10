@@ -73,6 +73,28 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 	return session.get();
 }
 
+Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const String& module_name, const String& path, const String& source_text) {
+	Ref<SlangModule> module;
+	module.instantiate();
+	slang::ISession* session_ptr = get_or_create_session();
+	ERR_FAIL_NULL_V(session_ptr, module);
+	{
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		slang::IModule* module_ptr = session_ptr->loadModuleFromSourceString(
+				module_name.utf8().get_data(),
+				path.utf8().get_data(),
+				source_text.utf8().get_data(),
+				diagnostics_blob.writeRef());
+		if (module_ptr) {
+			module->set_module(module_ptr);
+		}
+		if (diagnostics_blob) {
+			module->set_diagnostic(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		}
+	}
+	return module;
+}
+
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {
 	static bool glsl_initialized = enable_glsl;
 	static Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {

@@ -17,6 +17,7 @@
 #include "slang_shader_editor_plugin.h"
 #include "slang_shader_importer.h"
 #include "slang_session.h"
+#include "slang_module.h"
 #endif
 
 using namespace godot;
@@ -41,6 +42,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(SlangShaderEditorPlugin);
 		GDREGISTER_CLASS(SlangShaderImporter);
 		GDREGISTER_CLASS(gdslang::SlangSession);
+		GDREGISTER_CLASS(gdslang::SlangModule);
 		EditorPlugins::add_by_type<SlangShaderEditorPlugin>();
 	}
 #endif
