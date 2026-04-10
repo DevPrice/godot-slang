@@ -13,6 +13,8 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
 	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ENUM_HINT_STRING(ShaderTypeLayoutShape, MatrixLayout));
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
+	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
+	BIND_METHOD(SlangSession, load_module_from_source_string, "module_name", "path", "source_text");
 }
 
 gdslang::SlangSession::SlangSession() : profile("spirv_1_5"), default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) { }

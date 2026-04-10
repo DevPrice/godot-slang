@@ -36,13 +36,15 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_VIRTUAL_CLASS(ComputeTextureDispatchContext);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
+#ifdef TOOLS_ENABLED
+		GDREGISTER_CLASS(gdslang::SlangSession);
+		GDREGISTER_CLASS(gdslang::SlangModule);
+#endif
 	}
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_CLASS(SlangShaderEditorPlugin);
 		GDREGISTER_CLASS(SlangShaderImporter);
-		GDREGISTER_CLASS(gdslang::SlangSession);
-		GDREGISTER_CLASS(gdslang::SlangModule);
 		EditorPlugins::add_by_type<SlangShaderEditorPlugin>();
 	}
 #endif
