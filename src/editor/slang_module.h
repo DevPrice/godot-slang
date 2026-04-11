@@ -26,6 +26,8 @@ public:
 	slang::ProgramLayout* get_layout() const;
 	godot::String get_file_path() const;
 
+	godot::PackedStringArray get_dependency_files() const;
+
 	godot::TypedArray<godot::Ref<ComputeShaderKernel>> compile_kernels(const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Error _compile_kernels(godot::TypedArray<godot::Ref<ComputeShaderKernel>>& out_kernels, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Ref<ComputeShaderFile> compile_shader(const godot::PackedStringArray& additional_entry_points);

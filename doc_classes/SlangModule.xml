@@ -16,13 +16,19 @@
 			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
 			<description>
 				Compiles this module into [ComputeShaderKernel]s.
-			</description>
+			</description>g
 		</method>
 		<method name="compile_shader">
 			<return type="ComputeShaderFile" />
 			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
 			<description>
 				Compiles this module into a [ComputeShaderFile].
+			</description>
+		</method>
+		<method name="get_dependency_files" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+				Get the dependency file paths of this module.
 			</description>
 		</method>
 		<method name="get_params_shape" qualifiers="const">

@@ -2,6 +2,7 @@
 
 #include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
+#include "godot_cpp/classes/project_settings.hpp"
 #include "reflection_context.h"
 
 using namespace gdslang;
@@ -13,6 +14,7 @@ void SlangModule::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("compile_shader", "additional_entry_points"), &SlangModule::compile_shader, DEFVAL(PackedStringArray{}));
 	BIND_METHOD(SlangModule, get_params_shape)
 	BIND_METHOD(SlangModule, to_json)
+	BIND_METHOD(SlangModule, get_dependency_files)
 }
 
 slang::IModule* SlangModule::get_module() const {
@@ -31,6 +33,16 @@ slang::ProgramLayout* SlangModule::get_layout() const {
 String SlangModule::get_file_path() const {
 	ERR_FAIL_NULL_V(module, {});
 	return module->getFilePath();
+}
+
+PackedStringArray SlangModule::get_dependency_files() const {
+	ERR_FAIL_NULL_V(module, {});
+	PackedStringArray dependency_files{};
+	for (int32_t i = 0; i < module->getDependencyFileCount(); ++i) {
+		const String localized_path = ProjectSettings::get_singleton()->localize_path(module->getDependencyFilePath(i));
+		dependency_files.push_back(localized_path);
+	}
+	return dependency_files;
 }
 
 TypedArray<Ref<ComputeShaderKernel>> SlangModule::compile_kernels(const PackedStringArray& additional_entry_points) {
