@@ -16,7 +16,7 @@
 			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
 			<description>
 				Compiles this module into [ComputeShaderKernel]s.
-			</description>g
+			</description>
 		</method>
 		<method name="compile_shader">
 			<return type="ComputeShaderFile" />
