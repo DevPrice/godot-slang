@@ -127,20 +127,20 @@ slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool ena
 String gdslang::SlangSession::get_profile() const { return profile; }
 
 void gdslang::SlangSession::set_profile(String p_profile) {
-	session.setNull();
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	profile = p_profile;
 }
 
 bool gdslang::SlangSession::get_enable_glsl() const { return enable_glsl; }
 
 void gdslang::SlangSession::set_enable_glsl(const bool p_enable_glsl) {
-	session.setNull();
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	enable_glsl = p_enable_glsl;
 }
 
 ShaderTypeLayoutShape::MatrixLayout gdslang::SlangSession::get_default_matrix_layout() const { return default_matrix_layout; }
 
 void gdslang::SlangSession::set_default_matrix_layout(const ShaderTypeLayoutShape::MatrixLayout p_default_matrix_layout) {
-	session.setNull();
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	default_matrix_layout = p_default_matrix_layout;
 }
