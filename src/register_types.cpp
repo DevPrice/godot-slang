@@ -13,7 +13,7 @@
 #include "compute_shader_task.h"
 #include "compute_texture.h"
 
-#ifdef TOOLS_ENABLED
+#ifdef SLANG_IMPORT_ENABLED
 #include "slang_shader_editor_plugin.h"
 #include "slang_shader_importer.h"
 #include "slang_session.h"
@@ -36,12 +36,12 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_VIRTUAL_CLASS(ComputeTextureDispatchContext);
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
-#ifdef TOOLS_ENABLED
+#ifdef SLANG_IMPORT_ENABLED
 		GDREGISTER_CLASS(gdslang::SlangSession);
 		GDREGISTER_CLASS(gdslang::SlangModule);
 #endif
 	}
-#ifdef TOOLS_ENABLED
+#if defined(SLANG_IMPORT_ENABLED) && defined(TOOLS_ENABLED)
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_CLASS(SlangShaderEditorPlugin);
 		GDREGISTER_CLASS(SlangShaderImporter);
@@ -51,7 +51,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_gdextension_types(const ModuleInitializationLevel p_level) {
-#ifdef TOOLS_ENABLED
+#if defined(SLANG_IMPORT_ENABLED) && defined(TOOLS_ENABLED)
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::remove_by_type<SlangShaderEditorPlugin>();
 	}

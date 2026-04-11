@@ -55,7 +55,10 @@ projectdir = "demo"
 
 platformdir = f"{libdir}/{env['platform']}" if env["arch"] == "universal" else f"{libdir}/{env['platform']}-{env["arch"]}"
 
-if env["target"] == "editor":
+# TODO: Make this a separate flag
+slang_import_enabled = env["target"] == "editor"
+
+if slang_import_enabled:
     env.Append(
         CPPPATH=[
             "src/editor",
@@ -63,6 +66,7 @@ if env["target"] == "editor":
         ],
         LIBPATH=["slang/build/RelWithDebInfo/lib"],
         LIBS=["slang-compiler"],
+        CPPDEFINES=["SLANG_IMPORT_ENABLED"],
     )
 
     build_preset = "vs2022" if env["platform"] == "windows" else "default"

@@ -73,7 +73,7 @@ AttributeRegistry::AttributeRegistry() {
 		const StringName param_name = arguments["name"];
 		return [param_name](Variant& value, const Object*) {
 			if (is_null(value)) {
-#ifdef TOOLS_ENABLED
+#ifdef SLANG_IMPORT_ENABLED
 				if (unlikely(!RenderingServer::get_singleton()->is_on_render_thread())) {
 					static bool first_print = true;
 					if (first_print) {
