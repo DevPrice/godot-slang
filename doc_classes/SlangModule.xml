@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangModule" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		The granularity of shader code compilation and loading.
+	</brief_description>
+	<description>
+		A module is the granularity of shader code compilation and loading. Can be created from a [SlangSession].
+		In most cases a module corresponds to a single compilation "translation unit." This will often be a single Slang or HLSL file and everything it [code]#include[/code]s.
+		See the [url=https://shader-slang.org/docs/compilation-api/]Slang documentation[/url] for more information.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="compile_kernels">
+			<return type="ComputeShaderKernel[]" />
+			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
+			<description>
+				Compiles this module into [ComputeShaderKernel]s.
+			</description>
+		</method>
+		<method name="compile_shader">
+			<return type="ComputeShaderFile" />
+			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
+			<description>
+				Compiles this module into a [ComputeShaderFile].
+			</description>
+		</method>
+		<method name="get_params_shape" qualifiers="const">
+			<return type="StructTypeLayoutShape" />
+			<description>
+				Emits reflection information for this module's program layout as a [StructTypeLayoutShape].
+			</description>
+		</method>
+		<method name="to_json" qualifiers="const">
+			<return type="Variant" />
+			<description>
+				Emits reflection information for this module's program layout in JSON format.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="diagnostic" type="String" setter="set_diagnostic" getter="get_diagnostic" default="&quot;&quot;">
+			The diagnostic associated with attempting to load this module, if the module failed to load.
+		</member>
+	</members>
+</class>

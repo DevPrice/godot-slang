@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangSession" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A session provides a scope for code that is loaded.
+	</brief_description>
+	<description>
+		A session provides a scope for code that is loaded.
+		A session can be used to load modules of Slang source code, and to request target-specific compiled binaries and layout information.
+		See the [url=https://shader-slang.org/docs/compilation-api/]Slang documentation[/url] for more information.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="load_module_from_source_file">
+			<return type="SlangModule" />
+			<param index="0" name="module_name" type="String" />
+			<param index="1" name="path" type="String" />
+			<description>
+				Loads a module into this session from a file path.
+			</description>
+		</method>
+		<method name="load_module_from_source_string">
+			<return type="SlangModule" />
+			<param index="0" name="module_name" type="String" />
+			<param index="1" name="path" type="String" />
+			<param index="2" name="source_text" type="String" />
+			<description>
+				Loads a module into this session from a [String] containing the source code.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="default_matrix_layout" type="int" setter="set_default_matrix_layout" getter="get_default_matrix_layout" enum="ShaderTypeLayoutShape.MatrixLayout" default="1">
+			The default matrix layout for this compilation session.
+			This should never be changed after loading any modules with this session, create a new session instead.
+		</member>
+		<member name="enable_glsl" type="bool" setter="set_enable_glsl" getter="get_enable_glsl" default="false">
+			True if GLSL is enabled for this session.
+			This should never be changed after loading any modules with this session, create a new session instead.
+		</member>
+		<member name="profile" type="String" setter="set_profile" getter="get_profile" default="&quot;spirv_1_5&quot;">
+			The profile to use for compilation. Consult Slang documentation for the list of valid profiles.
+			This should never be changed after loading any modules with this session, create a new session instead.
+		</member>
+	</members>
+</class>
