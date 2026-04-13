@@ -98,6 +98,10 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		slang_session->set_default_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(default_matrix_layout));
 	}
 
+	PackedStringArray search_paths = SlangShaderEditorPlugin::get_search_paths();
+	search_paths.push_back(SlangShaderEditorPlugin::get_modules_path());
+	slang_session->set_search_paths(search_paths);
+
 	const Ref<gdslang::SlangModule> module = slang_session->load_module_from_source_string("__main_module", p_source_file.get_file(), shader_source);
 	ERR_FAIL_NULL_V_MSG(module, ERR_COMPILATION_FAILED, String("[%s] Failed to load module!") % p_source_file);
 	const Ref<ComputeShaderFile> slang_shader = module->compile_shader(p_options.get("entry_points", {}));

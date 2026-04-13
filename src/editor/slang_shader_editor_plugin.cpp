@@ -7,6 +7,11 @@ using namespace godot;
 void SlangShaderEditorPlugin::_bind_methods() {
 }
 
+String SlangShaderEditorPlugin::get_modules_path() {
+	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
+	return extension_path.get_base_dir().path_join("modules");
+}
+
 PackedStringArray SlangShaderEditorPlugin::get_search_paths() {
 	const ProjectSettings* project_settings = ProjectSettings::get_singleton();
 	ERR_FAIL_NULL_V(project_settings, {});

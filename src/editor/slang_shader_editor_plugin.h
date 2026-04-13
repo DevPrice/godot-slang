@@ -11,6 +11,7 @@ protected:
 	static void _bind_methods();
 
 public:
+	static godot::String get_modules_path();
 	static godot::PackedStringArray get_search_paths();
 
 private:

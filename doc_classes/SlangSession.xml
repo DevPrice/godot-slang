@@ -42,5 +42,9 @@
 			The profile to use for compilation. Consult Slang documentation for the list of valid profiles.
 			This should never be changed after loading any modules with this session, create a new session instead.
 		</member>
+		<member name="search_paths" type="PackedStringArray" setter="set_search_paths" getter="get_search_paths" default="PackedStringArray()">
+			The search paths to use during compilation when searching for included or imported files.
+			This should never be changed after loading any modules with this session, create a new session instead.
+		</member>
 	</members>
 </class>

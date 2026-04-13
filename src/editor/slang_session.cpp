@@ -3,14 +3,34 @@
 #include "enums.h"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/file_access.hpp"
-#include "godot_cpp/classes/project_settings.hpp"
 #include "slang_shader_editor_plugin.h"
 
 using namespace gdslang;
 using namespace godot;
 
+namespace {
+	class Utf8CharStringArray {
+	public:
+		Utf8CharStringArray(const PackedStringArray& strings) {
+			char_strings.reserve(strings.size());
+			for (const String& search_path : strings) {
+				char_strings.push_back(search_path.utf8());
+			}
+			string_ptrs.resize(char_strings.size());
+			std::ranges::transform(char_strings, string_ptrs.begin(),
+				[](const CharString &s) { return s.get_data(); });
+		}
+		const char* const* data() const { return string_ptrs.data(); }
+		size_t size() const { return string_ptrs.size(); }
+	private:
+		std::vector<CharString> char_strings{};
+		std::vector<const char*> string_ptrs{};
+	};
+}
+
 void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
+	BIND_GET_SET(SlangSession, search_paths, Variant::PACKED_STRING_ARRAY);
 	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ENUM_HINT_STRING(ShaderTypeLayoutShape, MatrixLayout));
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
@@ -36,23 +56,9 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 
 	session_desc.defaultMatrixLayoutMode = static_cast<SlangMatrixLayoutMode>(default_matrix_layout);
 
-	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
-	const CharString modules_path = extension_path.get_base_dir().path_join("modules").utf8();
-	const PackedStringArray search_paths = SlangShaderEditorPlugin::get_search_paths();
-	std::vector<CharString> search_paths_char_strings;
-	search_paths_char_strings.reserve(search_paths.size() + 1);
-	search_paths_char_strings.push_back(modules_path);
-	for (const String& search_path : search_paths) {
-		search_paths_char_strings.push_back(search_path.utf8());
-	}
-	std::vector<const char*> search_paths_vector;
-	search_paths_vector.resize(search_paths_char_strings.size());
-	std::ranges::transform(search_paths_char_strings, search_paths_vector.begin(),
-		[](const CharString &s) { return s.get_data(); });
-
-	// TODO: Move search paths to property
-	session_desc.searchPaths = search_paths_vector.data();
-	session_desc.searchPathCount = search_paths_vector.size();
+	const Utf8CharStringArray search_paths_array(search_paths);
+	session_desc.searchPaths = search_paths_array.data();
+	session_desc.searchPathCount = search_paths_array.size();
 
 	{
 		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
@@ -129,6 +135,13 @@ String gdslang::SlangSession::get_profile() const { return profile; }
 void gdslang::SlangSession::set_profile(String p_profile) {
 	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	profile = p_profile;
+}
+
+PackedStringArray gdslang::SlangSession::get_search_paths() const { return search_paths; }
+
+void gdslang::SlangSession::set_search_paths(PackedStringArray p_search_paths) {
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
+	search_paths = p_search_paths;
 }
 
 bool gdslang::SlangSession::get_enable_glsl() const { return enable_glsl; }
