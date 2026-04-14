@@ -7,4 +7,19 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<methods>
+		<method name="get_modules_path" qualifiers="static">
+			<return type="String" />
+			<description>
+				Gets the (globalized) path containing the Slang modules included with this plugin.
+			</description>
+		</method>
+		<method name="get_preprocessor_macros" qualifiers="static">
+			<return type="Dictionary" />
+			<description>
+				Gets the preprocessor macros declared for modules included with this plugin.
+				For example, this includes the GODOT_MAJOR_VERSION and GODOT_MINOR_VERSION macros.
+			</description>
+		</method>
+	</methods>
 </class>

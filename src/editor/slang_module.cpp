@@ -109,14 +109,8 @@ Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_ke
 }
 
 Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& additional_entry_points) {
-	String slang_error{};
-
-	if (!diagnostic.is_empty()) {
-		slang_error = diagnostic;
-	}
-
 	const Ref slang_shader = memnew(ComputeShaderFile);
-	if (slang_error.is_empty()) {
+	if (diagnostic.is_empty()) {
 		const Ref<StructTypeLayoutShape> global_params = get_params_shape();
 		slang_shader->set_parameters(global_params);
 		TypedArray<Ref<ComputeShaderKernel>> kernels;
@@ -128,7 +122,7 @@ Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& addi
 			slang_shader->set_kernels(kernels);
 		}
 	} else {
-		slang_shader->set_base_error(slang_error);
+		slang_shader->set_base_error(diagnostic);
 	}
 
 	slang_shader->set_meta("godot_version", ComputeShaderFile::get_godot_version_string());

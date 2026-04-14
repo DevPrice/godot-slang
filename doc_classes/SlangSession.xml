@@ -38,6 +38,10 @@
 			True if GLSL is enabled for this session.
 			This should never be changed after loading any modules with this session, create a new session instead.
 		</member>
+		<member name="preprocessor_macros" type="Dictionary" setter="set_preprocessor_macros" getter="get_preprocessor_macros" default="{}">
+			The preprocessor macros to define for compilation.
+			This should never be changed after loading any modules with this session, create a new session instead.
+		</member>
 		<member name="profile" type="String" setter="set_profile" getter="get_profile" default="&quot;spirv_1_5&quot;">
 			The profile to use for compilation. Consult Slang documentation for the list of valid profiles.
 			This should never be changed after loading any modules with this session, create a new session instead.

@@ -9,28 +9,54 @@ using namespace gdslang;
 using namespace godot;
 
 namespace {
-	class Utf8CharStringArray {
-	public:
-		Utf8CharStringArray(const PackedStringArray& strings) {
-			char_strings.reserve(strings.size());
-			for (const String& search_path : strings) {
-				char_strings.push_back(search_path.utf8());
-			}
-			string_ptrs.resize(char_strings.size());
-			std::ranges::transform(char_strings, string_ptrs.begin(),
-				[](const CharString &s) { return s.get_data(); });
+
+class Utf8CharStringArray {
+public:
+	Utf8CharStringArray(const PackedStringArray& strings) {
+		char_strings.reserve(strings.size());
+		for (const String& search_path : strings) {
+			char_strings.push_back(search_path.utf8());
 		}
-		const char* const* data() const { return string_ptrs.data(); }
-		size_t size() const { return string_ptrs.size(); }
-	private:
-		std::vector<CharString> char_strings{};
-		std::vector<const char*> string_ptrs{};
-	};
+		string_ptrs.resize(char_strings.size());
+		std::ranges::transform(char_strings, string_ptrs.begin(),
+			[](const CharString &s) { return s.get_data(); });
+	}
+
+	const char* const* data() const { return string_ptrs.data(); }
+	size_t size() const { return string_ptrs.size(); }
+
+private:
+	std::vector<CharString> char_strings{};
+	std::vector<const char*> string_ptrs{};
+};
+
+class PreprocessorMacros {
+public:
+	PreprocessorMacros(const Dictionary& macros) {
+		for (const Variant& key : macros.keys()) {
+			char_strings.reserve(macros.size() * 2);
+			CharString key_string = String(key).utf8();
+			CharString value_string = String(macros[key]).utf8();
+			char_strings.push_back(key_string);
+			char_strings.push_back(value_string);
+			preprocessor_macros.push_back({ .name = key_string.get_data(), .value = value_string.get_data() });
+		}
+	}
+
+	const slang::PreprocessorMacroDesc* data() const { return preprocessor_macros.data(); }
+	size_t size() const { return preprocessor_macros.size(); }
+
+private:
+	std::vector<CharString> char_strings{};
+	std::vector<slang::PreprocessorMacroDesc> preprocessor_macros;
+};
+
 }
 
 void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
 	BIND_GET_SET(SlangSession, search_paths, Variant::PACKED_STRING_ARRAY);
+	BIND_GET_SET(SlangSession, preprocessor_macros, Variant::DICTIONARY);
 	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ENUM_HINT_STRING(ShaderTypeLayoutShape, MatrixLayout));
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
@@ -60,21 +86,9 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 	session_desc.searchPaths = search_paths_array.data();
 	session_desc.searchPathCount = search_paths_array.size();
 
-	{
-		static auto godot_major_version_key = "GODOT_MAJOR_VERSION";
-		static auto godot_minor_version_key = "GODOT_MINOR_VERSION";
-		const Dictionary version_info = Engine::get_singleton()->get_version_info();
-		static const CharString major_version_string = String::num_int64(version_info.get("major", 0)).utf8();
-		static const CharString minor_version_string = String::num_int64(version_info.get("minor", 0)).utf8();
-		static const std::array macros = {
-			slang::PreprocessorMacroDesc{ .name = godot_major_version_key, .value = major_version_string.get_data() },
-			slang::PreprocessorMacroDesc{ .name = godot_minor_version_key, .value = minor_version_string.get_data() },
-		};
-
-		// TODO: Move preprocessor macros to property
-		session_desc.preprocessorMacroCount = macros.size();
-		session_desc.preprocessorMacros = macros.data();
-	}
+	const PreprocessorMacros macros(preprocessor_macros);
+	session_desc.preprocessorMacroCount = macros.size();
+	session_desc.preprocessorMacros = macros.data();
 
 	session_desc.allowGLSLSyntax = enable_glsl;
 
@@ -142,6 +156,13 @@ PackedStringArray gdslang::SlangSession::get_search_paths() const { return searc
 void gdslang::SlangSession::set_search_paths(PackedStringArray p_search_paths) {
 	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	search_paths = p_search_paths;
+}
+
+Dictionary gdslang::SlangSession::get_preprocessor_macros() const { return preprocessor_macros; }
+
+void gdslang::SlangSession::set_preprocessor_macros(Dictionary p_preprocessor_macros) {
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
+	preprocessor_macros = p_preprocessor_macros;
 }
 
 bool gdslang::SlangSession::get_enable_glsl() const { return enable_glsl; }

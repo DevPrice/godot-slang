@@ -16,6 +16,7 @@ class SlangSession final : public godot::RefCounted {
 
 	GET_SET_PROPERTY(godot::String, profile)
 	GET_SET_PROPERTY(godot::PackedStringArray, search_paths)
+	GET_SET_PROPERTY(godot::Dictionary, preprocessor_macros)
 	GET_SET_PROPERTY(bool, enable_glsl)
 	GET_SET_PROPERTY(ShaderTypeLayoutShape::MatrixLayout, default_matrix_layout)
 

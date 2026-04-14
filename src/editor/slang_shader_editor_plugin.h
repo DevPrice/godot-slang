@@ -12,6 +12,7 @@ protected:
 
 public:
 	static godot::String get_modules_path();
+	static godot::Dictionary get_preprocessor_macros();
 	static godot::PackedStringArray get_search_paths();
 
 private:
