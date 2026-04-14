@@ -31,8 +31,8 @@ slang::IModule** SlangModule::get_write_ref() {
 	return module.writeRef();
 }
 
-void SlangModule::set_module(slang::IModule* p_module) {
-	module = p_module;
+slang::IComponentType* SlangModule::get_component_type() const {
+	return get_module();
 }
 
 slang::ProgramLayout* SlangModule::get_layout() const {

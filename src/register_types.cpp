@@ -16,6 +16,7 @@
 #ifdef SLANG_IMPORT_ENABLED
 #include "slang_shader_editor_plugin.h"
 #include "slang_shader_importer.h"
+#include "slang_component_type.h"
 #include "slang_entry_point.h"
 #include "slang_session.h"
 #include "slang_module.h"
@@ -38,6 +39,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(ComputeShaderEffect);
 		GDREGISTER_CLASS(ComputeTexture);
 #ifdef SLANG_IMPORT_ENABLED
+		GDREGISTER_ABSTRACT_CLASS(SlangComponentType);
 		GDREGISTER_CLASS(gdslang::SlangSession);
 		GDREGISTER_CLASS(gdslang::SlangModule);
 		GDREGISTER_CLASS(SlangEntryPoint);

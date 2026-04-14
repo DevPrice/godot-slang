@@ -5,8 +5,10 @@
 
 #include "godot_cpp/classes/ref_counted.hpp"
 
-class SlangEntryPoint final : public godot::RefCounted {
-	GDCLASS(SlangEntryPoint, RefCounted)
+#include "slang_component_type.h"
+
+class SlangEntryPoint final : public SlangComponentType {
+	GDCLASS(SlangEntryPoint, SlangComponentType)
 
 protected:
 	static void _bind_methods();
@@ -14,6 +16,8 @@ protected:
 public:
 	slang::IEntryPoint* get_entry_point() const;
 	slang::IEntryPoint** write_ref();
+
+	slang::IComponentType* get_component_type() const override;
 
 	godot::String get_name() const;
 

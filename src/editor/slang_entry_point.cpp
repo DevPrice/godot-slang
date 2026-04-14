@@ -17,6 +17,10 @@ slang::IEntryPoint** SlangEntryPoint::write_ref() {
 	return entry_point.writeRef();
 }
 
+slang::IComponentType* SlangEntryPoint::get_component_type() const {
+	return get_entry_point();
+}
+
 String SlangEntryPoint::get_name() const {
 	ERR_FAIL_NULL_V(entry_point, {});
 	slang::FunctionReflection* reflection = entry_point->getFunctionReflection();

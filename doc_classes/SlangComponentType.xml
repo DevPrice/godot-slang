@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangComponentType" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A unit of shader code layout, reflection, and linking.
+	</brief_description>
+	<description>
+		A component type is a unit of shader code layout, reflection, and linking. It may be included into a linked and compiled shader program.
+	</description>
+	<tutorials>
+	</tutorials>
+</class>

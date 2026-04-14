@@ -3,16 +3,15 @@
 #include "slang.h"
 #include "slang-com-ptr.h"
 
-#include "godot_cpp/classes/ref_counted.hpp"
-
 #include "compute_shader_file.h"
 #include "compute_shader_kernel.h"
 #include "compute_shader_shape.h"
+#include "slang_component_type.h"
 
 namespace gdslang {
 
-class SlangModule final : public godot::RefCounted {
-	GDCLASS(SlangModule, RefCounted)
+class SlangModule final : public SlangComponentType {
+	GDCLASS(SlangModule, SlangComponentType)
 
 	GET_SET_PROPERTY(godot::String, diagnostic)
 
@@ -22,7 +21,8 @@ protected:
 public:
 	slang::IModule* get_module() const;
 	slang::IModule** get_write_ref();
-	void set_module(slang::IModule* p_module);
+
+	slang::IComponentType* get_component_type() const override;
 
 	slang::ProgramLayout* get_layout() const;
 	godot::String get_file_path() const;
