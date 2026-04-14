@@ -21,6 +21,7 @@ protected:
 
 public:
 	slang::IModule* get_module() const;
+	slang::IModule** get_write_ref();
 	void set_module(slang::IModule* p_module);
 
 	slang::ProgramLayout* get_layout() const;
@@ -31,6 +32,11 @@ public:
 	godot::TypedArray<godot::Ref<ComputeShaderKernel>> compile_kernels(const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Error _compile_kernels(godot::TypedArray<godot::Ref<ComputeShaderKernel>>& out_kernels, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Ref<ComputeShaderFile> compile_shader(const godot::PackedStringArray& additional_entry_points);
+
+	int64_t get_defined_entry_point_count() const;
+	godot::Ref<SlangEntryPoint> get_defined_entry_point(int64_t index) const;
+	godot::Ref<SlangEntryPoint> find_entry_point(const godot::String& name) const;
+	godot::Ref<SlangEntryPoint> find_and_check_entry_point(const godot::String& name, godot::RenderingDevice::ShaderStage shader_stage) const;
 
 	godot::Ref<StructTypeLayoutShape> get_params_shape() const;
 	godot::Variant to_json() const;

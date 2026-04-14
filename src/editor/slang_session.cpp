@@ -103,14 +103,11 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const Str
 	ERR_FAIL_NULL_V(session_ptr, module);
 	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
-		slang::IModule* module_ptr = session_ptr->loadModuleFromSourceString(
+		*module->get_write_ref() = session_ptr->loadModuleFromSourceString(
 				module_name.utf8().get_data(),
 				path.utf8().get_data(),
 				source_text.utf8().get_data(),
 				diagnostics_blob.writeRef());
-		if (module_ptr) {
-			module->set_module(module_ptr);
-		}
 		if (diagnostics_blob) {
 			module->set_diagnostic(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 		}

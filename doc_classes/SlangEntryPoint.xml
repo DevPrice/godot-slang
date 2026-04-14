@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangEntryPoint" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Represents a function that can be used as the starting point for execution within Slang.
+		See the [url=https://docs.shader-slang.org/en/latest/external/slang/docs/user-guide/02-conventional-features.html#shader-entry-points]Slang documentation[/url] for more information.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_name" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the name of this entry-point function.
+			</description>
+		</method>
+	</methods>
+</class>

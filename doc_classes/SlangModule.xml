@@ -25,6 +25,34 @@
 				Compiles this module into a [ComputeShaderFile].
 			</description>
 		</method>
+		<method name="find_and_check_entry_point" qualifiers="const">
+			<return type="SlangEntryPoint" />
+			<param index="0" name="entry_point_name" type="String" />
+			<param index="1" name="shader_stage" type="int" enum="RenderingDevice.ShaderStage" />
+			<description>
+				Find and validate an entry point by name, even if the function is not marked with the [code][shader(...)][/code] attribute.
+			</description>
+		</method>
+		<method name="find_entry_point" qualifiers="const">
+			<return type="SlangEntryPoint" />
+			<param index="0" name="entry_point_name" type="String" />
+			<description>
+				Find and an entry point by name. Note that this does not work in case the function is not explicitly designated as an entry point using the [code][shader(...)][/code] attribute.
+			</description>
+		</method>
+		<method name="get_defined_entry_point" qualifiers="const">
+			<return type="SlangEntryPoint" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Get the defined entry-point at [param index].
+			</description>
+		</method>
+		<method name="get_defined_entry_point_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Get number of entry points defined in the module.
+			</description>
+		</method>
 		<method name="get_dependency_files" qualifiers="const">
 			<return type="PackedStringArray" />
 			<description>

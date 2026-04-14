@@ -16,6 +16,7 @@
 #ifdef SLANG_IMPORT_ENABLED
 #include "slang_shader_editor_plugin.h"
 #include "slang_shader_importer.h"
+#include "slang_entry_point.h"
 #include "slang_session.h"
 #include "slang_module.h"
 #endif
@@ -39,6 +40,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 #ifdef SLANG_IMPORT_ENABLED
 		GDREGISTER_CLASS(gdslang::SlangSession);
 		GDREGISTER_CLASS(gdslang::SlangModule);
+		GDREGISTER_CLASS(SlangEntryPoint);
 #endif
 	}
 #if defined(SLANG_IMPORT_ENABLED) && defined(TOOLS_ENABLED)

@@ -1,9 +1,11 @@
-#include "slang_module.h"
+#include "godot_cpp/classes/project_settings.hpp"
 
 #include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
-#include "godot_cpp/classes/project_settings.hpp"
 #include "reflection_context.h"
+#include "slang_entry_point.h"
+
+#include "slang_module.h"
 
 using namespace gdslang;
 using namespace godot;
@@ -15,10 +17,18 @@ void SlangModule::_bind_methods() {
 	BIND_METHOD(SlangModule, get_params_shape)
 	BIND_METHOD(SlangModule, to_json)
 	BIND_METHOD(SlangModule, get_dependency_files)
+	BIND_METHOD(SlangModule, get_defined_entry_point_count)
+	BIND_METHOD(SlangModule, get_defined_entry_point, "index")
+	BIND_METHOD(SlangModule, find_entry_point, "entry_point_name")
+	BIND_METHOD(SlangModule, find_and_check_entry_point, "entry_point_name", "shader_stage")
 }
 
 slang::IModule* SlangModule::get_module() const {
 	return module.get();
+}
+
+slang::IModule** SlangModule::get_write_ref() {
+	return module.writeRef();
 }
 
 void SlangModule::set_module(slang::IModule* p_module) {
@@ -127,6 +137,39 @@ Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& addi
 
 	slang_shader->set_meta("godot_version", ComputeShaderFile::get_godot_version_string());
 	return slang_shader;
+}
+
+int64_t SlangModule::get_defined_entry_point_count() const {
+	ERR_FAIL_NULL_V(module, 0);
+	return module->getDefinedEntryPointCount();
+}
+
+Ref<SlangEntryPoint> SlangModule::get_defined_entry_point(const int64_t index) const {
+	ERR_FAIL_NULL_V(module, nullptr);
+	ERR_FAIL_INDEX_V(index, module->getDefinedEntryPointCount(), nullptr);
+	Ref entry_point = memnew(SlangEntryPoint);
+	Slang::ComPtr<slang::IBlob> diagnostics_blob;
+	ERR_FAIL_COND_V(SLANG_FAILED(module->getDefinedEntryPoint(index, entry_point->write_ref())), nullptr);
+	return entry_point;
+}
+
+Ref<SlangEntryPoint> SlangModule::find_entry_point(const String& name) const {
+	ERR_FAIL_NULL_V(module, nullptr);
+	Ref entry_point = memnew(SlangEntryPoint);
+	Slang::ComPtr<slang::IBlob> diagnostics_blob;
+	const CharString entry_point_name = name.utf8();
+	ERR_FAIL_COND_V(SLANG_FAILED(module->findEntryPointByName(entry_point_name.get_data(), entry_point->write_ref())), nullptr);
+	return entry_point;
+}
+
+Ref<SlangEntryPoint> SlangModule::find_and_check_entry_point(const String& name, const RenderingDevice::ShaderStage shader_stage) const {
+	ERR_FAIL_NULL_V(module, nullptr);
+	ERR_FAIL_COND_V(shader_stage != RenderingDevice::SHADER_STAGE_COMPUTE, nullptr);
+	Ref entry_point = memnew(SlangEntryPoint);
+	Slang::ComPtr<slang::IBlob> diagnostics_blob;
+	const CharString entry_point_name = name.utf8();
+	ERR_FAIL_COND_V(SLANG_FAILED(module->findAndCheckEntryPoint(entry_point_name.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point->write_ref(), diagnostics_blob.writeRef())), nullptr);
+	return entry_point;
 }
 
 Ref<StructTypeLayoutShape> SlangModule::get_params_shape() const {
