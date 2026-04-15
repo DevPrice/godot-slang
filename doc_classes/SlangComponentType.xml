@@ -9,6 +9,14 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="compile_entry_point" qualifiers="const">
+			<return type="SlangBlob" />
+			<param index="0" name="entry_point_index" type="int" default="0" />
+			<param index="1" name="target_index" type="int" default="0" />
+			<description>
+				Get the compiled code for the entry point at [param entryPointIndex] for the chosen [param targetIndex].
+			</description>
+		</method>
 		<method name="link" qualifiers="const">
 			<return type="SlangComponentType" />
 			<description>

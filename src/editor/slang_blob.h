@@ -3,6 +3,7 @@
 #include "godot_cpp/classes/ref_counted.hpp"
 
 #include "binding_macros.h"
+#include "slang.h"
 
 class SlangBlob : public godot::RefCounted {
 	GDCLASS(SlangBlob, RefCounted)
@@ -12,4 +13,7 @@ class SlangBlob : public godot::RefCounted {
 
 protected:
 	static void _bind_methods();
+
+public:
+	static godot::Ref<SlangBlob> create(slang::IBlob* blob, slang::IBlob* diagnostic);
 };
