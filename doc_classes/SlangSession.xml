@@ -18,6 +18,25 @@
 				Combine multiple component types to create a composite component type.
 			</description>
 		</method>
+		<method name="create_default_session" qualifiers="static">
+			<return type="SlangSession" />
+			<description>
+				Create a session configured to use the default / built-in modules and preprocess macros.
+			</description>
+		</method>
+		<method name="get_builtin_macros" qualifiers="static">
+			<return type="Dictionary" />
+			<description>
+				Gets the preprocessor macros declared for built-in modules included with the Godot Slang plugin.
+				For example, this includes the GODOT_MAJOR_VERSION and GODOT_MINOR_VERSION macros.
+			</description>
+		</method>
+		<method name="get_builtin_modules_path" qualifiers="static">
+			<return type="String" />
+			<description>
+				Gets the (globalized) path containing the Slang modules included with this plugin.
+			</description>
+		</method>
 		<method name="load_module_from_source_file">
 			<return type="SlangModule" />
 			<param index="0" name="module_name" type="String" />

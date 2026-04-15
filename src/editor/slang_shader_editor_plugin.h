@@ -10,11 +10,6 @@ class SlangShaderEditorPlugin : public godot::EditorPlugin {
 protected:
 	static void _bind_methods();
 
-public:
-	static godot::String get_modules_path();
-	static godot::Dictionary get_preprocessor_macros();
-	static godot::PackedStringArray get_search_paths();
-
 private:
 	godot::Ref<SlangShaderImporter> import_plugin;
 

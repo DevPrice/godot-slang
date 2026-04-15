@@ -1,8 +1,3 @@
-#include "slang_shader_importer.h"
-
-#include <vector>
-
-#include "slang-com-ptr.h"
 #include "slang.h"
 
 #include <godot_cpp/classes/dir_access.hpp>
@@ -15,9 +10,10 @@
 #include <compute_shader_file.h>
 #include <compute_shader_kernel.h>
 
-#include "compute_shader_cursor.h"
 #include "slang_session.h"
 #include "slang_shader_editor_plugin.h"
+
+#include "slang_shader_importer.h"
 
 using namespace godot;
 
@@ -68,7 +64,7 @@ String SlangShaderImporter::_get_save_extension() const {
 }
 
 String SlangShaderImporter::_get_resource_type() const {
-	return "ComputeShaderFile";
+	return ComputeShaderFile::get_class_static();
 }
 
 float SlangShaderImporter::_get_priority() const {
@@ -91,18 +87,12 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 
 	const String shader_source = shader_file->get_as_text(true);
 
-	const Ref slang_session = memnew(gdslang::SlangSession);
+	const Ref slang_session = gdslang::SlangSession::create_default_session();
 	slang_session->set_enable_glsl(p_source_file.ends_with(".glsl"));
 	const int64_t default_matrix_layout = p_options["default_matrix_layout"];
 	if (default_matrix_layout >= SLANG_MATRIX_LAYOUT_ROW_MAJOR && default_matrix_layout <= SLANG_MATRIX_LAYOUT_COLUMN_MAJOR) {
 		slang_session->set_default_matrix_layout(static_cast<ShaderTypeLayoutShape::MatrixLayout>(default_matrix_layout));
 	}
-
-	PackedStringArray search_paths = SlangShaderEditorPlugin::get_search_paths();
-	search_paths.push_back(SlangShaderEditorPlugin::get_modules_path());
-	slang_session->set_search_paths(search_paths);
-
-	slang_session->set_preprocessor_macros(SlangShaderEditorPlugin::get_preprocessor_macros());
 
 	const Ref<gdslang::SlangModule> module = slang_session->load_module_from_source_string("__main_module", p_source_file.get_file(), shader_source);
 	ERR_FAIL_NULL_V_MSG(module, ERR_COMPILATION_FAILED, String("[%s] Failed to load module!") % p_source_file);

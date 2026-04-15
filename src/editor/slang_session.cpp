@@ -1,9 +1,11 @@
-#include "slang_session.h"
-
-#include "enums.h"
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/file_access.hpp"
+#include "godot_cpp/classes/project_settings.hpp"
+
+#include "enums.h"
 #include "slang_shader_editor_plugin.h"
+
+#include "slang_session.h"
 
 using namespace gdslang;
 using namespace godot;
@@ -62,6 +64,9 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
 	BIND_METHOD(SlangSession, load_module_from_source_string, "module_name", "path", "source_text");
 	BIND_METHOD(SlangSession, create_composite_component_type, "component_types");
+	BIND_STATIC_METHOD(SlangSession, create_default_session);
+	BIND_STATIC_METHOD(SlangSession, get_builtin_modules_path);
+	BIND_STATIC_METHOD(SlangSession, get_builtin_macros);
 }
 
 gdslang::SlangSession::SlangSession() : profile("spirv_1_5"), default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) { }
@@ -140,6 +145,42 @@ Ref<SlangComponentType> gdslang::SlangSession::create_composite_component_type(c
 		return SlangComponentType::create(composite, String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 	}
 	return SlangComponentType::create(composite);
+}
+
+Ref<gdslang::SlangSession> gdslang::SlangSession::create_default_session() {
+	Ref session = memnew(SlangSession);
+	PackedStringArray search_paths = get_additional_search_paths();
+	search_paths.push_back(get_builtin_modules_path());
+	session->set_search_paths(search_paths);
+	session->set_preprocessor_macros(get_builtin_macros());
+	return session;
+}
+
+String gdslang::SlangSession::get_builtin_modules_path() {
+	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
+	return extension_path.get_base_dir().path_join("modules");
+}
+
+PackedStringArray gdslang::SlangSession::get_additional_search_paths() {
+	const ProjectSettings* project_settings = ProjectSettings::get_singleton();
+	ERR_FAIL_NULL_V(project_settings, {});
+	Array search_paths = project_settings->get_setting("slang/importer/search_paths");
+	PackedStringArray globalized_paths{};
+	globalized_paths.resize(search_paths.size());
+	for (const Variant& path : search_paths) {
+		globalized_paths.push_back(project_settings->globalize_path(path));
+	}
+	return globalized_paths;
+}
+
+Dictionary gdslang::SlangSession::get_builtin_macros() {
+	Dictionary macros{};
+	static StringName godot_major_version_key = "GODOT_MAJOR_VERSION";
+	static StringName godot_minor_version_key = "GODOT_MINOR_VERSION";
+	const Dictionary version_info = Engine::get_singleton()->get_version_info();
+	macros[godot_major_version_key] = version_info.get("major", 0);
+	macros[godot_minor_version_key] = version_info.get("minor", 0);
+	return macros;
 }
 
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {

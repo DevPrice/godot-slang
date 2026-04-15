@@ -33,6 +33,11 @@ public:
 
 	godot::Ref<SlangComponentType> create_composite_component_type(const godot::TypedArray<SlangComponentType>& component_types);
 
+	static godot::Ref<SlangSession> create_default_session();
+	static godot::String get_builtin_modules_path();
+	static godot::PackedStringArray get_additional_search_paths();
+	static godot::Dictionary get_builtin_macros();
+
 private:
 	Slang::ComPtr<slang::ISession> session;
 

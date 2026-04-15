@@ -6,35 +6,6 @@
 using namespace godot;
 
 void SlangShaderEditorPlugin::_bind_methods() {
-	BIND_STATIC_METHOD(SlangShaderEditorPlugin, get_modules_path);
-	BIND_STATIC_METHOD(SlangShaderEditorPlugin, get_preprocessor_macros);
-}
-
-String SlangShaderEditorPlugin::get_modules_path() {
-	const String extension_path = ProjectSettings::get_singleton()->globalize_path("uid://blqvpxodges3r");
-	return extension_path.get_base_dir().path_join("modules");
-}
-
-Dictionary SlangShaderEditorPlugin::get_preprocessor_macros() {
-	Dictionary macros{};
-	static StringName godot_major_version_key = "GODOT_MAJOR_VERSION";
-	static StringName godot_minor_version_key = "GODOT_MINOR_VERSION";
-	const Dictionary version_info = Engine::get_singleton()->get_version_info();
-	macros[godot_major_version_key] = version_info.get("major", 0);
-	macros[godot_minor_version_key] = version_info.get("minor", 0);
-	return macros;
-}
-
-PackedStringArray SlangShaderEditorPlugin::get_search_paths() {
-	const ProjectSettings* project_settings = ProjectSettings::get_singleton();
-	ERR_FAIL_NULL_V(project_settings, {});
-	Array search_paths = project_settings->get_setting("slang/importer/search_paths");
-	PackedStringArray globalized_paths{};
-	globalized_paths.resize(search_paths.size());
-	for (const Variant& path : search_paths) {
-		globalized_paths.push_back(project_settings->globalize_path(path));
-	}
-	return globalized_paths;
 }
 
 void SlangShaderEditorPlugin::_register_project_settings() {
