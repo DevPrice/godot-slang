@@ -15,6 +15,8 @@ class SlangSession final : public godot::RefCounted {
 	GDCLASS(SlangSession, RefCounted)
 
 	using SlangFormat = SlangCompileTarget;
+
+public:
 	enum SlangCompileTarget : int64_t;
 
 	GET_SET_PROPERTY(SlangCompileTarget, format)
