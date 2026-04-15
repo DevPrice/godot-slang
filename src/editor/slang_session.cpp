@@ -39,10 +39,8 @@ public:
 	PreprocessorMacros(const Dictionary& macros) {
 		char_strings.reserve(macros.size() * 2);
 		for (const Variant& key : macros.keys()) {
-			CharString key_string = String(key).utf8();
-			CharString value_string = String(macros[key]).utf8();
-			char_strings.push_back(key_string);
-			char_strings.push_back(value_string);
+			const CharString& key_string = char_strings.emplace_back(String(key).utf8());
+			const CharString& value_string = char_strings.emplace_back(String(macros[key]).utf8());
 			preprocessor_macros.push_back({ .name = key_string.get_data(), .value = value_string.get_data() });
 		}
 	}
