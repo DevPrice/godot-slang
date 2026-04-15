@@ -37,8 +37,8 @@ private:
 class PreprocessorMacros {
 public:
 	PreprocessorMacros(const Dictionary& macros) {
+		char_strings.reserve(macros.size() * 2);
 		for (const Variant& key : macros.keys()) {
-			char_strings.reserve(macros.size() * 2);
 			CharString key_string = String(key).utf8();
 			CharString value_string = String(macros[key]).utf8();
 			char_strings.push_back(key_string);
