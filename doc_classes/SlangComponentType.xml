@@ -8,6 +8,14 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<methods>
+		<method name="link" qualifiers="const">
+			<return type="SlangComponentType" />
+			<description>
+				Link this component type against all of its unsatisfied dependencies. Returns the new linked component without modifying this component.
+			</description>
+		</method>
+	</methods>
 	<members>
 		<member name="diagnostic" type="String" setter="set_diagnostic" getter="get_diagnostic" default="&quot;&quot;">
 			The diagnostic associated with attempting to load this component.

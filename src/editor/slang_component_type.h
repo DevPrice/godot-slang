@@ -17,6 +17,9 @@ protected:
 
 public:
 	virtual slang::IComponentType* get_component_type() const;
+
+	godot::Ref<SlangComponentType> link() const;
+
 	static godot::Ref<SlangComponentType> create(slang::IComponentType* component_type, const godot::String& diagnostic = "");
 
 private:
