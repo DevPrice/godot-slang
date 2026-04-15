@@ -95,8 +95,8 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_ENUM_CONSTANT(SLANG_HOST_OBJECT_CODE)
 	BIND_ENUM_CONSTANT(SLANG_HOST_LLVM_IR)
 	BIND_ENUM_CONSTANT(SLANG_SHADER_LLVM_IR)
-	BIND_ENUM_CONSTANT(SLANG_TARGET_COUNT_OF)
-	BIND_GET_SET_ENUM(SlangSession, format, ENUM_HINT_STRING(SlangSession, SlangCompileTarget));
+	BIND_ENUM_CONSTANT(SLANG_TARGET_MAX)
+	BIND_GET_SET_ENUM(SlangSession, format, ENUM_HINT_STRING(SlangSession, SlangCompileFormat));
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
 	BIND_GET_SET(SlangSession, search_paths, Variant::PACKED_STRING_ARRAY);
 	BIND_GET_SET(SlangSession, preprocessor_macros, Variant::DICTIONARY);
@@ -121,7 +121,7 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 
 	slang::SessionDesc session_desc = {};
 	slang::TargetDesc target_desc = {};
-	target_desc.format = static_cast<SlangFormat>(format);
+	target_desc.format = static_cast<SlangCompileTarget>(format);
 	target_desc.profile = global_session->findProfile(profile.utf8().get_data());
 
 	session_desc.targets = &target_desc;
@@ -244,9 +244,9 @@ slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool ena
 	return global_session;
 }
 
-gdslang::SlangSession::SlangCompileTarget gdslang::SlangSession::get_format() const { return format; }
+gdslang::SlangSession::SlangCompileFormat gdslang::SlangSession::get_format() const { return format; }
 
-void gdslang::SlangSession::set_format(const SlangCompileTarget p_format) {
+void gdslang::SlangSession::set_format(const SlangCompileFormat p_format) {
 	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	format = p_format;
 }

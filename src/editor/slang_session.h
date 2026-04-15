@@ -14,12 +14,10 @@ namespace gdslang {
 class SlangSession final : public godot::RefCounted {
 	GDCLASS(SlangSession, RefCounted)
 
-	using SlangFormat = SlangCompileTarget;
-
 public:
-	enum SlangCompileTarget : int64_t;
+	enum SlangCompileFormat : int64_t;
 
-	GET_SET_PROPERTY(SlangCompileTarget, format)
+	GET_SET_PROPERTY(SlangCompileFormat, format)
 	GET_SET_PROPERTY(godot::String, profile)
 	GET_SET_PROPERTY(godot::PackedStringArray, search_paths)
 	GET_SET_PROPERTY(godot::Dictionary, preprocessor_macros)
@@ -50,7 +48,7 @@ private:
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 
 public:
-	enum SlangCompileTarget : int64_t {
+	enum SlangCompileFormat : int64_t {
         SLANG_TARGET_UNKNOWN,
         SLANG_TARGET_NONE,
         SLANG_GLSL,
@@ -88,11 +86,11 @@ public:
         SLANG_HOST_OBJECT_CODE,
         SLANG_HOST_LLVM_IR,
         SLANG_SHADER_LLVM_IR,
-        SLANG_TARGET_COUNT_OF,
+        SLANG_TARGET_MAX,
     };
 
 };
 
 }
 
-VARIANT_ENUM_CAST(gdslang::SlangSession::SlangCompileTarget)
+VARIANT_ENUM_CAST(gdslang::SlangSession::SlangCompileFormat)
