@@ -8,4 +8,9 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<members>
+		<member name="diagnostic" type="String" setter="set_diagnostic" getter="get_diagnostic" default="&quot;&quot;">
+			The diagnostic associated with attempting to load this component.
+		</member>
+	</members>
 </class>

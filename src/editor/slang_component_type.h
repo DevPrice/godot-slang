@@ -5,11 +5,20 @@
 
 #include "godot_cpp/classes/ref_counted.hpp"
 
+#include "binding_macros.h"
+
 class SlangComponentType : public godot::RefCounted {
 	GDCLASS(SlangComponentType, RefCounted)
+
+	GET_SET_PROPERTY(godot::String, diagnostic)
 
 protected:
 	static void _bind_methods();
 
-	virtual slang::IComponentType* get_component_type() const = 0;
+public:
+	virtual slang::IComponentType* get_component_type() const;
+	static godot::Ref<SlangComponentType> create(slang::IComponentType* component_type, const godot::String& diagnostic = "");
+
+private:
+	Slang::ComPtr<slang::IComponentType> component_type;
 };

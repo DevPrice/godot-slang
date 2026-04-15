@@ -61,6 +61,7 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
 	BIND_METHOD(SlangSession, load_module_from_source_string, "module_name", "path", "source_text");
+	BIND_METHOD(SlangSession, create_composite_component_type, "component_types");
 }
 
 gdslang::SlangSession::SlangSession() : profile("spirv_1_5"), default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) { }
@@ -119,6 +120,26 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_file(const Strin
 	const Ref<FileAccess> shader_file = FileAccess::open(path, FileAccess::READ);
 	ERR_FAIL_NULL_V_MSG(shader_file, nullptr, String("Failed to open shader file: ") + path);
 	return load_module_from_source_string(module_name, path, shader_file->get_as_text(true));
+}
+
+Ref<SlangComponentType> gdslang::SlangSession::create_composite_component_type(const TypedArray<SlangComponentType>& component_types) {
+	slang::ISession* session_ptr = get_or_create_session();
+	ERR_FAIL_NULL_V(session_ptr, nullptr);
+	std::vector<slang::IComponentType*> component_type_ptrs;
+	component_type_ptrs.reserve(component_types.size());
+	for (Ref<SlangComponentType> component_type : component_types) {
+		ERR_FAIL_NULL_V(component_type, nullptr);
+		slang::IComponentType* ptr = component_type->get_component_type();
+		ERR_FAIL_NULL_V(ptr, nullptr);
+		component_type_ptrs.push_back(ptr);
+	}
+	slang::IComponentType* composite;
+	Slang::ComPtr<slang::IBlob> diagnostics_blob;
+	ERR_FAIL_COND_V(SLANG_FAILED(session_ptr->createCompositeComponentType(component_type_ptrs.data(), component_type_ptrs.size(), &composite, diagnostics_blob.writeRef())), nullptr);
+	if (diagnostics_blob) {
+		return SlangComponentType::create(composite, String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+	}
+	return SlangComponentType::create(composite);
 }
 
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {

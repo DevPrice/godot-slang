@@ -13,8 +13,6 @@ namespace gdslang {
 class SlangModule final : public SlangComponentType {
 	GDCLASS(SlangModule, SlangComponentType)
 
-	GET_SET_PROPERTY(godot::String, diagnostic)
-
 protected:
 	static void _bind_methods();
 

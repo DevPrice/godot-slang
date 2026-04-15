@@ -72,9 +72,4 @@
 			</description>
 		</method>
 	</methods>
-	<members>
-		<member name="diagnostic" type="String" setter="set_diagnostic" getter="get_diagnostic" default="&quot;&quot;">
-			The diagnostic associated with attempting to load this module, if the module failed to load.
-		</member>
-	</members>
 </class>

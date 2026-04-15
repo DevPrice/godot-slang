@@ -31,6 +31,8 @@ public:
 	godot::Ref<SlangModule> load_module_from_source_string(const godot::String& module_name, const godot::String& path, const godot::String& source_text);
 	godot::Ref<SlangModule> load_module_from_source_file(const godot::String& module_name, const godot::String& path);
 
+	godot::Ref<SlangComponentType> create_composite_component_type(const godot::TypedArray<SlangComponentType>& component_types);
+
 private:
 	Slang::ComPtr<slang::ISession> session;
 

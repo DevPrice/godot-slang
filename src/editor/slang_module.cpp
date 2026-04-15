@@ -11,7 +11,6 @@ using namespace gdslang;
 using namespace godot;
 
 void SlangModule::_bind_methods() {
-	BIND_GET_SET(SlangModule, diagnostic, Variant::STRING);
 	ClassDB::bind_method(D_METHOD("compile_kernels", "additional_entry_points"), &SlangModule::compile_kernels, DEFVAL(PackedStringArray{}));
 	ClassDB::bind_method(D_METHOD("compile_shader", "additional_entry_points"), &SlangModule::compile_shader, DEFVAL(PackedStringArray{}));
 	BIND_METHOD(SlangModule, get_params_shape)
@@ -120,6 +119,7 @@ Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_ke
 
 Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& additional_entry_points) {
 	const Ref slang_shader = memnew(ComputeShaderFile);
+	const String diagnostic = get_diagnostic();
 	if (diagnostic.is_empty()) {
 		const Ref<StructTypeLayoutShape> global_params = get_params_shape();
 		slang_shader->set_parameters(global_params);
@@ -169,6 +169,9 @@ Ref<SlangEntryPoint> SlangModule::find_and_check_entry_point(const String& name,
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	const CharString entry_point_name = name.utf8();
 	ERR_FAIL_COND_V(SLANG_FAILED(module->findAndCheckEntryPoint(entry_point_name.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point->write_ref(), diagnostics_blob.writeRef())), nullptr);
+	if (diagnostics_blob) {
+		entry_point->set_diagnostic(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+	}
 	return entry_point;
 }
 
@@ -330,5 +333,3 @@ bool SlangModule::_is_location_used(slang::IMetadata* metadata, const int64_t sp
 	}
 	return false;
 }
-
-GET_SET_PROPERTY_IMPL(SlangModule, String, diagnostic)
