@@ -1,11 +1,6 @@
 #pragma once
 
-#include <compute_shader_kernel.h>
 #include <godot_cpp/classes/editor_import_plugin.hpp>
-#include <optional>
-
-#include "attributes.h"
-#include "compute_shader_cursor.h"
 
 class SlangShaderImporter final : public godot::EditorImportPlugin {
 	GDCLASS(SlangShaderImporter, EditorImportPlugin)

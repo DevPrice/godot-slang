@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "godot_cpp/classes/engine.hpp"
 #include "godot_cpp/classes/file_access.hpp"
 #include "godot_cpp/classes/project_settings.hpp"
@@ -56,6 +58,45 @@ private:
 }
 
 void gdslang::SlangSession::_bind_methods() {
+	BIND_ENUM_CONSTANT(SLANG_TARGET_UNKNOWN)
+	BIND_ENUM_CONSTANT(SLANG_TARGET_NONE)
+	BIND_ENUM_CONSTANT(SLANG_GLSL)
+	BIND_ENUM_CONSTANT(SLANG_GLSL_VULKAN_DEPRECATED)
+	BIND_ENUM_CONSTANT(SLANG_GLSL_VULKAN_ONE_DESC_DEPRECATED)
+	BIND_ENUM_CONSTANT(SLANG_HLSL)
+	BIND_ENUM_CONSTANT(SLANG_SPIRV)
+	BIND_ENUM_CONSTANT(SLANG_SPIRV_ASM)
+	BIND_ENUM_CONSTANT(SLANG_DXBC)
+	BIND_ENUM_CONSTANT(SLANG_DXBC_ASM)
+	BIND_ENUM_CONSTANT(SLANG_DXIL)
+	BIND_ENUM_CONSTANT(SLANG_DXIL_ASM)
+	BIND_ENUM_CONSTANT(SLANG_C_SOURCE)
+	BIND_ENUM_CONSTANT(SLANG_CPP_SOURCE)
+	BIND_ENUM_CONSTANT(SLANG_HOST_EXECUTABLE)
+	BIND_ENUM_CONSTANT(SLANG_SHADER_SHARED_LIBRARY)
+	BIND_ENUM_CONSTANT(SLANG_SHADER_HOST_CALLABLE)
+	BIND_ENUM_CONSTANT(SLANG_CUDA_SOURCE)
+	BIND_ENUM_CONSTANT(SLANG_PTX)
+	BIND_ENUM_CONSTANT(SLANG_CUDA_OBJECT_CODE)
+	BIND_ENUM_CONSTANT(SLANG_OBJECT_CODE)
+	BIND_ENUM_CONSTANT(SLANG_HOST_CPP_SOURCE)
+	BIND_ENUM_CONSTANT(SLANG_HOST_HOST_CALLABLE)
+	BIND_ENUM_CONSTANT(SLANG_CPP_PYTORCH_BINDING)
+	BIND_ENUM_CONSTANT(SLANG_METAL)
+	BIND_ENUM_CONSTANT(SLANG_METAL_LIB)
+	BIND_ENUM_CONSTANT(SLANG_METAL_LIB_ASM)
+	BIND_ENUM_CONSTANT(SLANG_HOST_SHARED_LIBRARY)
+	BIND_ENUM_CONSTANT(SLANG_WGSL)
+	BIND_ENUM_CONSTANT(SLANG_WGSL_SPIRV_ASM)
+	BIND_ENUM_CONSTANT(SLANG_WGSL_SPIRV)
+	BIND_ENUM_CONSTANT(SLANG_HOST_VM)
+	BIND_ENUM_CONSTANT(SLANG_CPP_HEADER)
+	BIND_ENUM_CONSTANT(SLANG_CUDA_HEADER)
+	BIND_ENUM_CONSTANT(SLANG_HOST_OBJECT_CODE)
+	BIND_ENUM_CONSTANT(SLANG_HOST_LLVM_IR)
+	BIND_ENUM_CONSTANT(SLANG_SHADER_LLVM_IR)
+	BIND_ENUM_CONSTANT(SLANG_TARGET_COUNT_OF)
+	BIND_GET_SET_ENUM(SlangSession, format, ENUM_HINT_STRING(SlangSession, SlangCompileTarget));
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
 	BIND_GET_SET(SlangSession, search_paths, Variant::PACKED_STRING_ARRAY);
 	BIND_GET_SET(SlangSession, preprocessor_macros, Variant::DICTIONARY);
@@ -69,7 +110,7 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_STATIC_METHOD(SlangSession, get_builtin_macros);
 }
 
-gdslang::SlangSession::SlangSession() : profile("spirv_1_5"), default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) { }
+gdslang::SlangSession::SlangSession() : format(SLANG_SPIRV), profile("spirv_1_5"), default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR) { }
 
 slang::ISession* gdslang::SlangSession::get_or_create_session() {
 	if (session) {
@@ -80,7 +121,7 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 
 	slang::SessionDesc session_desc = {};
 	slang::TargetDesc target_desc = {};
-	target_desc.format = SLANG_SPIRV;
+	target_desc.format = static_cast<SlangFormat>(format);
 	target_desc.profile = global_session->findProfile(profile.utf8().get_data());
 
 	session_desc.targets = &target_desc;
@@ -201,6 +242,13 @@ slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool ena
 	}
 
 	return global_session;
+}
+
+gdslang::SlangSession::SlangCompileTarget gdslang::SlangSession::get_format() const { return format; }
+
+void gdslang::SlangSession::set_format(const SlangCompileTarget p_format) {
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
+	format = p_format;
 }
 
 String gdslang::SlangSession::get_profile() const { return profile; }
