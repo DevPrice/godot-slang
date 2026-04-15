@@ -1,3 +1,5 @@
+#include "reflection_context.h"
+
 #include "slang_component_type.h"
 
 using namespace godot;
@@ -10,6 +12,22 @@ void SlangComponentType::_bind_methods() {
 
 slang::IComponentType* SlangComponentType::get_component_type() const {
 	return component_type.get();
+}
+
+slang::ProgramLayout* SlangComponentType::get_layout() const {
+	slang::IComponentType* component_type_ptr = get_component_type();
+	ERR_FAIL_NULL_V(component_type_ptr, nullptr);
+	return component_type_ptr->getLayout();
+}
+
+Ref<StructTypeLayoutShape> SlangComponentType::get_params_shape() const {
+	const SlangReflectionContext reflection_context(get_layout());
+	return reflection_context.get_params_shape();
+}
+
+Variant SlangComponentType::to_json() const {
+	const SlangReflectionContext reflection_context(get_layout());
+	return reflection_context.to_json();
 }
 
 Ref<SlangComponentType> SlangComponentType::link() const {

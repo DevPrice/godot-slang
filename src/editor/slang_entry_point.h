@@ -18,6 +18,7 @@ public:
 	slang::IEntryPoint** write_ref();
 
 	slang::IComponentType* get_component_type() const override;
+	godot::Ref<StructTypeLayoutShape> get_params_shape() const override;
 
 	godot::String get_name() const;
 

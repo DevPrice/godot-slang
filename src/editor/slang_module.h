@@ -22,7 +22,6 @@ public:
 
 	slang::IComponentType* get_component_type() const override;
 
-	slang::ProgramLayout* get_layout() const;
 	godot::String get_file_path() const;
 
 	godot::PackedStringArray get_dependency_files() const;
@@ -35,9 +34,6 @@ public:
 	godot::Ref<SlangEntryPoint> get_defined_entry_point(int64_t index) const;
 	godot::Ref<SlangEntryPoint> find_entry_point(const godot::String& name) const;
 	godot::Ref<SlangEntryPoint> find_and_check_entry_point(const godot::String& name, godot::RenderingDevice::ShaderStage shader_stage) const;
-
-	godot::Ref<StructTypeLayoutShape> get_params_shape() const;
-	godot::Variant to_json() const;
 
 private:
 	Slang::ComPtr<slang::IModule> module{};

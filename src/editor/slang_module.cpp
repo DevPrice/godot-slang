@@ -34,11 +34,6 @@ slang::IComponentType* SlangModule::get_component_type() const {
 	return get_module();
 }
 
-slang::ProgramLayout* SlangModule::get_layout() const {
-	ERR_FAIL_NULL_V(module, nullptr);
-	return module->getLayout();
-}
-
 String SlangModule::get_file_path() const {
 	ERR_FAIL_NULL_V(module, {});
 	return module->getFilePath();
@@ -173,16 +168,6 @@ Ref<SlangEntryPoint> SlangModule::find_and_check_entry_point(const String& name,
 		entry_point->set_diagnostic(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
 	}
 	return entry_point;
-}
-
-Ref<StructTypeLayoutShape> SlangModule::get_params_shape() const {
-	const SlangReflectionContext reflection_context(get_layout());
-	return reflection_context.get_params_shape();
-}
-
-Variant SlangModule::to_json() const {
-	const SlangReflectionContext reflection_context(get_layout());
-	return reflection_context.to_json();
 }
 
 Ref<ComputeShaderKernel> SlangModule::_compile_kernel(slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape) {

@@ -5,7 +5,7 @@
 
 using namespace godot;
 
-void SlangEntryPoint::_bind_methods(){
+void SlangEntryPoint::_bind_methods() {
 	BIND_METHOD(SlangEntryPoint, get_name)
 }
 
@@ -19,6 +19,14 @@ slang::IEntryPoint** SlangEntryPoint::write_ref() {
 
 slang::IComponentType* SlangEntryPoint::get_component_type() const {
 	return get_entry_point();
+}
+
+Ref<StructTypeLayoutShape> SlangEntryPoint::get_params_shape() const {
+	slang::ProgramLayout* layout = get_layout();
+	ERR_FAIL_NULL_V(layout, nullptr);
+	const SlangReflectionContext reflection_context(layout);
+	// TODO: Will this always be index zero?
+	return reflection_context.get_entry_point_params_shape(layout->getEntryPointByIndex(0));
 }
 
 String SlangEntryPoint::get_name() const {

@@ -17,10 +17,22 @@
 				Get the compiled code for the entry point at [param entryPointIndex] for the chosen [param targetIndex].
 			</description>
 		</method>
+		<method name="get_params_shape" qualifiers="const">
+			<return type="StructTypeLayoutShape" />
+			<description>
+				Emits reflection information for this module's program layout as a [StructTypeLayoutShape].
+			</description>
+		</method>
 		<method name="link" qualifiers="const">
 			<return type="SlangComponentType" />
 			<description>
 				Link this component type against all of its unsatisfied dependencies. Returns the new linked component without modifying this component.
+			</description>
+		</method>
+		<method name="to_json" qualifiers="const">
+			<return type="Variant" />
+			<description>
+				Emits reflection information for this module's program layout in JSON format.
 			</description>
 		</method>
 	</methods>
