@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangBlob" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		A raw buffer and optional diagnostic returned from the Slang compilation API.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="buffer" type="PackedByteArray" setter="set_buffer" getter="get_buffer" default="PackedByteArray()">
+			The raw data in this blob.
+		</member>
+		<member name="diagnostic" type="String" setter="set_diagnostic" getter="get_diagnostic" default="&quot;&quot;">
+			The diagnostic associated with creating this blob.
+		</member>
+	</members>
+</class>
