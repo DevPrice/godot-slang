@@ -64,7 +64,7 @@
 			True if GLSL is enabled for this session.
 			This should never be changed after loading any modules with this session, create a new session instead.
 		</member>
-		<member name="format" type="int" setter="set_format" getter="get_format" enum="SlangSession.SlangCompileFormat" default="6">
+		<member name="format" type="int" setter="set_format" getter="get_format" enum="SlangCompileTarget" default="6">
 			The target format to generate code for (e.g., SPIR-V, DXIL, etc.).
 			This should never be changed after loading any modules with this session, create a new session instead.
 		</member>
@@ -82,106 +82,106 @@
 		</member>
 	</members>
 	<constants>
-		<constant name="SLANG_TARGET_UNKNOWN" value="0" enum="SlangCompileFormat">
+		<constant name="SLANG_TARGET_UNKNOWN" value="0" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_TARGET_NONE" value="1" enum="SlangCompileFormat">
+		<constant name="SLANG_TARGET_NONE" value="1" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_GLSL" value="2" enum="SlangCompileFormat">
+		<constant name="SLANG_GLSL" value="2" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_GLSL_VULKAN_DEPRECATED" value="3" enum="SlangCompileFormat" deprecated="deprecated and removed: just use [code]SLANG_GLSL[/code].">
+		<constant name="SLANG_GLSL_VULKAN_DEPRECATED" value="3" enum="SlangCompileTarget" deprecated="deprecated and removed: just use [code]SLANG_GLSL[/code].">
 		</constant>
-		<constant name="SLANG_GLSL_VULKAN_ONE_DESC_DEPRECATED" value="4" enum="SlangCompileFormat" deprecated="deprecated and removed">
+		<constant name="SLANG_GLSL_VULKAN_ONE_DESC_DEPRECATED" value="4" enum="SlangCompileTarget" deprecated="deprecated and removed">
 		</constant>
-		<constant name="SLANG_HLSL" value="5" enum="SlangCompileFormat">
+		<constant name="SLANG_HLSL" value="5" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_SPIRV" value="6" enum="SlangCompileFormat">
+		<constant name="SLANG_SPIRV" value="6" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_SPIRV_ASM" value="7" enum="SlangCompileFormat">
+		<constant name="SLANG_SPIRV_ASM" value="7" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_DXBC" value="8" enum="SlangCompileFormat">
+		<constant name="SLANG_DXBC" value="8" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_DXBC_ASM" value="9" enum="SlangCompileFormat">
+		<constant name="SLANG_DXBC_ASM" value="9" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_DXIL" value="10" enum="SlangCompileFormat">
+		<constant name="SLANG_DXIL" value="10" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_DXIL_ASM" value="11" enum="SlangCompileFormat">
+		<constant name="SLANG_DXIL_ASM" value="11" enum="SlangCompileTarget">
 		</constant>
-		<constant name="SLANG_C_SOURCE" value="12" enum="SlangCompileFormat">
+		<constant name="SLANG_C_SOURCE" value="12" enum="SlangCompileTarget">
 			The C language
 		</constant>
-		<constant name="SLANG_CPP_SOURCE" value="13" enum="SlangCompileFormat">
+		<constant name="SLANG_CPP_SOURCE" value="13" enum="SlangCompileTarget">
 			C++ code for shader kernels.
 		</constant>
-		<constant name="SLANG_HOST_EXECUTABLE" value="14" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_EXECUTABLE" value="14" enum="SlangCompileTarget">
 			Standalone binary executable (for hosting CPU/OS)
 		</constant>
-		<constant name="SLANG_SHADER_SHARED_LIBRARY" value="15" enum="SlangCompileFormat">
+		<constant name="SLANG_SHADER_SHARED_LIBRARY" value="15" enum="SlangCompileTarget">
 			A shared library/Dll for shader kernels (for hosting CPU/OS)
 		</constant>
-		<constant name="SLANG_SHADER_HOST_CALLABLE" value="16" enum="SlangCompileFormat">
+		<constant name="SLANG_SHADER_HOST_CALLABLE" value="16" enum="SlangCompileTarget">
 			A CPU target that makes the compiled shader code available to be run immediately
 		</constant>
-		<constant name="SLANG_CUDA_SOURCE" value="17" enum="SlangCompileFormat">
+		<constant name="SLANG_CUDA_SOURCE" value="17" enum="SlangCompileTarget">
 			Cuda source
 		</constant>
-		<constant name="SLANG_PTX" value="18" enum="SlangCompileFormat">
+		<constant name="SLANG_PTX" value="18" enum="SlangCompileTarget">
 			PTX
 		</constant>
-		<constant name="SLANG_CUDA_OBJECT_CODE" value="19" enum="SlangCompileFormat">
+		<constant name="SLANG_CUDA_OBJECT_CODE" value="19" enum="SlangCompileTarget">
 			Object code that contains CUDA functions.
 		</constant>
-		<constant name="SLANG_OBJECT_CODE" value="20" enum="SlangCompileFormat">
+		<constant name="SLANG_OBJECT_CODE" value="20" enum="SlangCompileTarget">
 			Object code that can be used for later linking (kernel/shader)
 		</constant>
-		<constant name="SLANG_HOST_CPP_SOURCE" value="21" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_CPP_SOURCE" value="21" enum="SlangCompileTarget">
 			C++ code for host library or executable.
 		</constant>
-		<constant name="SLANG_HOST_HOST_CALLABLE" value="22" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_HOST_CALLABLE" value="22" enum="SlangCompileTarget">
 			Host callable host code (ie non kernel/shader)
 		</constant>
-		<constant name="SLANG_CPP_PYTORCH_BINDING" value="23" enum="SlangCompileFormat">
+		<constant name="SLANG_CPP_PYTORCH_BINDING" value="23" enum="SlangCompileTarget">
 			C++ PyTorch binding code.
 		</constant>
-		<constant name="SLANG_METAL" value="24" enum="SlangCompileFormat">
+		<constant name="SLANG_METAL" value="24" enum="SlangCompileTarget">
 			Metal shading language
 		</constant>
-		<constant name="SLANG_METAL_LIB" value="25" enum="SlangCompileFormat">
+		<constant name="SLANG_METAL_LIB" value="25" enum="SlangCompileTarget">
 			Metal library
 		</constant>
-		<constant name="SLANG_METAL_LIB_ASM" value="26" enum="SlangCompileFormat">
+		<constant name="SLANG_METAL_LIB_ASM" value="26" enum="SlangCompileTarget">
 			Metal library assembly
 		</constant>
-		<constant name="SLANG_HOST_SHARED_LIBRARY" value="27" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_SHARED_LIBRARY" value="27" enum="SlangCompileTarget">
 			A shared library/Dll for host code (for hosting CPU/OS)
 		</constant>
-		<constant name="SLANG_WGSL" value="28" enum="SlangCompileFormat">
+		<constant name="SLANG_WGSL" value="28" enum="SlangCompileTarget">
 			WebGPU shading language
 		</constant>
-		<constant name="SLANG_WGSL_SPIRV_ASM" value="29" enum="SlangCompileFormat">
+		<constant name="SLANG_WGSL_SPIRV_ASM" value="29" enum="SlangCompileTarget">
 			SPIR-V assembly via WebGPU shading language
 		</constant>
-		<constant name="SLANG_WGSL_SPIRV" value="30" enum="SlangCompileFormat">
+		<constant name="SLANG_WGSL_SPIRV" value="30" enum="SlangCompileTarget">
 			SPIR-V via WebGPU shading language
 		</constant>
-		<constant name="SLANG_HOST_VM" value="31" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_VM" value="31" enum="SlangCompileTarget">
 			Bytecode that can be interpreted by the Slang VM
 		</constant>
-		<constant name="SLANG_CPP_HEADER" value="32" enum="SlangCompileFormat">
+		<constant name="SLANG_CPP_HEADER" value="32" enum="SlangCompileTarget">
 			C++ header for shader kernels.
 		</constant>
-		<constant name="SLANG_CUDA_HEADER" value="33" enum="SlangCompileFormat">
+		<constant name="SLANG_CUDA_HEADER" value="33" enum="SlangCompileTarget">
 			Cuda header
 		</constant>
-		<constant name="SLANG_HOST_OBJECT_CODE" value="34" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_OBJECT_CODE" value="34" enum="SlangCompileTarget">
 			Host object code
 		</constant>
-		<constant name="SLANG_HOST_LLVM_IR" value="35" enum="SlangCompileFormat">
+		<constant name="SLANG_HOST_LLVM_IR" value="35" enum="SlangCompileTarget">
 			Host LLVM IR assembly
 		</constant>
-		<constant name="SLANG_SHADER_LLVM_IR" value="36" enum="SlangCompileFormat">
+		<constant name="SLANG_SHADER_LLVM_IR" value="36" enum="SlangCompileTarget">
 			Host LLVM IR assembly (kernel/shader)
 		</constant>
-		<constant name="SLANG_TARGET_MAX" value="37" enum="SlangCompileFormat">
+		<constant name="SLANG_TARGET_MAX" value="37" enum="SlangCompileTarget">
 		</constant>
 	</constants>
 </class>
