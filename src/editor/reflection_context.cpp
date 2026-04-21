@@ -17,6 +17,8 @@
 
 #include "reflection_context.h"
 
+#include "slang_blob.h"
+
 using namespace godot;
 
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
@@ -601,8 +603,7 @@ Variant SlangReflectionContext::to_json() const {
 	ERR_FAIL_NULL_V(program_layout, nullptr);
 	Slang::ComPtr<slang::IBlob> json_blob;
 	if (SLANG_SUCCEEDED(program_layout->toJson(json_blob.writeRef()))) {
-		const String json_string = String::utf8(static_cast<const char*>(json_blob->getBufferPointer()), json_blob->getBufferSize());
-		return JSON::parse_string(json_string);
+		return JSON::parse_string(SlangBlob::blob_to_string(json_blob));
 	}
 	return nullptr;
 }

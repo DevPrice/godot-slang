@@ -36,7 +36,7 @@ Ref<SlangComponentType> SlangComponentType::link() const {
 	slang::IComponentType* linked_component;
 	ERR_FAIL_COND_V(SLANG_FAILED(component_type->link(&linked_component, diagnostics_blob.writeRef())), nullptr);
 	if (diagnostics_blob) {
-		return create(linked_component, String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		return create(linked_component, SlangBlob::blob_to_string(diagnostics_blob));
 	}
 	return create(linked_component);
 }

@@ -10,18 +10,30 @@ void SlangBlob::_bind_methods() {
 Ref<SlangBlob> SlangBlob::create(slang::IBlob* blob, slang::IBlob* diagnostic) {
 	ERR_FAIL_NULL_V(blob, {});
 	Ref ret = memnew(SlangBlob);
-	if (void const* buffer_ptr = blob->getBufferPointer()) {
-		PackedByteArray buffer;
-		buffer.resize(blob->getBufferSize());
-		memcpy(buffer.ptrw(), buffer_ptr, blob->getBufferSize());
-		ret->set_buffer(buffer);
-	}
+	ret->set_buffer(blob_to_bytes(blob));
 	if (diagnostic) {
-		if (void const* diagnostic_ptr = diagnostic->getBufferPointer()) {
-			ret->set_diagnostic(String::utf8(static_cast<const char*>(diagnostic_ptr), diagnostic->getBufferSize()));
-		}
+		ret->set_diagnostic(blob_to_string(diagnostic));
 	}
 	return ret;
+}
+
+String SlangBlob::blob_to_string(slang::IBlob* blob) {
+	if (blob && blob->getBufferPointer() && blob->getBufferSize()) {
+		return String::utf8(
+			static_cast<const char*>(blob->getBufferPointer()),
+			static_cast<int64_t>(blob->getBufferSize()));
+	}
+	return String{};
+}
+
+PackedByteArray SlangBlob::blob_to_bytes(slang::IBlob* blob) {
+	if (blob && blob->getBufferPointer() && blob->getBufferSize()) {
+		PackedByteArray buffer;
+		buffer.resize(static_cast<int64_t>(blob->getBufferSize()));
+		memcpy(buffer.ptrw(), blob->getBufferPointer(), blob->getBufferSize());
+		return buffer;
+	}
+	return PackedByteArray{};
 }
 
 GET_SET_PROPERTY_IMPL(SlangBlob, godot::PackedByteArray, buffer)

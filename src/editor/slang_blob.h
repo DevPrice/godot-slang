@@ -16,4 +16,6 @@ protected:
 
 public:
 	static godot::Ref<SlangBlob> create(slang::IBlob* blob, slang::IBlob* diagnostic);
+	static godot::String blob_to_string(slang::IBlob* blob);
+	static godot::PackedByteArray blob_to_bytes(slang::IBlob* blob);
 };

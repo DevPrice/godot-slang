@@ -154,7 +154,7 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const Str
 				source_text.utf8().get_data(),
 				diagnostics_blob.writeRef());
 		if (diagnostics_blob) {
-			module->set_diagnostic(String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+			module->set_diagnostic(SlangBlob::blob_to_string(diagnostics_blob));
 		}
 	}
 	return module;
@@ -181,7 +181,7 @@ Ref<SlangComponentType> gdslang::SlangSession::create_composite_component_type(c
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	ERR_FAIL_COND_V(SLANG_FAILED(session_ptr->createCompositeComponentType(component_type_ptrs.data(), component_type_ptrs.size(), &composite, diagnostics_blob.writeRef())), nullptr);
 	if (diagnostics_blob) {
-		return SlangComponentType::create(composite, String::utf8(static_cast<const char*>(diagnostics_blob->getBufferPointer()), diagnostics_blob->getBufferSize()));
+		return SlangComponentType::create(composite, SlangBlob::blob_to_string(diagnostics_blob));
 	}
 	return SlangComponentType::create(composite);
 }
