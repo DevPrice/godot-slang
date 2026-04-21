@@ -48,16 +48,6 @@ PackedStringArray SlangModule::get_dependency_files() const {
 	return dependency_files;
 }
 
-TypedArray<Ref<ComputeShaderKernel>> SlangModule::compile_kernels(const PackedStringArray& additional_entry_points) {
-	TypedArray<Ref<ComputeShaderKernel>> kernels{};
-	const Ref<ShaderTypeLayoutShape> global_params_shape = get_params_shape();
-	const Error err = _compile_kernels(kernels, global_params_shape, additional_entry_points);
-	if (err != OK) {
-		ERR_PRINT(String("Failed to compile kernels: %s") % UtilityFunctions::error_string(err));
-	}
-	return kernels;
-}
-
 Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_kernels, const Ref<ShaderTypeLayoutShape>& global_params_shape, const PackedStringArray& additional_entry_points) {
 	ERR_FAIL_NULL_V(module, ERR_UNCONFIGURED);
 	std::vector<Slang::ComPtr<slang::IEntryPoint>> entry_points{};
