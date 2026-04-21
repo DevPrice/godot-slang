@@ -11,7 +11,6 @@ using namespace gdslang;
 using namespace godot;
 
 void SlangModule::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("compile_kernels", "additional_entry_points"), &SlangModule::compile_kernels, DEFVAL(PackedStringArray{}));
 	ClassDB::bind_method(D_METHOD("compile_shader", "additional_entry_points"), &SlangModule::compile_shader, DEFVAL(PackedStringArray{}));
 	BIND_METHOD(SlangModule, get_params_shape)
 	BIND_METHOD(SlangModule, to_json)

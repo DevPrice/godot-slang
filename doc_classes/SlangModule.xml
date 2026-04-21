@@ -11,13 +11,6 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="compile_kernels">
-			<return type="ComputeShaderKernel[]" />
-			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
-			<description>
-				Compiles this module into [ComputeShaderKernel]s.
-			</description>
-		</method>
 		<method name="compile_shader">
 			<return type="ComputeShaderFile" />
 			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
