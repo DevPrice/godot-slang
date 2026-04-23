@@ -68,6 +68,8 @@ if slang_import_enabled:
         LIBS=["slang-compiler"],
         CPPDEFINES=["SLANG_IMPORT_ENABLED"],
     )
+    if env["platform"] == "macos":
+        env.Append(LINKFLAGS=["-Wl,-rpath,@loader_path"])
 
     build_preset = "vs2022" if env["platform"] == "windows" else "default"
     slang_build = slang(env=env, output_dir=f"{projectdir}/{platformdir}", build_preset=build_preset, build_type="releaseWithDebugInfo")
