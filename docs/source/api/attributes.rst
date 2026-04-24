@@ -56,6 +56,7 @@ When applied to a texture, a value passed as a ``Texture2D`` will be read as sRG
 **Example:**
 
 .. code-block:: hlsl
+
     [gd::Color]
     uniform float3 my_color;
 
@@ -118,7 +119,7 @@ Indicates that a variable should be exported within Godot. This will expose it w
 gd::ExportParam
 ---------------------
 
-Indicates that a variable should be exported within Godot. This is the same as :ref:`_gd_ExportAttribute` except it may be applied to function parameters.
+Indicates that a variable should be exported within Godot. This is the same as :ref:`gd_ExportAttribute` except it may be applied to function parameters.
 Is only valid on parameters of an entry-point function parameter.
 
 **Target:** ``Param``
@@ -154,7 +155,7 @@ When used within a ``ComputeShaderTask``, will automatically bind the current fr
 gd::GlobalParam
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind the value of the corresponding `global shader parameter <https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms>`_ if no texture is provided.
+When used within a ``ComputeShaderTask``, will bind the value of the corresponding `global shader parameter <https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms>`_ if no value is otherwise provided.
 
 **Target:** ``Var``
 
@@ -324,7 +325,7 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
 gd::Sampler
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind a cached sampler with the specified filter and repeate mode if no sampler is provided.
+When used within a ``ComputeShaderTask``, will bind a cached sampler with the specified filter and repeat mode if no sampler is provided.
 
 **Target:** ``Var``
 
