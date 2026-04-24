@@ -13,8 +13,6 @@ gd::Class
 Indicates that a struct is represented by a global Godot class. This will, for example, expose fields of the
 type as the corresponding Godot class in the property inspector.
 
-See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_exports.html#export-custom>`__ for more information.
-
 **Target:** ``Var``
 
 **Fields:**
