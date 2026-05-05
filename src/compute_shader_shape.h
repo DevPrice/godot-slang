@@ -20,6 +20,7 @@ struct FieldShape {
 	std::optional<godot::PropertyInfo> property_info{};
 	int64_t binding_offset{};
 	int64_t byte_offset{};
+	bool synced{};
 
 	operator godot::Dictionary() const;
 

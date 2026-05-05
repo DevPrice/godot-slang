@@ -37,6 +37,7 @@ struct GodotAttributes {
     DECLARE_GODOT_ATTRIBUTE(name, Name)
     DECLARE_GODOT_ATTRIBUTE(property_hint, PropertyHint)
     DECLARE_GODOT_ATTRIBUTE(sampler, Sampler)
+    DECLARE_GODOT_ATTRIBUTE(sync, Sync)
     DECLARE_GODOT_ATTRIBUTE(time, Time)
     DECLARE_GODOT_ATTRIBUTE(type, Type)
 };
