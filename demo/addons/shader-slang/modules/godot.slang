@@ -238,6 +238,15 @@ public struct gd_PropertyHintAttribute {
 };
 
 /**
+ Marks a variable as synced or unsynced.
+ Synced parameters are automatically pushed to the GPU before each dispatch, while unnsynced parameters must be written manually.
+*/
+[__AttributeUsage(_AttributeTargets.Var)]
+public struct gd_SyncAttribute {
+    let sync : bool = true;
+};
+
+/**
  Binds a parameter to the current time in seconds.
  Must be applied to a variable of type `float`.
 */

@@ -113,6 +113,7 @@ STR_NAME_KEY(binding_offset)
 STR_NAME_KEY(offset)
 STR_NAME_KEY(default_value)
 STR_NAME_KEY(property_info)
+STR_NAME_KEY(synced)
 
 STR_NAME_KEY(binding_type)
 STR_NAME_KEY(uniform_type)
@@ -131,6 +132,8 @@ FieldShape::operator Dictionary() const {
 	result[key_user_attributes()] = user_attributes;
 	result[key_binding_offset()] = binding_offset;
 	result[key_offset()] = byte_offset;
+	result[key_synced()] = synced;
+
 	if (default_value.get_type() != Variant::NIL) {
 		result[key_default_value()] = default_value;
 	}
@@ -151,6 +154,7 @@ FieldShape FieldShape::from_dict(const Dictionary& dict) {
 			: std::nullopt,
 		dict.get(key_binding_offset(), {}),
 		dict.get(key_offset(), {}),
+		dict.get(key_synced(), true),
 	};
 }
 
