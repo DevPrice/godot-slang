@@ -21,6 +21,24 @@
 
 using namespace godot;
 
+namespace {
+	bool is_gpu_writable(slang::TypeLayoutReflection* type) {
+		ERR_FAIL_NULL_V(type, false);
+		while (type->getKind() == slang::TypeReflection::Kind::Array || type->getKind() == slang::TypeReflection::Kind::ShaderStorageBuffer) {
+			type = type->getElementTypeLayout();
+			if (type == nullptr) {
+				return false;
+			}
+		}
+		const SlangResourceAccess access = type->getResourceAccess();
+		return access == SLANG_RESOURCE_ACCESS_READ_WRITE
+			|| access == SLANG_RESOURCE_ACCESS_RASTER_ORDERED
+			|| access == SLANG_RESOURCE_ACCESS_APPEND
+			|| access == SLANG_RESOURCE_ACCESS_CONSUME
+			|| access == SLANG_RESOURCE_ACCESS_WRITE;
+	}
+}
+
 Ref<StructTypeLayoutShape> SlangReflectionContext::get_params_shape() const {
 	ERR_FAIL_NULL_V(program_layout, {});
 	return _get_shape(program_layout->getGlobalParamsTypeLayout(), { .include_bindings = true });
@@ -126,6 +144,12 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.shape = field_shape;
 				field_info.user_attributes = field_attributes;
 				field_info.byte_offset = static_cast<int64_t>(field->getOffset());
+				if (field_attributes.has(GodotAttributes::sync())) {
+					Dictionary sync_attr = field_attributes[GodotAttributes::sync()];
+					field_info.synced = sync_attr["sync"];
+				} else {
+					field_info.synced = !is_gpu_writable(field->getTypeLayout());
+				}
 
 				// TODO: I feel like I shouldn't need to have this logic, but I'm not sure how to find the uniform buffer binding correctly otherwise.
 				slang::TypeLayoutReflection* field_type = field->getTypeLayout();
