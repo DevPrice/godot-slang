@@ -33,6 +33,7 @@ struct PushConstants {
     let depth_sensitivity : float = 0.25;
     [gd::Export]
     let normal_sensitivity : float = 0.1;
+    let pad : int2;
 }
 
 [vk::push_constant]

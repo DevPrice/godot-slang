@@ -67,7 +67,7 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 			if (binding_type == slang::BindingType::PushConstant) {
 				binding_range.size = leaf_shape->get_size();
 			}
-			if (binding_type == slang::BindingType::PushConstant || binding_type == slang::BindingType::ConstantBuffer) {
+			if (binding_type == slang::BindingType::ConstantBuffer) {
 				binding_range.alignment = 16;
 			}
 			if (binding_type == slang::BindingType::ConstantBuffer || binding_type == slang::BindingType::ParameterBlock) {

@@ -48,7 +48,7 @@ ComputeShaderObject::ComputeShaderObject(RenderingDevice* p_rendering_device, Sa
 		const auto binding = BindingRange::from_dict(bindings[binding_range_index]);
 		has_only_parameter_blocks = has_only_parameter_blocks && binding.type == ShaderTypeLayoutShape::BindingType::PARAMETER_BLOCK;
 		if (binding.type == ShaderTypeLayoutShape::BindingType::PUSH_CONSTANT) {
-			push_constants.resize(ComputeBuffer::aligned_size(binding.size, binding.alignment));
+			push_constants.resize(ComputeBuffer::aligned_size(binding.size, _get_push_constant_alignment()));
 		} else if (binding.uniform_type && binding.leaf_shape.is_null()) {
 			Ref<RDUniform> uniform{};
 			uniform.instantiate();
@@ -293,6 +293,22 @@ RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 		return sampler_cache->get_sampler(sampler);
 	}
 	return data;
+}
+
+int64_t ComputeShaderObject::_get_push_constant_alignment() {
+	// changed from 16 bytes -> unaligned in Godot 4.7
+	// https://github.com/godotengine/godot/issues/120097
+	static int64_t alignment = [] -> int64_t {
+		const Engine* engine = Engine::get_singleton();
+		ERR_FAIL_NULL_V(engine, 8);
+		const Dictionary version_info = engine->get_version_info();
+		const int64_t hex_version = version_info.get("hex", 0x999999);
+		if (hex_version < 0x040700) {
+			return 16;
+		}
+		return 1;
+	}();
+	return alignment;
 }
 
 ComputeShaderCursor ComputeShaderCursor::path(const StringName& path) const {

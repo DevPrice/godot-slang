@@ -10,6 +10,7 @@ let scene_texture : Texture2D<float4>;
 [gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
 let sampler_state : SamplerState;
 
+[vk::push_constant]
 [gd::compositor::InternalSize]
 let viewport_size : int2;
 
