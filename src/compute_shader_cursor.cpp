@@ -300,7 +300,7 @@ int64_t ComputeShaderObject::_get_push_constant_alignment() {
 	// https://github.com/godotengine/godot/issues/120097
 	static int64_t alignment = [] -> int64_t {
 		const Engine* engine = Engine::get_singleton();
-		ERR_FAIL_NULL_V(engine, 8);
+		ERR_FAIL_NULL_V(engine, 1);
 		const Dictionary version_info = engine->get_version_info();
 		const int64_t hex_version = version_info.get("hex", 0x999999);
 		if (hex_version < 0x040700) {
