@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="shader-slang demo"
 run/main_scene="uid://dh0oj81pufivs"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [input]
@@ -59,6 +59,7 @@ toggle_data_mosh={
 
 [rendering]
 
+rendering_device/driver.windows="d3d12"
 anti_aliasing/quality/screen_space_aa=2
 
 [shader_globals]
