@@ -75,7 +75,7 @@ public:
 
 private:
 	mutable UniqueRID<godot::RenderingServer> black_texture = UniqueRID(godot::RenderingServer::get_singleton());
-    std::unordered_map<godot::StringName, FactoryWithPriority<WriteHandler>, GodotHasher> write_handler_factories;
+    std::unordered_map<godot::StringName, FactoryWithPriority<WriteHandler>, gdslang::GodotHasher> write_handler_factories;
 
 public:
     AttributeRegistry();

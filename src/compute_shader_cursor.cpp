@@ -388,7 +388,7 @@ void ComputeShaderCursor::write_resource(const Variant& data) const {
 }
 
 void ComputeShaderCursor::write(Variant data) const {
-	for (const auto [handler, _] : write_handlers) {
+	for (const auto& [handler, _] : write_handlers) {
 		handler(data, dispatch_context);
 	}
 	switch (data.get_type()) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "godot_cpp/classes/mutex.hpp"
 #include "godot_cpp/classes/resource.hpp"
 #include "godot_cpp/variant/typed_array.hpp"
 #include "memory"
@@ -69,6 +70,8 @@ private:
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
 	std::unique_ptr<ComputeShaderObject> _shader_object;
+
+	godot::Ref<godot::Mutex> _mutex;
 
 	void _reset();
 	void _shader_changed();

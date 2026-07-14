@@ -14,6 +14,7 @@
 #include "compute_shader_task.h"
 
 using namespace godot;
+using namespace gdslang;
 
 constexpr auto shader_param_prefix_chars = "shader_parameter/";
 constexpr int64_t shader_param_prefix_length = std::char_traits<char>::length(shader_param_prefix_chars);
@@ -52,7 +53,9 @@ void ComputeShaderTask::_bind_methods() {
 }
 
 ComputeShaderTask::ComputeShaderTask() :
-		_shader_object(nullptr) {}
+		_shader_object(nullptr) {
+	_mutex.instantiate();
+}
 
 TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
@@ -64,6 +67,7 @@ TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
 Ref<ComputeShaderFile> ComputeShaderTask::get_shader() const { return shader; }
 
 void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
+	std::lock_guard lock(*_mutex.ptr());
 	if (shader != p_shader) {
 		const Callable changed_callable = callable_mp(this, &ComputeShaderTask::_shader_changed);
 		if (shader.is_valid() && shader->is_connected("changed", changed_callable)) {
@@ -90,6 +94,7 @@ RenderingDevice* ComputeShaderTask::get_rendering_device() const {
 
 void ComputeShaderTask::set_rendering_device(RenderingDevice* p_rendering_device) {
 	ERR_FAIL_COND_MSG(p_rendering_device, "Overriding the rendering_device is not yet supported!");
+	std::lock_guard lock(*_mutex.ptr());
 	if (p_rendering_device != ObjectDB::get_instance(rendering_device_id)) {
 		rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
 		RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &ComputeShaderTask::_reset));
@@ -110,6 +115,7 @@ Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
 }
 
 void ComputeShaderTask::set_shader_parameter(const StringName& param, const Variant& value) {
+	std::lock_guard lock(*_mutex.ptr());
 	const PackedStringArray parts = param.split("/");
 	Variant current = _shader_parameters;
 	int64_t i = 0;
@@ -126,6 +132,7 @@ void ComputeShaderTask::set_shader_parameter(const StringName& param, const Vari
 }
 
 void ComputeShaderTask::clear_shader_parameters() {
+	std::lock_guard lock(*_mutex.ptr());
 	_shader_parameters.clear();
 	_kernel_parameters.clear();
 }
@@ -147,6 +154,7 @@ Variant ComputeShaderTask::get_kernel_parameter(const StringName& kernel, const 
 }
 
 void ComputeShaderTask::set_kernel_parameter(const StringName& kernel, const StringName& param, const Variant& value) {
+	std::lock_guard lock(*_mutex.ptr());
 	const PackedStringArray parts = param.split("/");
 	if (!_kernel_parameters.has(kernel)) {
 		_kernel_parameters[kernel] = Dictionary();
@@ -166,6 +174,7 @@ void ComputeShaderTask::set_kernel_parameter(const StringName& kernel, const Str
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -174,6 +183,7 @@ void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object*
 }
 
 void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -185,10 +195,12 @@ void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i t
 }
 
 void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
 	_dispatch(kernel_index, thread_groups, context);
 }
 
 void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
@@ -423,6 +435,7 @@ bool ComputeShaderTask::_property_get_reflection(const StringName& p_name, Field
 }
 
 void ComputeShaderTask::_reset() {
+	std::lock_guard lock(*_mutex.ptr());
 	const int64_t num_kernels = get_kernels().size();
 	_kernel_data.resize(num_kernels);
 	for (int64_t i = 0; i < num_kernels; i++) {
@@ -452,6 +465,7 @@ RenderingDevice* ComputeShaderTask::_get_active_rendering_device() const {
 }
 
 ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const int64_t kernel_index) {
+	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_INDEX_V(kernel_index, _kernel_data.size(), nullptr);
 	std::unique_ptr<KernelData>& kernel_data = _kernel_data[kernel_index];
 	if (kernel_data) {
@@ -486,6 +500,7 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_kernel_data(const StringN
 }
 
 void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
 	if (shader.is_null() || !_shader_object)
 		return;
 	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
