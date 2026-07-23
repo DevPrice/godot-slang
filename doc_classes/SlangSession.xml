@@ -6,6 +6,7 @@
 	<description>
 		A session provides a scope for code that is loaded.
 		A session can be used to load modules of Slang source code, and to request target-specific compiled binaries and layout information.
+		This class is not thread-safe. It should only be used from the thread it was created on.
 		See the [url=https://shader-slang.org/docs/compilation-api/]Slang documentation[/url] for more information.
 	</description>
 	<tutorials>

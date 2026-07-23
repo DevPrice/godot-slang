@@ -224,22 +224,23 @@ Dictionary gdslang::SlangSession::get_builtin_macros() {
 
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {
 	// IGlobalSession is not thread-safe
-	thread_local bool glsl_initialized = enable_glsl;
-	thread_local Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {
+	if (enable_glsl) {
+		thread_local Slang::ComPtr<slang::IGlobalSession> global_session = [] {
+			Slang::ComPtr<slang::IGlobalSession> ptr;
+			SlangGlobalSessionDesc desc = {};
+			desc.enableGLSL = true;
+			slang::createGlobalSession(&desc, ptr.writeRef());
+			return ptr;
+		}();
+		return global_session;
+	}
+	thread_local Slang::ComPtr<slang::IGlobalSession> global_session = [] {
 		Slang::ComPtr<slang::IGlobalSession> ptr;
 		SlangGlobalSessionDesc desc = {};
-		desc.enableGLSL = enable_glsl;
+		desc.enableGLSL = false;
 		slang::createGlobalSession(&desc, ptr.writeRef());
 		return ptr;
 	}();
-
-	if (!glsl_initialized && enable_glsl) {
-		SlangGlobalSessionDesc desc = {};
-		desc.enableGLSL = true;
-		slang::createGlobalSession(&desc, global_session.writeRef());
-		glsl_initialized = true;
-	}
-
 	return global_session;
 }
 
