@@ -9,8 +9,6 @@
 
 #include "slang_session.h"
 
-#include "godot_cpp/classes/mutex.hpp"
-
 using namespace gdslang;
 using namespace godot;
 
@@ -225,10 +223,9 @@ Dictionary gdslang::SlangSession::get_builtin_macros() {
 }
 
 slang::IGlobalSession* gdslang::SlangSession::_get_global_session(const bool enable_glsl) {
-	static const Ref mutex = memnew(Mutex);
-	std::lock_guard lock(*mutex.ptr());
-	static bool glsl_initialized = enable_glsl;
-	static Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {
+	// IGlobalSession is not thread-safe
+	thread_local bool glsl_initialized = enable_glsl;
+	thread_local Slang::ComPtr<slang::IGlobalSession> global_session = [enable_glsl] {
 		Slang::ComPtr<slang::IGlobalSession> ptr;
 		SlangGlobalSessionDesc desc = {};
 		desc.enableGLSL = enable_glsl;
