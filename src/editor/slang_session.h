@@ -42,6 +42,8 @@ public:
 
 private:
 	Slang::ComPtr<slang::ISession> session;
+	// the global_session must live at least as long as the session, so keep a reference
+	Slang::ComPtr<slang::IGlobalSession> global_session;
 
 	static slang::IGlobalSession* _get_global_session(bool enable_glsl = false);
 

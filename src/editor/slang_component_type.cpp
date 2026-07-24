@@ -1,9 +1,12 @@
 #include "compute_shader_cursor.h"
 #include "reflection_context.h"
+#include "slang_session.h"
 
 #include "slang_component_type.h"
 
 using namespace godot;
+
+SlangComponentType::~SlangComponentType() {}
 
 void SlangComponentType::_bind_methods() {
 	BIND_GET_SET(SlangComponentType, diagnostic, Variant::STRING)
@@ -36,10 +39,13 @@ Ref<SlangComponentType> SlangComponentType::link() const {
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	slang::IComponentType* linked_component;
 	ERR_FAIL_COND_V(SLANG_FAILED(component_type->link(&linked_component, diagnostics_blob.writeRef())), nullptr);
-	if (diagnostics_blob) {
-		return create(linked_component, SlangBlob::blob_to_string(diagnostics_blob));
+	Ref<SlangComponentType> linked = diagnostics_blob
+		? create(linked_component, SlangBlob::blob_to_string(diagnostics_blob))
+		: create(linked_component);
+	if (linked.is_valid()) {
+		linked->set_session(get_session());
 	}
-	return create(linked_component);
+	return linked;
 }
 
 Ref<SlangBlob> SlangComponentType::compile_entry_point(const int64_t entry_point_index, const int64_t target_index) const {
@@ -154,3 +160,5 @@ Ref<SlangComponentType> SlangComponentType::create(slang::IComponentType* compon
 }
 
 GET_SET_PROPERTY_IMPL(SlangComponentType, String, diagnostic)
+GET_SET_PROPERTY_IMPL(SlangComponentType, Ref<gdslang::SlangSession>, session)
+

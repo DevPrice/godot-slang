@@ -114,8 +114,9 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 	if (session) {
 		return session.get();
 	}
-	slang::IGlobalSession* global_session = _get_global_session(enable_glsl);
-	ERR_FAIL_NULL_V_MSG(global_session, nullptr, "Failed to initialize global Slang session!");
+	slang::IGlobalSession* global_session_ptr = global_session ? global_session : _get_global_session(enable_glsl);
+	ERR_FAIL_NULL_V_MSG(global_session_ptr, nullptr, "Failed to initialize global Slang session!");
+	global_session = global_session_ptr;
 
 	slang::SessionDesc session_desc = {};
 	slang::TargetDesc target_desc = {};
@@ -146,6 +147,7 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const Str
 	module.instantiate();
 	slang::ISession* session_ptr = get_or_create_session();
 	ERR_FAIL_NULL_V(session_ptr, module);
+	module->set_session(this);
 	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
 		*module->get_write_ref() = session_ptr->loadModuleFromSourceString(
@@ -180,10 +182,16 @@ Ref<SlangComponentType> gdslang::SlangSession::create_composite_component_type(c
 	slang::IComponentType* composite;
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	ERR_FAIL_COND_V(SLANG_FAILED(session_ptr->createCompositeComponentType(component_type_ptrs.data(), component_type_ptrs.size(), &composite, diagnostics_blob.writeRef())), nullptr);
+	Ref<SlangComponentType> component;
 	if (diagnostics_blob) {
-		return SlangComponentType::create(composite, SlangBlob::blob_to_string(diagnostics_blob));
+		component = SlangComponentType::create(composite, SlangBlob::blob_to_string(diagnostics_blob));
+	} else {
+		component = SlangComponentType::create(composite);
 	}
-	return SlangComponentType::create(composite);
+	if (component.is_valid()) {
+		component->set_session(this);
+	}
+	return component;
 }
 
 Ref<gdslang::SlangSession> gdslang::SlangSession::create_default_session() {

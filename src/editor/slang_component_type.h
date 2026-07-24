@@ -10,15 +10,23 @@
 #include "compute_shader_shape.h"
 #include "slang_blob.h"
 
+namespace gdslang {
+class SlangSession;
+}
+
 class SlangComponentType : public godot::RefCounted {
 	GDCLASS(SlangComponentType, RefCounted)
 
 	GET_SET_PROPERTY(godot::String, diagnostic)
+	GET_SET_PROPERTY(godot::Ref<gdslang::SlangSession>, session)
 
 protected:
 	static void _bind_methods();
 
 public:
+	SlangComponentType() = default;
+	virtual ~SlangComponentType() override;
+
 	virtual slang::IComponentType* get_component_type() const;
 	slang::ProgramLayout* get_layout() const;
 

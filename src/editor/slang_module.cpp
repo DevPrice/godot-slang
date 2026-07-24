@@ -5,6 +5,7 @@
 #include "reflection_context.h"
 #include "slang_entry_point.h"
 
+#include "slang_session.h"
 #include "slang_module.h"
 
 using namespace gdslang;
@@ -134,6 +135,7 @@ Ref<SlangEntryPoint> SlangModule::get_defined_entry_point(const int64_t index) c
 	Ref entry_point = memnew(SlangEntryPoint);
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	ERR_FAIL_COND_V(SLANG_FAILED(module->getDefinedEntryPoint(index, entry_point->write_ref())), nullptr);
+	entry_point->set_session(get_session());
 	return entry_point;
 }
 
@@ -143,6 +145,7 @@ Ref<SlangEntryPoint> SlangModule::find_entry_point(const String& name) const {
 	Slang::ComPtr<slang::IBlob> diagnostics_blob;
 	const CharString entry_point_name = name.utf8();
 	ERR_FAIL_COND_V(SLANG_FAILED(module->findEntryPointByName(entry_point_name.get_data(), entry_point->write_ref())), nullptr);
+	entry_point->set_session(get_session());
 	return entry_point;
 }
 
@@ -156,6 +159,7 @@ Ref<SlangEntryPoint> SlangModule::find_and_check_entry_point(const String& name,
 	if (diagnostics_blob) {
 		entry_point->set_diagnostic(SlangBlob::blob_to_string(diagnostics_blob));
 	}
+	entry_point->set_session(get_session());
 	return entry_point;
 }
 
@@ -218,5 +222,6 @@ Ref<ComputeShaderKernel> SlangModule::_compile_kernel(slang::IEntryPoint* entry_
 
 	const Ref<SlangComponentType> component_type = create(linked_program.get(), compile_error);
 	ERR_FAIL_NULL_V(component_type, nullptr);
+	component_type->set_session(get_session());
 	return component_type->compile_kernel(global_params_shape);
 }
