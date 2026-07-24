@@ -76,6 +76,10 @@ public:
 	static BindingType ext_binding_type(BindingType binding_type) {
 		return static_cast<BindingType>(static_cast<int64_t>(binding_type) & static_cast<int64_t>(BindingType::EXT_MASK));
 	}
+
+	static godot::String get_matrix_layout_hint_string() {
+		return godot::String("Unknown:%s,Row-major:%s,Column-major:%s") % godot::Array { godot::String::num_int64(UNKNOWN), godot::String::num_int64(ROW_MAJOR), godot::String::num_int64(COLUMN_MAJOR) };
+	}
 };
 
 class VariantTypeLayoutShape : public ShaderTypeLayoutShape {

@@ -98,7 +98,7 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, profile, Variant::STRING);
 	BIND_GET_SET(SlangSession, search_paths, Variant::PACKED_STRING_ARRAY);
 	BIND_GET_SET(SlangSession, preprocessor_macros, Variant::DICTIONARY);
-	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ENUM_HINT_STRING(ShaderTypeLayoutShape, MatrixLayout));
+	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ShaderTypeLayoutShape::get_matrix_layout_hint_string());
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
 	BIND_METHOD(SlangSession, load_module_from_source_string, "module_name", "path", "source_text");

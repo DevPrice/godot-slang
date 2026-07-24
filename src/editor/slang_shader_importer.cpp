@@ -53,7 +53,7 @@ TypedArray<Dictionary> SlangShaderImporter::_get_import_options(const String& p_
 		matrix_layout_option.set("name", "default_matrix_layout");
 		matrix_layout_option.set("default_value", ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR);
 		matrix_layout_option.set("property_hint", PROPERTY_HINT_ENUM);
-		matrix_layout_option.set("hint_string", String("Row-major:%s,Column-major:%s") % Array { String::num_int64(ShaderTypeLayoutShape::MatrixLayout::ROW_MAJOR), String::num_int64(ShaderTypeLayoutShape::MatrixLayout::COLUMN_MAJOR) });
+		matrix_layout_option.set("hint_string", ShaderTypeLayoutShape::get_matrix_layout_hint_string());
 		options.push_back(matrix_layout_option);
 	}
 	return options;
