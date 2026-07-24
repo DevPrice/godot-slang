@@ -298,7 +298,7 @@ RID ComputeShaderObject::_get_resource_rid(const Variant& data) const {
 int64_t ComputeShaderObject::_get_push_constant_alignment() {
 	// changed from 16 bytes -> unaligned in Godot 4.7
 	// https://github.com/godotengine/godot/issues/120097
-	static int64_t alignment = [] -> int64_t {
+	static int64_t alignment = []() -> int64_t {
 		const Engine* engine = Engine::get_singleton();
 		ERR_FAIL_NULL_V(engine, 1);
 		const Dictionary version_info = engine->get_version_info();
