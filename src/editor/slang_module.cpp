@@ -23,11 +23,11 @@ void SlangModule::_bind_methods() {
 }
 
 slang::IModule* SlangModule::get_module() const {
-	return module.get();
+	return module;
 }
 
 slang::IModule** SlangModule::get_write_ref() {
-	return module.writeRef();
+	return &module;
 }
 
 slang::IComponentType* SlangModule::get_component_type() const {
@@ -171,7 +171,7 @@ Ref<ComputeShaderKernel> SlangModule::_compile_kernel(slang::IEntryPoint* entry_
 	Slang::ComPtr<slang::IComponentType> composed_program;
 	{
 		const std::array<slang::IComponentType*, 2> componentTypes = {
-			module.get(),
+			module,
 			entry_point,
 		};
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;

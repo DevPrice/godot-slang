@@ -35,7 +35,19 @@ public:
 	godot::Ref<SlangEntryPoint> find_and_check_entry_point(const godot::String& name, godot::RenderingDevice::ShaderStage shader_stage) const;
 
 private:
-	Slang::ComPtr<slang::IModule> module{};
+	// Non-owning. `ISession::loadModule*` returns a borrowed pointer: the module is owned by the
+	// `ISession` that loaded it (via its loaded-module map), and the returned pointer is not
+	// ref-counted on our behalf. Holding it in a `ComPtr` would release a reference we never
+	// acquired, freeing the module one release early and corrupting the heap when the session's
+	// `ASTBuilder` is later torn down.
+	//
+	// This stays valid because `SlangComponentType::session` keeps the owning `SlangSession`
+	// (and therefore the `ISession`) alive for at least as long as this object. Anything that
+	// sets `module` must set `session` too.
+	//
+	// Note the asymmetry with `SlangEntryPoint::write_ref`: entry points come back through an
+	// `IEntryPoint**` out-param, which *is* a +1 reference, so that one is correctly a `ComPtr`.
+	slang::IModule* module{};
 
 	godot::Ref<ComputeShaderKernel> _compile_kernel(slang::IEntryPoint* entry_point, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
 };

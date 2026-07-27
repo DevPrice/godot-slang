@@ -147,6 +147,8 @@ Ref<SlangModule> gdslang::SlangSession::load_module_from_source_string(const Str
 	module.instantiate();
 	slang::ISession* session_ptr = get_or_create_session();
 	ERR_FAIL_NULL_V(session_ptr, module);
+	// Must happen before the module is set: the module pointer is borrowed from this session,
+	// so the session has to be retained for at least as long as the module.
 	module->set_session(this);
 	{
 		Slang::ComPtr<slang::IBlob> diagnostics_blob;
