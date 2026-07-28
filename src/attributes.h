@@ -68,15 +68,23 @@ public:
     template <typename T>
     using AttributeHandlerFactory = std::function<T(const godot::Dictionary& attribute_arguments, const FieldShape& field)>;
 
+    // Whether a handler's value can change between dispatches, or is derived only from
+    // the attribute arguments and the value being written.
+    enum class WriteFrequency {
+        EVERY_DISPATCH,
+        ON_CHANGE,
+    };
+
     template <typename T>
-    struct FactoryWithPriority {
+    struct HandlerRegistration {
         AttributeHandlerFactory<T> factory{};
         int64_t priority{};
+        WriteFrequency frequency{ WriteFrequency::EVERY_DISPATCH };
     };
 
 private:
 	mutable UniqueRID<godot::RenderingServer> black_texture = UniqueRID(godot::RenderingServer::get_singleton());
-    std::unordered_map<godot::StringName, FactoryWithPriority<WriteHandler>, gdslang::GodotHasher> write_handler_factories;
+    std::unordered_map<godot::StringName, HandlerRegistration<WriteHandler>, gdslang::GodotHasher> write_handler_factories;
 
 public:
     AttributeRegistry();
@@ -85,9 +93,11 @@ public:
     AttributeRegistry& operator=(const AttributeRegistry&) = delete;
     AttributeRegistry& operator=(AttributeRegistry&&) = delete;
 
-    void register_write_handler(const godot::StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, int64_t priority = PRIORITY_DEFAULT);
-    void register_write_handler(const godot::StringName& attribute_name, const godot::Callable& factory_callable, int64_t priority = PRIORITY_DEFAULT);
-    std::optional<FactoryWithPriority<WriteHandler>> get_write_handler(const godot::StringName& attribute_name);
+    void register_write_handler(const godot::StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, int64_t priority = PRIORITY_DEFAULT, WriteFrequency frequency = WriteFrequency::EVERY_DISPATCH);
+    void register_write_handler(const godot::StringName& attribute_name, const godot::Callable& factory_callable, int64_t priority = PRIORITY_DEFAULT, WriteFrequency frequency = WriteFrequency::EVERY_DISPATCH);
+    std::optional<HandlerRegistration<WriteHandler>> get_write_handler(const godot::StringName& attribute_name);
+    // True if any handler for this attribute must run on every dispatch, regardless of [gd::Sync].
+    [[nodiscard]] bool writes_every_dispatch(const godot::StringName& attribute_name) const;
 
     static AttributeRegistry* get_instance();
 

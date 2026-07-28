@@ -44,7 +44,7 @@ AttributeRegistry::AttributeRegistry() {
 		return [](Variant& value, const Object*) {
 			handle_color_write(value);
 		};
-	}, PRIORITY_MODIFIER);
+	}, PRIORITY_MODIFIER, WriteFrequency::ON_CHANGE);
 	register_write_handler(GodotAttributes::default_white(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
@@ -52,7 +52,7 @@ AttributeRegistry::AttributeRegistry() {
 				value = rs->texture_get_rd_texture(rs->get_white_texture());
 			}
 		};
-	});
+	}, PRIORITY_DEFAULT, WriteFrequency::ON_CHANGE);
 	register_write_handler(GodotAttributes::default_black(), [this](const Dictionary&, const FieldShape&) {
 		RID black_texture = _get_black_texture();
 		return [black_texture](Variant& value, const Object*) {
@@ -61,7 +61,7 @@ AttributeRegistry::AttributeRegistry() {
 				value = rs->texture_get_rd_texture(black_texture);
 			}
 		};
-	});
+	}, PRIORITY_DEFAULT, WriteFrequency::ON_CHANGE);
 	register_write_handler(GodotAttributes::frame_id(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
@@ -122,7 +122,7 @@ AttributeRegistry::AttributeRegistry() {
 				value = Array{ sampler_state, value };
 			}
 		};
-	});
+	}, PRIORITY_DEFAULT, WriteFrequency::ON_CHANGE);
 	register_write_handler(GodotAttributes::time(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object*) {
 			if (is_null(value)) {
@@ -258,11 +258,11 @@ AttributeRegistry::AttributeRegistry() {
 	});
 }
 
-void AttributeRegistry::register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, const int64_t priority) {
-	write_handler_factories.insert_or_assign(attribute_name, FactoryWithPriority<WriteHandler>{ factory, priority });
+void AttributeRegistry::register_write_handler(const StringName& attribute_name, const AttributeHandlerFactory<WriteHandler>& factory, const int64_t priority, const WriteFrequency frequency) {
+	write_handler_factories.insert_or_assign(attribute_name, HandlerRegistration<WriteHandler>{ factory, priority, frequency });
 }
 
-void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable, const int64_t priority) {
+void AttributeRegistry::register_write_handler(const StringName& attribute_name, const Callable& factory_callable, const int64_t priority, const WriteFrequency frequency) {
 	const AttributeHandlerFactory<WriteHandler> factory = [factory_callable](const Dictionary& arguments, const FieldShape& field) -> WriteHandler {
 		const Callable handler_callable = factory_callable.call(arguments, Dictionary(field));
 		if (handler_callable.is_valid()) {
@@ -272,12 +272,17 @@ void AttributeRegistry::register_write_handler(const StringName& attribute_name,
 		}
 		return nullptr;
 	};
-	register_write_handler(attribute_name, factory, priority);
+	register_write_handler(attribute_name, factory, priority, frequency);
 }
 
-std::optional<AttributeRegistry::FactoryWithPriority<AttributeRegistry::WriteHandler>> AttributeRegistry::get_write_handler(const StringName& attribute_name) {
+std::optional<AttributeRegistry::HandlerRegistration<AttributeRegistry::WriteHandler>> AttributeRegistry::get_write_handler(const StringName& attribute_name) {
 	const auto it = write_handler_factories.find(attribute_name);
 	return it != write_handler_factories.end() ? std::make_optional(it->second) : std::nullopt;
+}
+
+bool AttributeRegistry::writes_every_dispatch(const StringName& attribute_name) const {
+	const auto it = write_handler_factories.find(attribute_name);
+	return it != write_handler_factories.end() && it->second.frequency == WriteFrequency::EVERY_DISPATCH;
 }
 
 AttributeRegistry* AttributeRegistry::get_instance() {
