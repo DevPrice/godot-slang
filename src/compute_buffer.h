@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include "binding_macros.h"
 #include "compute_shader_shape.h"
 #include "rids.h"
@@ -33,8 +35,11 @@ private:
 	UniqueRID<godot::RenderingDevice> rid;
 	ComputeBufferType type;
     int64_t remote_size = 0;
-    int64_t dirty_start = 0;
+    // dirty_start is only meaningful while dirty_start < dirty_end
+    int64_t dirty_start = DIRTY_NONE;
     int64_t dirty_end = 0;
+
+    static constexpr int64_t DIRTY_NONE = std::numeric_limits<int64_t>::max();
 
 	godot::RID _create_buffer();
 	void _update_buffer();
