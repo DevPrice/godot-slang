@@ -16,10 +16,10 @@ void ComputeBuffer::write(const int64_t offset, const std::span<const uint8_t> d
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
 	ERR_FAIL_COND_MSG(offset + data.size() > buffer.size(), "Attempt to write past end of buffer!");
 	const int64_t size = Math::min<size_t>(data.size(), buffer.size() - offset);
-	if (memcmp(buffer.ptr(), data.data(), size)) {
+	if (memcmp(buffer.ptr() + offset, data.data(), size)) {
 		memcpy(buffer.ptrw() + offset, data.data(), size);
 		dirty_start = Math::min(offset, dirty_start);
-		dirty_end = Math::max<int64_t>(offset + data.size(), dirty_end);
+		dirty_end = Math::max<int64_t>(offset + size, dirty_end);
 	}
 }
 
@@ -62,11 +62,11 @@ void ComputeBuffer::flush() {
 	if (!rid.is_valid()) {
 		ERR_FAIL_COND(buffer.is_empty());
 		rid = _create_buffer();
-	} else if (dirty_start != dirty_end) {
+	} else if (dirty_start < dirty_end) {
 		_update_buffer();
 	}
 	remote_size = buffer.size();
-	dirty_start = 0;
+	dirty_start = DIRTY_NONE;
 	dirty_end = 0;
 }
 
@@ -92,7 +92,16 @@ void ComputeBuffer::_update_buffer() {
 		// TODO: buffer_update and texture_update both fail?
 		rid = rendering_device->texture_buffer_create(buffer.size() / 16, RenderingDevice::DATA_FORMAT_R32G32B32A32_SFLOAT, buffer);
 	} else {
-		rendering_device->buffer_update(rid, dirty_start, Math::min(dirty_end - dirty_start, buffer.size()), buffer);
+		const int64_t start = Math::max<int64_t>(dirty_start, 0);
+		const int64_t end = Math::min<int64_t>(dirty_end, buffer.size());
+		if (start >= end) {
+			return;
+		}
+		if (start == 0) {
+			rendering_device->buffer_update(rid, 0, end, buffer);
+		} else {
+			rendering_device->buffer_update(rid, start, end - start, buffer.slice(start, end));
+		}
 	}
 }
 
