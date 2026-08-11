@@ -11,6 +11,7 @@
 #include "attributes.h"
 #include "compute_buffer.h"
 #include "compute_shader_shape.h"
+#include "sync_policy.h"
 
 class SamplerCache;
 
@@ -37,6 +38,7 @@ private:
     bool owns_binding_space{};
     int64_t first_slot_index{};
     std::unordered_map<uint64_t, std::unique_ptr<ComputeShaderObject>> subobjects{};
+    bool needs_full_write = true;
 
 public:
     using DescriptorSets = std::map<uint64_t, godot::TypedArray<godot::Ref<godot::RDUniform>>>;
@@ -46,6 +48,14 @@ public:
 
     [[nodiscard]] godot::Ref<ShaderTypeLayoutShape> get_shape() const { return shape; }
     [[nodiscard]] const godot::PackedByteArray& get_push_constants() const { return push_constants; }
+
+    // true until the first write reaches this object; nothing on the GPU is worth
+    // preserving until then, so every parameter is written once.
+    bool take_needs_full_write() {
+        const bool result = needs_full_write;
+        needs_full_write = false;
+        return result;
+    }
 
     void write_resource(const ComputeShaderOffset& offset, const godot::Variant& data);
     void write_bytes(const ComputeShaderOffset& offset, const std::span<const uint8_t>& data);
@@ -87,13 +97,19 @@ private:
     ComputeShaderObject* object;
     godot::Ref<ShaderTypeLayoutShape> shape{};
     const godot::Object* dispatch_context;
+    SyncPolicy sync_policy{};
 
     std::multiset<WriteHandlerWithPriority> write_handlers{};
     godot::Variant default_value{};
 
 public:
-    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const godot::Object* p_context = nullptr)
-        : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context) {}
+    explicit ComputeShaderCursor(ComputeShaderObject* p_object, const godot::Object* p_context = nullptr, const bool p_filtering = false)
+        : object(p_object), shape(object ? object->get_shape() : nullptr), dispatch_context(p_context), sync_policy{ p_filtering ? WriteScope::SYNCED : WriteScope::ALL, SyncMode::DEFAULT } {}
+
+    [[nodiscard]] bool should_write_field(const FieldShape& field, const bool supplied) const { return sync_policy.should_write(field, supplied); }
+    [[nodiscard]] bool writes_on_assignment_only() const { return sync_policy.writes_on_assignment_only(); }
+    [[nodiscard]] ComputeShaderCursor with_scope(WriteScope scope) const;
+    [[nodiscard]] ComputeShaderCursor field(const FieldShape& field) const;
 
 	ComputeShaderCursor path(const godot::StringName& path) const;
     [[nodiscard]] ComputeShaderCursor field(const godot::StringName& field_name) const;

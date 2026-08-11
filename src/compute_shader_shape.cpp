@@ -72,6 +72,10 @@ void VariantTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const
 int64_t ArrayTypeLayoutShape::get_size() const { return size; }
 void ArrayTypeLayoutShape::set_size(const int64_t p_size) { size = p_size; }
 
+bool ArrayTypeLayoutShape::has_forced_writes() const {
+	return element_shape.is_valid() && element_shape->has_forced_writes();
+}
+
 void ArrayTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
 	// TODO: Maybe these should be separate shapes
 	if (get_element_count()) {
@@ -113,7 +117,7 @@ STR_NAME_KEY(binding_offset)
 STR_NAME_KEY(offset)
 STR_NAME_KEY(default_value)
 STR_NAME_KEY(property_info)
-STR_NAME_KEY(synced)
+STR_NAME_KEY(sync_mode)
 
 STR_NAME_KEY(binding_type)
 STR_NAME_KEY(uniform_type)
@@ -132,7 +136,7 @@ FieldShape::operator Dictionary() const {
 	result[key_user_attributes()] = user_attributes;
 	result[key_binding_offset()] = binding_offset;
 	result[key_offset()] = byte_offset;
-	result[key_synced()] = synced;
+	result[key_sync_mode()] = static_cast<int64_t>(sync_mode);
 
 	if (default_value.get_type() != Variant::NIL) {
 		result[key_default_value()] = default_value;
@@ -154,7 +158,7 @@ FieldShape FieldShape::from_dict(const Dictionary& dict) {
 			: std::nullopt,
 		dict.get(key_binding_offset(), {}),
 		dict.get(key_offset(), {}),
-		dict.get(key_synced(), true),
+		static_cast<SyncMode>(static_cast<int64_t>(dict.get(key_sync_mode(), 0))),
 	};
 }
 
@@ -201,12 +205,41 @@ std::optional<FieldShape> StructTypeLayoutShape::field(const StringName& field_n
 	return std::nullopt;
 }
 
+bool StructTypeLayoutShape::has_forced_writes() const {
+    if (const int8_t cached = forced_writes_cache.load(std::memory_order_relaxed); cached >= 0) {
+        return cached != 0;
+    }
+    const bool result = [this] {
+        const AttributeRegistry* registry = AttributeRegistry::get_instance();
+        for (const StringName field_name : properties.keys()) {
+            const FieldShape field = FieldShape::from_dict(properties[field_name]);
+            if (field.sync_mode == SyncMode::ALWAYS) {
+                return true;
+            }
+            for (const StringName attribute_name : field.user_attributes.keys()) {
+                if (registry->writes_every_dispatch(attribute_name)) {
+                    return true;
+                }
+            }
+            if (field.shape.is_valid() && field.shape->has_forced_writes()) {
+                return true;
+            }
+        }
+        return false;
+    }();
+    forced_writes_cache.store(result ? 1 : 0, std::memory_order_relaxed);
+    return result;
+}
+
 void StructTypeLayoutShape::write_into(const ComputeShaderCursor& cursor, const Variant& data) const {
     const Dictionary fields = get_properties();
     for (const StringName field_name : fields.keys()) {
         const FieldShape field = FieldShape::from_dict(fields[field_name]);
         bool is_valid{};
 		const Variant field_value = data.get_named(field.name, is_valid);
-        cursor.field(field_name).write(field_value);
+        if (!cursor.should_write_field(field, is_valid)) {
+            continue;
+        }
+        cursor.field(field).write(field_value);
     }
 }

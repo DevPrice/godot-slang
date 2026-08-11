@@ -16,7 +16,7 @@ void ComputeBuffer::write(const int64_t offset, const std::span<const uint8_t> d
 	ERR_FAIL_COND_MSG(get_is_fixed_size() && buffer.size() == 0, "Attempt to write fixed-size buffer before initialize!");
 	ERR_FAIL_COND_MSG(offset + data.size() > buffer.size(), "Attempt to write past end of buffer!");
 	const int64_t size = Math::min<size_t>(data.size(), buffer.size() - offset);
-	if (memcmp(buffer.ptr() + offset, data.data(), size)) {
+	if (!get_is_change_tracked() || memcmp(buffer.ptr() + offset, data.data(), size)) {
 		memcpy(buffer.ptrw() + offset, data.data(), size);
 		dirty_start = Math::min(offset, dirty_start);
 		dirty_end = Math::max<int64_t>(offset + size, dirty_end);
@@ -112,3 +112,4 @@ RID ComputeBuffer::get_rid() const {
 GET_SET_PROPERTY_IMPL(ComputeBuffer, PackedByteArray, buffer)
 GET_SET_PROPERTY_IMPL(ComputeBuffer, int64_t, alignment)
 GET_SET_PROPERTY_IMPL(ComputeBuffer, bool, is_fixed_size)
+GET_SET_PROPERTY_IMPL(ComputeBuffer, bool, is_change_tracked)

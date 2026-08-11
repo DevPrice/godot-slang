@@ -27,6 +27,17 @@ const StringName& shader_param_prefix() {
 constexpr auto kernel_param_prefix_chars = "kernel_parameter/";
 constexpr int64_t kernel_param_prefix_length = std::char_traits<char>::length(kernel_param_prefix_chars);
 
+void ComputeShaderTask::_write_assigned(ComputeShaderObject* object, const Object* context, const ParameterStore& store, const ParameterStore::DirtyPaths& dirty) {
+	for (const StringName& path : dirty) {
+		const ComputeShaderCursor rooted = ComputeShaderCursor(object, context).path(path);
+		if (!rooted.writes_on_assignment_only()) {
+			// not GPU-owned, so the dispatch walk above already wrote it
+			continue;
+		}
+		rooted.with_scope(WriteScope::ASSIGNED).write(store.get(path));
+	}
+}
+
 const StringName& kernel_param_prefix() {
 	static const StringName prefix(kernel_param_prefix_chars);
 	return prefix;
@@ -102,75 +113,30 @@ void ComputeShaderTask::set_rendering_device(RenderingDevice* p_rendering_device
 }
 
 Variant ComputeShaderTask::get_shader_parameter(const StringName& param) const {
-	const PackedStringArray parts = param.split("/");
-	Variant current = _shader_parameters;
-	int64_t i = 0;
-	bool valid;
-	for (; i < parts.size() - 1; ++i) {
-		current = current.get_named(parts[i], valid);
-		if (!valid || current.get_type() == Variant::NIL)
-			return {};
-	}
-	return current.get_named(parts[i], valid);
+	return _shader_parameters.get(param);
 }
 
 void ComputeShaderTask::set_shader_parameter(const StringName& param, const Variant& value) {
 	std::lock_guard lock(*_mutex.ptr());
-	const PackedStringArray parts = param.split("/");
-	Variant current = _shader_parameters;
-	int64_t i = 0;
-	bool valid;
-	for (; i < parts.size() - 1; ++i) {
-		Variant next = current.get_named(parts[i], valid);
-		if (!valid || next.get_type() == Variant::NIL) {
-			next = Dictionary();
-			current.set_named(parts[i], next, valid);
-		}
-		current = next;
-	}
-	current.set_named(parts[i], value, valid);
+	_shader_parameters.set(param, value);
 }
 
 void ComputeShaderTask::clear_shader_parameters() {
 	std::lock_guard lock(*_mutex.ptr());
 	_shader_parameters.clear();
-	_kernel_parameters.clear();
+	for (KeyValue<StringName, ParameterStore>& kernel_parameters : _kernel_parameters) {
+		kernel_parameters.value.clear();
+	}
 }
 
 Variant ComputeShaderTask::get_kernel_parameter(const StringName& kernel, const StringName& param) const {
-	const PackedStringArray parts = param.split("/");
-	const Dictionary* params_ptr = _kernel_parameters.getptr(kernel);
-	if (!params_ptr)
-		return {};
-	Variant current = *params_ptr;
-	int64_t i = 0;
-	bool valid;
-	for (; i < parts.size() - 1; ++i) {
-		current = current.get_named(parts[i], valid);
-		if (!valid || current.get_type() == Variant::NIL)
-			return {};
-	}
-	return current.get_named(parts[i], valid);
+	const ParameterStore* kernel_parameters = _kernel_parameters.getptr(kernel);
+	return kernel_parameters ? kernel_parameters->get(param) : Variant{};
 }
 
 void ComputeShaderTask::set_kernel_parameter(const StringName& kernel, const StringName& param, const Variant& value) {
 	std::lock_guard lock(*_mutex.ptr());
-	const PackedStringArray parts = param.split("/");
-	if (!_kernel_parameters.has(kernel)) {
-		_kernel_parameters[kernel] = Dictionary();
-	}
-	Variant current = _kernel_parameters[kernel];
-	int64_t i = 0;
-	bool valid;
-	for (; i < parts.size() - 1; ++i) {
-		Variant next = current.get_named(parts[i], valid);
-		if (!valid || next.get_type() == Variant::NIL) {
-			next = Dictionary();
-			current.set_named(parts[i], next, valid);
-		}
-		current = next;
-	}
-	current.set_named(parts[i], value, valid);
+	_kernel_parameters[kernel].set(param, value);
 }
 
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
@@ -516,9 +482,24 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	const KernelData* kernel_data = _get_or_create_kernel(kernel_index);
 	ERR_FAIL_NULL_MSG(kernel_data, "ComputeShaderTask: Couldn't obtain kernel data!");
 
-	const Dictionary kernel_params = _kernel_parameters.has(kernel->get_kernel_name()) ? _kernel_parameters[kernel->get_kernel_name()] : Dictionary{};
-	ComputeShaderCursor(_shader_object.get(), context).write(_shader_parameters);
-	ComputeShaderCursor(kernel_data->shader_object.get(), context).write(kernel_params);
+	const StringName& kernel_name = kernel->get_kernel_name();
+	ParameterStore& kernel_parameters = _kernel_parameters[kernel_name];
+
+	// both flags have to be taken, so don't let short-circuiting skip one
+	const bool shader_full_write = _shader_parameters.take_write_all() | _shader_object->take_needs_full_write();
+	const bool kernel_full_write = kernel_parameters.take_write_all() | kernel_data->shader_object->take_needs_full_write();
+	const ParameterStore::DirtyPaths shader_dirty = _shader_parameters.take_dirty();
+	const ParameterStore::DirtyPaths kernel_dirty = kernel_parameters.take_dirty();
+
+	ComputeShaderCursor(_shader_object.get(), context, !shader_full_write).write(_shader_parameters.values());
+	ComputeShaderCursor(kernel_data->shader_object.get(), context, !kernel_full_write).write(kernel_parameters.values());
+	if (!shader_full_write) {
+		_write_assigned(_shader_object.get(), context, _shader_parameters, shader_dirty);
+	}
+	if (!kernel_full_write) {
+		_write_assigned(kernel_data->shader_object.get(), context, kernel_parameters, kernel_dirty);
+	}
+
 	_shader_object->flush_buffers();
 	kernel_data->shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();

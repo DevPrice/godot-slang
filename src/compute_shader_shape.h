@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <optional>
 
 #include "godot_cpp/classes/resource.hpp"
@@ -11,6 +12,15 @@ class ShaderTypeLayoutShape;
 class ComputeShaderCursor;
 struct BindingRange;
 
+// Serialized into the imported shape: don't renumber without bumping
+// SlangShaderImporter::_get_format_version().
+enum class SyncMode {
+	// no [gd::Sync] of its own; inherits the enclosing parameter's resolved mode
+	DEFAULT = 0,
+	ALWAYS = 1,
+	NEVER = 2,
+};
+
 struct FieldShape {
 
 	godot::StringName name{};
@@ -20,7 +30,7 @@ struct FieldShape {
 	std::optional<godot::PropertyInfo> property_info{};
 	int64_t binding_offset{};
 	int64_t byte_offset{};
-	bool synced{};
+	SyncMode sync_mode{ SyncMode::DEFAULT };
 
 	operator godot::Dictionary() const;
 
@@ -39,6 +49,9 @@ public:
 	[[nodiscard]] virtual int64_t get_size() const { return 0; }
 	virtual std::optional<FieldShape> field(const godot::StringName& field_name) const { return std::nullopt; }
 	virtual void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const = 0;
+	// True if anything below this shape has to be written on every dispatch, which is
+	// reason enough to descend into a parameter that would otherwise be skipped.
+	[[nodiscard]] virtual bool has_forced_writes() const { return false; }
 
 	// Values must match SlangMatrixLayoutMode
 	enum MatrixLayout {
@@ -115,6 +128,7 @@ public:
 	[[nodiscard]] int64_t get_size() const override;
 	void set_size(int64_t p_size);
 	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
+	[[nodiscard]] bool has_forced_writes() const override;
 
 private:
 	int64_t size{};
@@ -136,9 +150,14 @@ public:
 	void set_size(int64_t p_size);
 	std::optional<FieldShape> field(const godot::StringName& field_name) const override;
 	void write_into(const ComputeShaderCursor& cursor, const godot::Variant& data) const override;
+	[[nodiscard]] bool has_forced_writes() const override;
 
 private:
 	int64_t size{};
+	// safe to cache: shapes are immutable after import. atomic because one shape is shared
+	// by every task referencing the shader, and those dispatch from both the main and the
+	// render thread; racing writers compute the same answer, so relaxed is enough
+	mutable std::atomic<int8_t> forced_writes_cache{ -1 };
 
 };
 

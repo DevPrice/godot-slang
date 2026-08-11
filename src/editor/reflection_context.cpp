@@ -145,10 +145,11 @@ Ref<ShaderTypeLayoutShape> SlangReflectionContext::_get_shape(slang::TypeLayoutR
 				field_info.user_attributes = field_attributes;
 				field_info.byte_offset = static_cast<int64_t>(field->getOffset());
 				if (field_attributes.has(GodotAttributes::sync())) {
-					Dictionary sync_attr = field_attributes[GodotAttributes::sync()];
-					field_info.synced = sync_attr["sync"];
+					const Dictionary sync_attr = field_attributes[GodotAttributes::sync()];
+					field_info.sync_mode = static_cast<bool>(sync_attr.get("sync", true)) ? SyncMode::ALWAYS : SyncMode::NEVER;
 				} else {
-					field_info.synced = !is_gpu_writable(field->getTypeLayout());
+					// only an explicit attribute overrides an enclosing parameter
+					field_info.sync_mode = is_gpu_writable(field->getTypeLayout()) ? SyncMode::NEVER : SyncMode::DEFAULT;
 				}
 
 				// TODO: I feel like I shouldn't need to have this logic, but I'm not sure how to find the uniform buffer binding correctly otherwise.
