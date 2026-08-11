@@ -239,7 +239,8 @@ public struct gd_PropertyHintAttribute {
 
 /**
  Marks a variable as synced or unsynced.
- Synced parameters are automatically pushed to the GPU before each dispatch, while unnsynced parameters must be written manually.
+ Synced parameters are written before every dispatch, while unsynced parameters are written only when they are assigned, preserving whatever the shader wrote into them.
+ Parameters that the shader can write to are unsynced unless this attribute says otherwise.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_SyncAttribute {

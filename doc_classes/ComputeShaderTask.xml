@@ -12,6 +12,7 @@
 			<return type="void" />
 			<description>
 				Clears all shader parameters for this task.
+				Every parameter is written again on the next dispatch, including parameters that are unsynced.
 			</description>
 		</method>
 		<method name="dispatch">
@@ -145,6 +146,9 @@
 				compute_shader_task.set_shader_parameter("sampler2d", [sampler_rid, texture_rid])
 				[/gdscript]
 				[/codeblocks]
+				Assigning a parameter is also what schedules an unsynced parameter to be written. Parameters that the shader writes to are not rewritten on every dispatch, so their contents survive until the parameter is assigned again. See the [code]gd::Sync[/code] attribute.
+				Assigning a value writes every member that value supplies, so a member left out of it keeps whatever the shader wrote there.
+				Mutating an [Array] or [Dictionary] in place is not an assignment. Call this method again with the mutated value to write the change.
 			</description>
 		</method>
 	</methods>
