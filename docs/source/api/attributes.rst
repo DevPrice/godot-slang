@@ -350,6 +350,66 @@ When used within a ``ComputeShaderTask``, will bind a cached sampler with the sp
     [gd::Sampler(gd::SamplerFilter.LINEAR, gd::SamplerRepeatMode.REPEAT)]
     uniform SamplerState sampler_state;
 
+.. _gd_SyncAttribute:
+
+gd::Sync
+---------------------
+
+Controls whether a parameter is written before every dispatch, or only when it is assigned.
+Synced parameters are written on every dispatch, so the value held by the ``ComputeShaderTask`` always wins.
+Unsynced parameters are written only when they are assigned, leaving whatever the shader wrote into them intact between dispatches.
+
+Parameters that the shader can write to, such as ``RWStructuredBuffer`` or ``RWTexture2D``, are unsynced by default, and every other parameter is synced by default.
+Applying this attribute overrides that default. Applying it to a struct or ``ParameterBlock`` also covers the members that don't declare their own.
+
+An unsynced parameter is written when it is assigned through ``set_shader_parameter``, when one of its members is assigned by name, and on the first dispatch after the shader is loaded, since there is no GPU state to preserve yet.
+Assigning a parameter writes every member the assigned value supplies, so leaving a member out is how you preserve the shader's output for it.
+Parameters bound automatically by an attribute whose value changes between dispatches, such as :ref:`gd_TimeAttribute` or the compositor textures, are always written regardless of this attribute.
+
+Push constants are re-sent on every dispatch by construction, so marking a push constant field unsynced has no effect.
+
+**Target:** ``Var``
+
+**Fields:**
+
+.. list-table::
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Name
+     - Type
+     - Description
+   * - ``sync``
+     - ``bool``
+     - Whether the parameter is written before every dispatch. Defaults to ``true``.
+
+**Example:**
+
+.. tabs::
+
+ .. code-tab:: hlsl
+
+    // written by the shader, so unsynced by default
+    uniform RWStructuredBuffer<float> accumulator;
+
+    // opt a shader-writable parameter back into being written every dispatch
+    [gd::Sync(true)]
+    uniform RWStructuredBuffer<float> scratch;
+
+ .. code-tab:: gdscript
+
+    var task: ComputeShaderTask = get_task()
+
+    # seeds the accumulator
+    task.set_shader_parameter("accumulator", [0.0, 0.0, 0.0])
+
+    # the values the shader accumulates survive each dispatch
+    task.dispatch_all(thread_groups)
+    task.dispatch_all(thread_groups)
+
+    # assign it again to reseed it
+    task.set_shader_parameter("accumulator", [0.0, 0.0, 0.0])
+
 .. _gd_TimeAttribute:
 
 gd::Time
