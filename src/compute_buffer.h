@@ -17,6 +17,10 @@ class ComputeBuffer {
     GET_SET_PROPERTY(godot::PackedByteArray, buffer)
     GET_SET_PROPERTY(int64_t, alignment)
     GET_SET_PROPERTY(bool, is_fixed_size)
+    // Whether the local copy can be trusted to reflect the buffer contents.
+    // False for bindings the shader can write, where a write must upload even if
+    // the bytes it writes are unchanged locally.
+    GET_SET_PROPERTY(bool, is_change_tracked)
 
 public:
 	ComputeBuffer(godot::RenderingDevice* p_rendering_device, ComputeBufferType p_type);

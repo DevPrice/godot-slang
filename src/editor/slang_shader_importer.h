@@ -11,6 +11,7 @@ protected:
 public:
 	[[nodiscard]] godot::String _get_importer_name() const override;
 	[[nodiscard]] godot::String _get_visible_name() const override;
+	[[nodiscard]] int32_t _get_format_version() const override;
 	[[nodiscard]] int32_t _get_preset_count() const override;
 	[[nodiscard]] godot::String _get_preset_name(int32_t p_preset_index) const override;
 	[[nodiscard]] godot::PackedStringArray _get_recognized_extensions() const override;

@@ -9,6 +9,7 @@
 #include "compute_shader_cursor.h"
 #include "compute_shader_file.h"
 #include "compute_shader_shape.h"
+#include "parameter_store.h"
 #include "sampler_cache.h"
 
 class ComputeShaderTask : public godot::Resource {
@@ -64,8 +65,8 @@ private:
 		UniqueRID<godot::RenderingDevice> pipeline_rid{};
 		std::unique_ptr<ComputeShaderObject> shader_object{};
 	};
-	godot::Dictionary _shader_parameters{};
-	godot::HashMap<godot::StringName, godot::Dictionary> _kernel_parameters{};
+	ParameterStore _shader_parameters{};
+	godot::HashMap<godot::StringName, ParameterStore> _kernel_parameters{};
 	std::vector<std::unique_ptr<KernelData>> _kernel_data{};
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
@@ -81,4 +82,5 @@ private:
 	KernelData* _get_kernel_data(const godot::StringName& kernel_name) const;
 
 	void _dispatch(int64_t kernel_index, godot::Vector3i thread_groups, const Object* context = nullptr);
+	static void _write_assigned(ComputeShaderObject* object, const Object* context, const ParameterStore& store, const ParameterStore::DirtyPaths& dirty);
 };

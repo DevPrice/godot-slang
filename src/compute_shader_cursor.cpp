@@ -248,6 +248,7 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 				new_buffer.set_alignment(binding_range->alignment);
 				new_buffer.set_size(binding_range->size);
 				new_buffer.set_is_fixed_size(true);
+				new_buffer.set_is_change_tracked(true);
 				return &new_buffer;
 			}
 			case ShaderTypeLayoutShape::BindingType::TYPED_BUFFER:
@@ -257,6 +258,8 @@ ComputeBuffer* ComputeShaderObject::_get_or_create_buffer(const int64_t binding_
 				ComputeBuffer& new_buffer = *new_buffer_it->second;
 				new_buffer.set_size(256); // TODO: Default sizing behavior?
 				new_buffer.set_is_fixed_size(false);
+				// the shader can write these, so the local copy can't be trusted between dispatches
+				new_buffer.set_is_change_tracked(binding_range->ext_binding_type() != ShaderTypeLayoutShape::BindingType::MUTABLE_FLAG);
 				return &new_buffer;
 			}
 			default:
@@ -311,6 +314,12 @@ int64_t ComputeShaderObject::_get_push_constant_alignment() {
 	return alignment;
 }
 
+ComputeShaderCursor ComputeShaderCursor::with_scope(const WriteScope scope) const {
+	ComputeShaderCursor result(*this);
+	result.sync_policy = sync_policy.with_scope(scope);
+	return result;
+}
+
 ComputeShaderCursor ComputeShaderCursor::path(const StringName& path) const {
 	if (path.is_empty())
 		return *this;
@@ -331,27 +340,32 @@ ComputeShaderCursor ComputeShaderCursor::path(const StringName& path) const {
 }
 
 ComputeShaderCursor ComputeShaderCursor::field(const StringName& field_name) const {
-	ComputeShaderCursor result(*this);
-	ERR_FAIL_NULL_V(result.shape, ComputeShaderCursor(nullptr));
-	const std::optional<FieldShape> property = result.shape->field(field_name);
+	ERR_FAIL_NULL_V(shape, ComputeShaderCursor(nullptr));
+	const std::optional<FieldShape> property = shape->field(field_name);
 	ERR_FAIL_COND_V_MSG(!property, ComputeShaderCursor(nullptr), String("No such field '%s'!") % field_name);
-	const Ref<ShaderTypeLayoutShape> property_shape = property->shape;
+	return field(*property);
+}
+
+ComputeShaderCursor ComputeShaderCursor::field(const FieldShape& property) const {
+	ComputeShaderCursor result(*this);
+	const Ref<ShaderTypeLayoutShape> property_shape = property.shape;
 	ERR_FAIL_NULL_V(property_shape, ComputeShaderCursor(nullptr));
 
 	result.shape = property_shape;
-	result.offset += ComputeShaderOffset::from_field(*property);
+	result.offset += ComputeShaderOffset::from_field(property);
+	result.sync_policy = sync_policy.descend(property);
 
 	result.write_handlers.clear();
-	const Dictionary attributes = property->user_attributes;
+	const Dictionary attributes = property.user_attributes;
 	for (auto attribute_name : attributes.keys()) {
 		const Dictionary attribute_arguments = attributes[attribute_name];
 		if (const auto factory = AttributeRegistry::get_instance()->get_write_handler(attribute_name)) {
-			if (const auto handler = factory->factory(attribute_arguments, *property)) {
+			if (const auto handler = factory->factory(attribute_arguments, property)) {
 				result.write_handlers.insert(WriteHandlerWithPriority{ handler, factory->priority });
 			}
 		}
 	}
-	result.default_value = property->default_value;
+	result.default_value = property.default_value;
 
 	if (ComputeShaderObject* subobject = result.object->get_or_create_subobject(result.offset.binding_range_offset)) {
 		result.object = subobject;

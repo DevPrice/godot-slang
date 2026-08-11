@@ -28,6 +28,11 @@ String SlangShaderImporter::_get_visible_name() const {
 	return "Compute Shader";
 }
 
+int32_t SlangShaderImporter::_get_format_version() const {
+	// 1: FieldShape gained "sync_mode" (SyncMode)
+	return 1;
+}
+
 int32_t SlangShaderImporter::_get_preset_count() const {
 	return 1;
 }
