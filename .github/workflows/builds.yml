@@ -187,15 +187,37 @@ jobs:
             ${{ github.workspace }}/dummy-file-to-keep-directory-structure.txt
             ${{ github.workspace }}/addons
 
-  # Merges all the build artifacts into a single godot-slang artifact.
-  # If you comment remove this step, all the builds will be uploaded individually.
+  # Merges all the build artifacts into a single godot-slang artifact, and regenerates the
+  # .gdextension so that it declares every library the matrix built (each individual build
+  # only declares its own).
   merge:
     runs-on: ubuntu-22.04
     needs: [build, build-editor]
+    permissions:
+      contents: read
+      actions: write # to delete the per-build artifacts once they're merged
     steps:
-      - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+      # Checkout must come first; it cleans the workspace.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: godot-slang-*
+          merge-multiple: true
+          path: merged
+
+      - name: Regenerate .gdextension
+        run: python gdextension.py merged/addons/shader-slang
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: godot-slang
-          pattern: godot-slang-*
-          delete-merged: true
+          path: merged
+
+      - name: Delete merged artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: godot-slang-*

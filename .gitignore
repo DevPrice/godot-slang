@@ -13,8 +13,9 @@
 *.dll
 *.ilk
 
-# Ignore library files but not the gdextension file
+# Library files, generated gdextension file
 demo/addons/shader-slang/bin/*
+demo/addons/shader-slang/shader-slang.gdextension
 .sconsign*.dblite
 
 /addons/shader-slang/bin/

@@ -1,0 +1,9 @@
+[configuration]
+
+entry_symbol = "shader_slang_init"
+compatibility_minimum = "4.5"
+
+[icons]
+ComputeShaderFile = "uid://coddu1nrabxjp"
+
+[libraries]
