@@ -62,6 +62,7 @@ Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderType
 	slang::ProgramLayout* program_layout = get_layout();
 
 	slang::EntryPointReflection* entry_point_layout = program_layout->getEntryPointByIndex(0);
+	ERR_FAIL_NULL_V(entry_point_layout, nullptr);
 	{
 		if (entry_point_layout->getStage() != SLANG_STAGE_COMPUTE) {
 			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % entry_point_layout->getName());
@@ -72,6 +73,7 @@ Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderType
 	Ref kernel = memnew(ComputeShaderKernel);
 	const Ref spirv = memnew(RDShaderSPIRV);
 	kernel->set_spirv(spirv);
+	kernel->set_kernel_name(entry_point_layout->getName());
 
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_layout->getFunction()));
