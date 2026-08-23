@@ -1,6 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
+importer_version=1
 type="ComputeShaderFile"
 uid="uid://b1h1shyxl3loe"
 path="res://.godot/imported/normals.slang-07a6dbcb252e12f0780a9ba3b09877bf.res"

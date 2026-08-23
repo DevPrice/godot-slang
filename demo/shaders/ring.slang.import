@@ -1,6 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
+importer_version=1
 type="ComputeShaderFile"
 uid="uid://cf7opoytwnryw"
 path="res://.godot/imported/ring.slang-68f2ebc72e5ea8e4d102a660ee210036.res"

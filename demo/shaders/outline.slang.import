@@ -1,6 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
+importer_version=1
 type="ComputeShaderFile"
 uid="uid://c3dx8jm428dtf"
 path="res://.godot/imported/outline.slang-5a0716822482f5ad5dfd7b1425a0ec07.res"

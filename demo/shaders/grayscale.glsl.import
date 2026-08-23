@@ -1,6 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
+importer_version=1
 type="ComputeShaderFile"
 uid="uid://cb1dadvbj1uwj"
 path="res://.godot/imported/grayscale.glsl-f36d5def71a7aff7d5e9e312f97176d1.res"
