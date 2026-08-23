@@ -36,7 +36,7 @@ jobs:
     steps:
       # Clone this repository
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -93,7 +93,7 @@ jobs:
 
       # Upload the build
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
@@ -119,7 +119,7 @@ jobs:
     steps:
       # Clone this repository
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -180,7 +180,7 @@ jobs:
 
       # Upload the build
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: godot-slang-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
@@ -199,10 +199,10 @@ jobs:
     steps:
       # Checkout must come first; it cleans the workspace.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: godot-slang-*
           merge-multiple: true
@@ -212,12 +212,12 @@ jobs:
         run: python gdextension.py merged/addons/shader-slang
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: godot-slang
           path: merged
 
       - name: Delete merged artifacts
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@v6
         with:
           name: godot-slang-*
