@@ -8,6 +8,7 @@ extends Node
 @export var shader: SlangShaderFile
 @export var target: TextureRect
 @export var size := Vector2i(512, 512)
+@export var auto_size := true
 @export var clear_color := Color(0.05, 0.05, 0.08)
 
 var _rendering_device: RenderingDevice
@@ -33,10 +34,13 @@ func _ready() -> void:
 		target.texture = _texture_rd
 	RenderingServer.call_on_render_thread(_draw)
 
-
 func _exit_tree() -> void:
 	RenderingServer.call_on_render_thread(_free_resources)
 
+func _process(_delta: float) -> void:
+	if target and target.size and auto_size:
+		size = target.size
+		RenderingServer.call_on_render_thread(_draw)
 
 func _draw() -> void:
 	_rendering_device = RenderingServer.get_rendering_device()
