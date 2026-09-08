@@ -24,7 +24,7 @@ protected:
 public:
 	SlangShaderTask();
 
-	[[nodiscard]] godot::TypedArray<SlangShaderProgram> get_kernels() const;
+	[[nodiscard]] godot::TypedArray<SlangShaderProgram> get_programs() const;
 
 	[[nodiscard]] godot::Variant get_shader_parameter(const godot::StringName& param) const;
 	void set_shader_parameter(const godot::StringName& param, const godot::Variant& value);
@@ -60,14 +60,14 @@ public:
 	bool _property_get_reflection(const godot::StringName& p_name, FieldShape& r_reflection) const;
 
 private:
-	struct KernelData {
+	struct ProgramData {
 		UniqueRID<godot::RenderingDevice> shader_rid{};
 		UniqueRID<godot::RenderingDevice> pipeline_rid{};
 		std::unique_ptr<ComputeShaderObject> shader_object{};
 	};
 	ParameterStore _shader_parameters{};
 	godot::HashMap<godot::StringName, ParameterStore> _kernel_parameters{};
-	std::vector<std::unique_ptr<KernelData>> _kernel_data{};
+	std::vector<std::unique_ptr<ProgramData>> _program_data{};
 
 	std::unique_ptr<SamplerCache> _sampler_cache;
 	std::unique_ptr<ComputeShaderObject> _shader_object;
@@ -78,8 +78,8 @@ private:
 	void _shader_changed();
 
 	godot::RenderingDevice* _get_active_rendering_device() const;
-	KernelData* _get_or_create_kernel(int64_t kernel_index);
-	KernelData* _get_kernel_data(const godot::StringName& kernel_name) const;
+	ProgramData* _get_or_create_program(int64_t kernel_index);
+	ProgramData* _get_program_data(const godot::StringName& kernel_name) const;
 
 	void _dispatch(int64_t kernel_index, godot::Vector3i thread_groups, const Object* context = nullptr);
 	static void _write_assigned(ComputeShaderObject* object, const Object* context, const ParameterStore& store, const ParameterStore::DirtyPaths& dirty);

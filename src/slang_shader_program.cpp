@@ -13,6 +13,7 @@ void SlangShaderProgram::_bind_methods() {
 	BIND_GET_SET(SlangShaderProgram, stages, Variant::INT);
 	BIND_GET_SET_RESOURCE(SlangShaderProgram, parameters, StructTypeLayoutShape);
 	BIND_METHOD(SlangShaderProgram, get_compile_error)
+	BIND_METHOD(SlangShaderProgram, has_stage, "stage")
 }
 
 String SlangShaderProgram::get_compile_error() const {
@@ -28,6 +29,10 @@ String SlangShaderProgram::get_compile_error() const {
 		}
 	}
 	return {};
+}
+
+bool SlangShaderProgram::has_stage(const RenderingDevice::ShaderStage stage) const {
+	return (stages & stage_bit(stage)) != 0;
 }
 
 int64_t SlangShaderProgram::stage_bit(const RenderingDevice::ShaderStage stage) {

@@ -73,6 +73,7 @@ Ref<SlangShaderProgram> SlangComponentType::compile_kernel(const Ref<ShaderTypeL
 	Ref kernel = memnew(SlangShaderProgram);
 	const Ref spirv = memnew(RDShaderSPIRV);
 	kernel->set_spirv(spirv);
+	kernel->set_stages(SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_COMPUTE));
 	kernel->set_program_name(entry_point_layout->getName());
 
 	const SlangReflectionContext reflection_context(program_layout);
@@ -106,7 +107,6 @@ Ref<SlangShaderProgram> SlangComponentType::compile_kernel(const Ref<ShaderTypeL
 
 	if (compile_error.is_empty()) {
 		spirv->set_stage_bytecode(RenderingDevice::SHADER_STAGE_COMPUTE, compiled_blob->get_buffer());
-		kernel->set_stages(SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_COMPUTE));
 	} else {
 		spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, compile_error);
 		return kernel;
@@ -143,6 +143,8 @@ Ref<SlangShaderProgram> SlangComponentType::compile_pass() const {
 			continue;
 		}
 
+		stages |= SlangShaderProgram::stage_bit(*stage);
+
 		// the fragment entry point stands in for the pass as a whole
 		if (*stage == RenderingDevice::SHADER_STAGE_FRAGMENT) {
 			pass->set_user_attributes(reflection_context.get_attributes(entry_point_layout->getFunction()));
@@ -164,7 +166,6 @@ Ref<SlangShaderProgram> SlangComponentType::compile_pass() const {
 		}
 
 		spirv->set_stage_bytecode(*stage, SlangBlob::blob_to_bytes(compiled_blob));
-		stages |= SlangShaderProgram::stage_bit(*stage);
 	}
 	pass->set_stages(stages);
 

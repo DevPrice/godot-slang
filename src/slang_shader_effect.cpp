@@ -40,7 +40,7 @@ void SlangShaderEffect::_render_callback(const int32_t p_effect_callback_type, R
 	if (task.is_null()) {
 		return;
 	}
-	const TypedArray<SlangShaderProgram> kernels = task->get_kernels();
+	const TypedArray<SlangShaderProgram> kernels = task->get_programs();
 	if (kernels.is_empty())
 		return;
 
@@ -64,7 +64,8 @@ void SlangShaderEffect::_render_callback(const int32_t p_effect_callback_type, R
 	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
 		Ref<SlangShaderProgram> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
-		if (kernel.is_valid() && kernel->get_compile_error().is_empty()) {
+		// the task exposes every program, so skip the ones that aren't dispatchable
+		if (kernel.is_valid() && kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE) && kernel->get_compile_error().is_empty()) {
 			if (!queued_kernels.erase(kernel->get_program_name()) && (kernel_attributes.has(CompositorAttributes::skip()) || kernel_attributes.has(CompositorAttributes::once()))) {
 				continue;
 			}

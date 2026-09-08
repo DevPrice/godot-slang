@@ -4,11 +4,18 @@
 	</brief_description>
 	<description>
 		A single compiled program within a [SlangShaderFile]. Contains both the compiled SPIR-V and reflection metadata related to this particular program within a shader.
-		A compute program is built from one entry-point and appears in [member SlangShaderFile.kernels]; a raster program is built from a vertex and a fragment entry-point linked together and appears in [member SlangShaderFile.passes].
+		A compute program is built from a single entry-point; a raster program is built from a vertex and a fragment entry-point linked together. Both are listed in [member SlangShaderFile.programs] and told apart by [member stages].
 	</description>
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="has_stage" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="stage" type="int" enum="RenderingDevice.ShaderStage" />
+			<description>
+				Returns [code]true[/code] if this program is built from the given shader stage.
+			</description>
+		</method>
 		<method name="get_compile_error" qualifiers="const">
 			<return type="String" />
 			<description>
@@ -33,7 +40,7 @@
 			The SPIR-V intermediate representation of this program, with one bytecode entry per shader stage it provides.
 		</member>
 		<member name="stages" type="int" setter="set_stages" getter="get_stages" default="0">
-			The shader stages this program provides, as a bitmask of [code]RenderingDevice.SHADER_STAGE_*_BIT[/code] values.
+			The shader stages this program is built from, as a bitmask of [code]RenderingDevice.SHADER_STAGE_*_BIT[/code] values. This is set even when a stage fails to compile, so it describes what the program is rather than what succeeded.
 		</member>
 		<member name="thread_group_size" type="Vector3i" setter="set_thread_group_size" getter="get_thread_group_size" default="Vector3i(0, 0, 0)">
 			The thread group size declared for this kernel.

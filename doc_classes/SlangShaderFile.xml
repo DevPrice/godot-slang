@@ -4,7 +4,7 @@
 	</brief_description>
 	<description>
 		Compiled Slang shader with SPIR-V and reflection information for each program it declares.
-		Compute entry-points are compiled into [member kernels]; a vertex and a fragment entry-point are linked together into a raster pass in [member passes].
+		Every compiled program in the file is listed in [member programs]. A compute entry-point becomes one program on its own; a vertex and a fragment entry-point are linked together into a single raster pass program. Check [member SlangShaderProgram.stages] to tell them apart.
 		In most cases, this can be used as a drop-in replacement for [RDShaderFile].
 	</description>
 	<tutorials>
@@ -13,33 +13,25 @@
 		<method name="get_spirv" qualifiers="const">
 			<return type="RDShaderSPIRV" />
 			<param index="0" name="version" type="StringName" default="&amp;&quot;&quot;" />
-			<param index="1" name="kernel_index" type="int" default="0" />
+			<param index="1" name="program_index" type="int" default="0" />
 			<description>
-				Returns the SPIR-V intermediate representation of the specified kernel (at [param kernel_index]).
-			</description>
-		</method>
-		<method name="get_pass_spirv" qualifiers="const">
-			<return type="RDShaderSPIRV" />
-			<param index="0" name="version" type="StringName" default="&amp;&quot;&quot;" />
-			<param index="1" name="pass_index" type="int" default="0" />
-			<description>
-				Returns the SPIR-V intermediate representation of the specified raster pass (at [param pass_index]), with one bytecode entry per shader stage.
+				Returns the SPIR-V intermediate representation of the specified program (at [param program_index]), with one bytecode entry per shader stage it provides.
 			</description>
 		</method>
 		<method name="get_version_list" qualifiers="const">
 			<return type="StringName[]" />
-			<param index="0" name="kernel_index" type="int" default="0" />
+			<param index="0" name="program_index" type="int" default="0" />
 			<description>
-				Returns the list of compiled versions for this shader. This is always empty for Slang compute shaders.
+				Returns the list of compiled versions for this shader. This is always empty for Slang shaders.
 			</description>
 		</method>
 		<method name="set_bytecode">
 			<return type="void" />
 			<param index="0" name="bytecode" type="RDShaderSPIRV" />
 			<param index="1" name="version" type="StringName" default="&amp;&quot;&quot;" />
-			<param index="2" name="kernel_index" type="int" default="0" />
+			<param index="2" name="program_index" type="int" default="0" />
 			<description>
-				Sets the SPIR-V [param bytecode] that will be compiled for the specified kernel (at [param kernel_index]).
+				Sets the SPIR-V [param bytecode] that will be compiled for the specified program (at [param program_index]).
 			</description>
 		</method>
 	</methods>
@@ -47,11 +39,8 @@
 		<member name="base_error" type="String" setter="set_base_error" getter="get_base_error">
 			The base compilation error message, which indicates errors not related to a specific shader stage if non-empty. If empty, shader compilation is not necessarily successful (check each [SlangShaderProgram]'s [RDShaderSPIRV] error message members).
 		</member>
-		<member name="kernels" type="SlangShaderProgram[]" setter="set_kernels" getter="get_kernels">
-			The kernels declared in this shader file, one for each entry-point.
-		</member>
-		<member name="passes" type="SlangShaderProgram[]" setter="set_passes" getter="get_passes">
-			The raster passes declared in this shader file. A pass is a vertex and a fragment entry-point linked into a single program, so a shader file describes at most one.
+		<member name="programs" type="SlangShaderProgram[]" setter="set_programs" getter="get_programs">
+			Every program compiled from this shader file: one per compute entry-point, plus one for each vertex/fragment pair linked into a raster pass.
 		</member>
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
 			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [SlangShaderTask] to bind data to the correct descriptor slots.

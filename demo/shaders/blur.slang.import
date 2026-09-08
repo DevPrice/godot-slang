@@ -1,7 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
-importer_version=2
+importer_version=3
 type="SlangShaderFile"
 uid="uid://beo0gjpqyq8cc"
 path="res://.godot/imported/blur.slang-43abd47a7dc3b54ec64550db742ab007.res"

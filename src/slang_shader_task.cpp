@@ -68,9 +68,9 @@ SlangShaderTask::SlangShaderTask() :
 	_mutex.instantiate();
 }
 
-TypedArray<SlangShaderProgram> SlangShaderTask::get_kernels() const {
+TypedArray<SlangShaderProgram> SlangShaderTask::get_programs() const {
 	if (shader.is_valid()) {
-		return shader->get_kernels().duplicate();
+		return shader->get_programs().duplicate();
 	}
 	return {};
 }
@@ -142,19 +142,23 @@ void SlangShaderTask::set_kernel_parameter(const StringName& kernel, const Strin
 void SlangShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
-	for (int64_t i = 0; i < kernels.size(); i++) {
-		_dispatch(i, thread_groups, context);
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		const Ref<SlangShaderProgram> program = programs[i];
+		// programs is every compiled program, so skip anything that isn't dispatchable
+		if (program.is_valid() && program->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
+			_dispatch(i, thread_groups, context);
+		}
 	}
 }
 
 void SlangShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
-	for (int64_t i = 0; i < kernels.size(); i++) {
-		Ref<SlangShaderProgram> kernel = kernels[i];
-		if (kernel.is_valid() && kernel->get_program_name() == kernel_name) {
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		Ref<SlangShaderProgram> program = programs[i];
+		if (program.is_valid() && program->get_program_name() == kernel_name && program->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
 			_dispatch(i, thread_groups, context);
 		}
 	}
@@ -168,10 +172,10 @@ void SlangShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thr
 void SlangShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
-	for (int64_t i = 0; i < kernels.size(); i++) {
-		const Ref<SlangShaderProgram> kernel = kernels[i];
-		if (kernel.is_valid()) {
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		const Ref<SlangShaderProgram> kernel = programs[i];
+		if (kernel.is_valid() && kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
 			const Dictionary attributes = kernel->get_user_attributes();
 			if (attributes.has(GodotAttributes::kernel_group())) {
 				const Dictionary kernel_group_attr = attributes[GodotAttributes::kernel_group()];
@@ -213,7 +217,7 @@ Dictionary SlangShaderTask::get_kernel_parameters(const StringName& kernel_name)
 	if (shader.is_null()) {
 		return {};
 	}
-	for (const Ref<SlangShaderProgram> kernel : shader->get_kernels()) {
+	for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
 		if (kernel->get_program_name() == kernel_name) {
 			const Ref<StructTypeLayoutShape> params_shape = kernel->get_parameters();
 			if (params_shape.is_null()) {
@@ -226,24 +230,24 @@ Dictionary SlangShaderTask::get_kernel_parameters(const StringName& kernel_name)
 }
 
 TypedArray<RID> SlangShaderTask::get_kernel_rids(const StringName& kernel, const StringName& param) const {
-	const KernelData* kernel_data = _get_kernel_data(kernel);
-	ERR_FAIL_NULL_V(kernel_data, {});
-	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
-	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_rids();
+	const ProgramData* program_data = _get_program_data(kernel);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_rids();
 }
 
 PackedByteArray SlangShaderTask::get_kernel_buffer_data(const StringName& kernel, const StringName& param) const {
-	const KernelData* kernel_data = _get_kernel_data(kernel);
-	ERR_FAIL_NULL_V(kernel_data, {});
-	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
-	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_buffer_data();
+	const ProgramData* program_data = _get_program_data(kernel);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data();
 }
 
 Error SlangShaderTask::get_kernel_buffer_data_async(const StringName& kernel, const StringName& param, const Callable& callback) const {
-	const KernelData* kernel_data = _get_kernel_data(kernel);
-	ERR_FAIL_NULL_V(kernel_data, {});
-	ERR_FAIL_NULL_V(kernel_data->shader_object, {});
-	return ComputeShaderCursor(kernel_data->shader_object.get()).path(param).get_buffer_data_async(callback);
+	const ProgramData* program_data = _get_program_data(kernel);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data_async(callback);
 }
 
 bool SlangShaderTask::_set(const StringName& p_name, const Variant& p_value) {
@@ -312,7 +316,7 @@ void SlangShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	ERR_FAIL_NULL(p_list);
 	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
 	if (shader.is_valid()) {
-		for (const Ref<SlangShaderProgram> kernel : shader->get_kernels()) {
+		for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
 			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ kernel_param_prefix(), kernel->get_program_name() }, get_kernel_parameters(kernel->get_program_name()));
 		}
 	}
@@ -402,10 +406,10 @@ bool SlangShaderTask::_property_get_reflection(const StringName& p_name, FieldSh
 
 void SlangShaderTask::_reset() {
 	std::lock_guard lock(*_mutex.ptr());
-	const int64_t num_kernels = get_kernels().size();
-	_kernel_data.resize(num_kernels);
-	for (int64_t i = 0; i < num_kernels; i++) {
-		_kernel_data[i] = nullptr;
+	const int64_t num_programs = get_programs().size();
+	_program_data.resize(num_programs);
+	for (int64_t i = 0; i < num_programs; i++) {
+		_program_data[i] = nullptr;
 	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rd, "SlangShaderTask: Couldn't obtain rendering device for reset!");
@@ -430,36 +434,36 @@ RenderingDevice* SlangShaderTask::_get_active_rendering_device() const {
 	return rendering_server ? rendering_server->get_rendering_device() : nullptr;
 }
 
-SlangShaderTask::KernelData* SlangShaderTask::_get_or_create_kernel(const int64_t kernel_index) {
+SlangShaderTask::ProgramData* SlangShaderTask::_get_or_create_program(const int64_t kernel_index) {
 	std::lock_guard lock(*_mutex.ptr());
-	ERR_FAIL_INDEX_V(kernel_index, _kernel_data.size(), nullptr);
-	std::unique_ptr<KernelData>& kernel_data = _kernel_data[kernel_index];
-	if (kernel_data) {
-		return kernel_data.get();
+	ERR_FAIL_INDEX_V(kernel_index, _program_data.size(), nullptr);
+	std::unique_ptr<ProgramData>& program_data = _program_data[kernel_index];
+	if (program_data) {
+		return program_data.get();
 	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_V(rd, nullptr);
-	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
-	ERR_FAIL_INDEX_V(kernel_index, kernels.size(), nullptr);
-	const Ref<SlangShaderProgram> kernel = kernels[kernel_index];
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	ERR_FAIL_INDEX_V(kernel_index, programs.size(), nullptr);
+	const Ref<SlangShaderProgram> kernel = programs[kernel_index];
 	const RID shader_rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
-	kernel_data = std::make_unique<KernelData>(KernelData{
+	program_data = std::make_unique<ProgramData>(ProgramData{
 		UniqueRID(rd, shader_rid),
 		UniqueRID(rd, rd->compute_pipeline_create(shader_rid)),
 		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters(), kernel->get_space_offset(), kernel->get_slot_offset()),
 	});
-	return kernel_data.get();
+	return program_data.get();
 }
 
-SlangShaderTask::KernelData* SlangShaderTask::_get_kernel_data(const StringName& kernel_name) const {
+SlangShaderTask::ProgramData* SlangShaderTask::_get_program_data(const StringName& kernel_name) const {
 	if (shader.is_null())
 		return nullptr;
-	TypedArray<SlangShaderProgram> kernels = shader->get_kernels();
-	for (int64_t i = 0; i < kernels.size(); i++) {
-		Ref<SlangShaderProgram> kernel = kernels[i];
-		if (kernel.is_valid() && kernel->get_program_name() == kernel_name) {
-			ERR_FAIL_INDEX_V(i, _kernel_data.size(), {});
-			return _kernel_data[i].get();
+	TypedArray<SlangShaderProgram> programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		Ref<SlangShaderProgram> program = programs[i];
+		if (program.is_valid() && program->get_program_name() == kernel_name) {
+			ERR_FAIL_INDEX_V(i, _program_data.size(), {});
+			return _program_data[i].get();
 		}
 	}
 	return nullptr;
@@ -469,52 +473,53 @@ void SlangShaderTask::_dispatch(const int64_t kernel_index, const Vector3i threa
 	std::lock_guard lock(*_mutex.ptr());
 	if (shader.is_null() || !_shader_object)
 		return;
-	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
-	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	ERR_FAIL_INDEX_MSG(kernel_index, programs.size(), String("Attempted to dispatch invalid program index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(programs.size() - 1) }));
 
-	const Ref<SlangShaderProgram> kernel = kernels[kernel_index];
-	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
+	const Ref<SlangShaderProgram> kernel = programs[kernel_index];
+	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid program index %s (found: nil)!") % String::num_int64(kernel_index));
+	ERR_FAIL_COND_MSG(!kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE), String("Program '%s' is not a compute kernel and can't be dispatched!") % kernel->get_program_name());
 	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
 
 	RenderingDevice* rendering_device = _get_active_rendering_device();
 	ERR_FAIL_NULL_MSG(rendering_device, "SlangShaderTask: Couldn't obtain rendering device for dispatch!");
 
-	const KernelData* kernel_data = _get_or_create_kernel(kernel_index);
-	ERR_FAIL_NULL_MSG(kernel_data, "SlangShaderTask: Couldn't obtain kernel data!");
+	const ProgramData* program_data = _get_or_create_program(kernel_index);
+	ERR_FAIL_NULL_MSG(program_data, "SlangShaderTask: Couldn't obtain kernel data!");
 
 	const StringName& kernel_name = kernel->get_program_name();
 	ParameterStore& kernel_parameters = _kernel_parameters[kernel_name];
 
 	// both flags have to be taken, so don't let short-circuiting skip one
 	const bool shader_full_write = _shader_parameters.take_write_all() | _shader_object->take_needs_full_write();
-	const bool kernel_full_write = kernel_parameters.take_write_all() | kernel_data->shader_object->take_needs_full_write();
+	const bool kernel_full_write = kernel_parameters.take_write_all() | program_data->shader_object->take_needs_full_write();
 	const ParameterStore::DirtyPaths shader_dirty = _shader_parameters.take_dirty();
 	const ParameterStore::DirtyPaths kernel_dirty = kernel_parameters.take_dirty();
 
 	ComputeShaderCursor(_shader_object.get(), context, !shader_full_write).write(_shader_parameters.values());
-	ComputeShaderCursor(kernel_data->shader_object.get(), context, !kernel_full_write).write(kernel_parameters.values());
+	ComputeShaderCursor(program_data->shader_object.get(), context, !kernel_full_write).write(kernel_parameters.values());
 	if (!shader_full_write) {
 		_write_assigned(_shader_object.get(), context, _shader_parameters, shader_dirty);
 	}
 	if (!kernel_full_write) {
-		_write_assigned(kernel_data->shader_object.get(), context, kernel_parameters, kernel_dirty);
+		_write_assigned(program_data->shader_object.get(), context, kernel_parameters, kernel_dirty);
 	}
 
 	_shader_object->flush_buffers();
-	kernel_data->shader_object->flush_buffers();
+	program_data->shader_object->flush_buffers();
 	const int64_t compute_list = rendering_device->compute_list_begin();
-	rendering_device->compute_list_bind_compute_pipeline(compute_list, kernel_data->pipeline_rid);
+	rendering_device->compute_list_bind_compute_pipeline(compute_list, program_data->pipeline_rid);
 
 	ComputeShaderObject::DescriptorSets descriptor_sets{};
 	uint64_t next_space_index = 0;
 	const uint64_t active_space_index = _shader_object->get_descriptor_sets(descriptor_sets, next_space_index);
-	kernel_data->shader_object->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
+	program_data->shader_object->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
 
 	const Dictionary used_binding_sets = kernel->get_used_binding_sets();
 	for (const auto& [space_index, uniforms] : descriptor_sets) {
 		if (used_binding_sets.get(space_index, false)) {
 			// TODO: UniformSetCacheRD only works with the default rendering device
-			const RID uniform_set = UniformSetCacheRD::get_cache(kernel_data->shader_rid, space_index, uniforms);
+			const RID uniform_set = UniformSetCacheRD::get_cache(program_data->shader_rid, space_index, uniforms);
 			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
 		}
 	}
@@ -524,7 +529,7 @@ void SlangShaderTask::_dispatch(const int64_t kernel_index, const Vector3i threa
 	// (meaning either a single global buffer for all stages, or distinct per-entry-point buffers).
 	if (const PackedByteArray& global_push_constants = _shader_object->get_push_constants(); global_push_constants.size() > 0) {
 		rendering_device->compute_list_set_push_constant(compute_list, global_push_constants, global_push_constants.size());
-	} else if (const PackedByteArray& kernel_push_constants = kernel_data->shader_object->get_push_constants(); kernel_push_constants.size() > 0) {
+	} else if (const PackedByteArray& kernel_push_constants = program_data->shader_object->get_push_constants(); kernel_push_constants.size() > 0) {
 		rendering_device->compute_list_set_push_constant(compute_list, kernel_push_constants, kernel_push_constants.size());
 	}
 

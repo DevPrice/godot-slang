@@ -26,7 +26,7 @@ public:
 
 	godot::PackedStringArray get_dependency_files() const;
 
-	godot::Error _compile_programs(godot::TypedArray<godot::Ref<SlangShaderProgram>>& out_kernels, godot::TypedArray<godot::Ref<SlangShaderProgram>>& out_passes, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
+	godot::Error _compile_programs(godot::TypedArray<godot::Ref<SlangShaderProgram>>& out_programs, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Ref<SlangShaderFile> compile_shader(const godot::PackedStringArray& additional_entry_points);
 
 	int64_t get_defined_entry_point_count() const;
@@ -52,8 +52,9 @@ private:
 	godot::Ref<SlangShaderProgram> _compile_kernel(slang::IEntryPoint* entry_point, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape);
 	godot::Ref<SlangShaderProgram> _compile_pass(slang::IEntryPoint* vertex_entry_point, slang::IEntryPoint* fragment_entry_point);
 
+	static int64_t _raster_stages();
 	static SlangStage _get_entry_point_stage(slang::IEntryPoint* entry_point);
-	static godot::Ref<SlangShaderProgram> _make_error_program(const godot::String& program_name, godot::RenderingDevice::ShaderStage stage, const godot::String& compile_error);
+	static godot::Ref<SlangShaderProgram> _make_error_program(const godot::String& program_name, int64_t stages, godot::RenderingDevice::ShaderStage error_stage, const godot::String& compile_error);
 };
 
 }

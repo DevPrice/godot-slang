@@ -49,6 +49,10 @@ PackedStringArray SlangModule::get_dependency_files() const {
 	return dependency_files;
 }
 
+int64_t SlangModule::_raster_stages() {
+	return SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_VERTEX) | SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_FRAGMENT);
+}
+
 SlangStage SlangModule::_get_entry_point_stage(slang::IEntryPoint* entry_point) {
 	ERR_FAIL_NULL_V(entry_point, SLANG_STAGE_NONE);
 	// an entry point's stage only shows up once it has a layout of its own
@@ -59,18 +63,19 @@ SlangStage SlangModule::_get_entry_point_stage(slang::IEntryPoint* entry_point) 
 	return entry_point_layout->getEntryPointByIndex(0)->getStage();
 }
 
-Ref<SlangShaderProgram> SlangModule::_make_error_program(const String& program_name, const RenderingDevice::ShaderStage stage, const String& compile_error) {
+Ref<SlangShaderProgram> SlangModule::_make_error_program(const String& program_name, const int64_t stages, const RenderingDevice::ShaderStage error_stage, const String& compile_error) {
 	Ref<SlangShaderProgram> program;
 	program.instantiate();
 	Ref<RDShaderSPIRV> spirv;
 	spirv.instantiate();
-	spirv->set_stage_compile_error(stage, compile_error.trim_suffix("\n"));
+	spirv->set_stage_compile_error(error_stage, compile_error.trim_suffix("\n"));
+	program->set_stages(stages);
 	program->set_program_name(program_name);
 	program->set_spirv(spirv);
 	return program;
 }
 
-Error SlangModule::_compile_programs(TypedArray<Ref<SlangShaderProgram>>& out_kernels, TypedArray<Ref<SlangShaderProgram>>& out_passes, const Ref<ShaderTypeLayoutShape>& global_params_shape, const PackedStringArray& additional_entry_points) {
+Error SlangModule::_compile_programs(TypedArray<Ref<SlangShaderProgram>>& out_programs, const Ref<ShaderTypeLayoutShape>& global_params_shape, const PackedStringArray& additional_entry_points) {
 	ERR_FAIL_NULL_V(module, ERR_UNCONFIGURED);
 	std::vector<Slang::ComPtr<slang::IEntryPoint>> compute_entry_points{};
 	std::vector<Slang::ComPtr<slang::IEntryPoint>> vertex_entry_points{};
@@ -116,14 +121,14 @@ Error SlangModule::_compile_programs(TypedArray<Ref<SlangShaderProgram>>& out_ke
 				const String compile_error = diagnostics_blob && diagnostics_blob->getBufferSize() > 0
 						? SlangBlob::blob_to_string(diagnostics_blob)
 						: String("Failed to find entry point '%s'!") % entry_point_name;
-				out_kernels.push_back(_make_error_program(entry_point_name, RenderingDevice::SHADER_STAGE_COMPUTE, compile_error));
+				out_programs.push_back(_make_error_program(entry_point_name, SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_COMPUTE), RenderingDevice::SHADER_STAGE_COMPUTE, compile_error));
 			}
 		}
 	}
 	for (const Slang::ComPtr<slang::IEntryPoint>& entry_point : compute_entry_points) {
 		const Ref<SlangShaderProgram> kernel = _compile_kernel(entry_point, global_params_shape);
 		if (kernel.is_valid()) {
-			out_kernels.push_back(kernel);
+			out_programs.push_back(kernel);
 		}
 	}
 
@@ -133,11 +138,12 @@ Error SlangModule::_compile_programs(TypedArray<Ref<SlangShaderProgram>>& out_ke
 		if (vertex_entry_points.size() == 1 && fragment_entry_points.size() == 1) {
 			const Ref<SlangShaderProgram> pass = _compile_pass(vertex_entry_points.front(), fragment_entry_points.front());
 			if (pass.is_valid()) {
-				out_passes.push_back(pass);
+				out_programs.push_back(pass);
 			}
 		} else {
-			out_passes.push_back(_make_error_program(
+			out_programs.push_back(_make_error_program(
 					get_file_path().get_file(),
+					_raster_stages(),
 					RenderingDevice::SHADER_STAGE_VERTEX,
 					String("Expected exactly one vertex and one fragment entry point, found %s and %s!") % Array({ String::num_int64(vertex_entry_points.size()), String::num_int64(fragment_entry_points.size()) })));
 		}
@@ -152,15 +158,13 @@ Ref<SlangShaderFile> SlangModule::compile_shader(const PackedStringArray& additi
 	if (diagnostic.is_empty()) {
 		const Ref<StructTypeLayoutShape> global_params = get_params_shape();
 		slang_shader->set_parameters(global_params);
-		TypedArray<Ref<SlangShaderProgram>> kernels;
-		TypedArray<Ref<SlangShaderProgram>> passes;
-		if (const Error compile_error = _compile_programs(kernels, passes, global_params.ptr(), additional_entry_points)) {
+		TypedArray<Ref<SlangShaderProgram>> programs;
+		if (const Error compile_error = _compile_programs(programs, global_params.ptr(), additional_entry_points)) {
 			slang_shader->set_base_error(UtilityFunctions::error_string(compile_error));
-		} else if (kernels.is_empty() && passes.is_empty()) {
+		} else if (programs.is_empty()) {
 			slang_shader->set_base_error("No entry points found!");
 		} else {
-			slang_shader->set_kernels(kernels);
-			slang_shader->set_passes(passes);
+			slang_shader->set_programs(programs);
 		}
 	} else {
 		slang_shader->set_base_error(diagnostic);
@@ -252,7 +256,7 @@ Ref<SlangShaderProgram> SlangModule::_compile_pass(slang::IEntryPoint* vertex_en
 	}
 
 	if (linked_program.get() == nullptr) {
-		return _make_error_program(pass_name, RenderingDevice::SHADER_STAGE_VERTEX, compile_error);
+		return _make_error_program(pass_name, _raster_stages(), RenderingDevice::SHADER_STAGE_VERTEX, compile_error);
 	}
 
 	const Ref<SlangComponentType> component_type = create(linked_program.get(), compile_error);

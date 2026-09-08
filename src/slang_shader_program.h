@@ -11,7 +11,8 @@ class SlangShaderProgram : public godot::Resource {
 
 	GET_SET_PROPERTY(godot::StringName, program_name)
 	GET_SET_PROPERTY(godot::Ref<godot::RDShaderSPIRV>, spirv)
-	// Bitmask of RenderingDevice::SHADER_STAGE_*_BIT for the stages this program provides.
+	// Bitmask of RenderingDevice::SHADER_STAGE_*_BIT for the stages this program is built from.
+	// Set even when a stage fails to compile, so it says what the program is, not what succeeded.
 	GET_SET_PROPERTY(int64_t, stages)
 	GET_SET_PROPERTY(godot::Vector3i, thread_group_size)
 	GET_SET_PROPERTY(int64_t, space_offset)
@@ -28,6 +29,8 @@ public:
 	~SlangShaderProgram() override = default;
 
 	godot::String get_compile_error() const;
+
+	[[nodiscard]] bool has_stage(godot::RenderingDevice::ShaderStage stage) const;
 
 	static int64_t stage_bit(godot::RenderingDevice::ShaderStage stage);
 };

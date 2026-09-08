@@ -17,6 +17,7 @@ var _pipeline := RID()
 var _texture := RID()
 var _framebuffer := RID()
 var _texture_rd := Texture2DRD.new()
+var _program: SlangShaderProgram
 var _can_draw := false
 ## The size the current texture and framebuffer were built for.
 var _drawn_size := Vector2i.ZERO
@@ -25,16 +26,26 @@ func _ready() -> void:
 	if shader == null:
 		push_error("No shader assigned!")
 		return
-	if shader.passes.is_empty():
+	_program = _find_raster_program()
+	if _program == null:
 		push_error("'%s' has no raster passes!" % shader.resource_path)
 		return
-	var compile_error: String = shader.passes[0].get_compile_error()
+	var compile_error: String = _program.get_compile_error()
 	if not compile_error.is_empty():
 		push_error("'%s' failed to compile:\n%s" % [shader.resource_path, compile_error])
 		return
 	if target != null:
 		target.texture = _texture_rd
 	_can_draw = true
+
+## A shader file lists compute kernels and raster passes together in `programs`,
+## so the pass is the program built from both a vertex and a fragment stage.
+func _find_raster_program() -> SlangShaderProgram:
+	for program: SlangShaderProgram in shader.programs:
+		if (program.has_stage(RenderingDevice.SHADER_STAGE_VERTEX)
+				and program.has_stage(RenderingDevice.SHADER_STAGE_FRAGMENT)):
+			return program
+	return null
 
 func _exit_tree() -> void:
 	RenderingServer.call_on_render_thread(_free_resources)
@@ -86,7 +97,7 @@ func _draw(draw_size: Vector2i) -> void:
 ## created against the framebuffer *format*, which only depends on the attachment
 ## formats and sample count, not on the framebuffer's dimensions.
 func _create_pipeline() -> void:
-	_shader = _rendering_device.shader_create_from_spirv(shader.get_pass_spirv(), shader.passes[0].program_name)
+	_shader = _rendering_device.shader_create_from_spirv(_program.spirv, _program.program_name)
 
 	var blend_state := RDPipelineColorBlendState.new()
 	blend_state.attachments = [RDPipelineColorBlendStateAttachment.new()]

@@ -31,7 +31,8 @@ String SlangShaderImporter::_get_visible_name() const {
 int32_t SlangShaderImporter::_get_format_version() const {
 	// 1: FieldShape gained "sync_mode" (SyncMode)
 	// 2: vertex/fragment entry points are compiled into SlangShaderFile::passes
-	return 2;
+	// 3: kernels and passes unified into SlangShaderFile::programs
+	return 3;
 }
 
 int32_t SlangShaderImporter::_get_preset_count() const {
@@ -109,9 +110,7 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 		UtilityFunctions::push_error(String("[%s] %s") % Array { p_source_file, base_error });
 	}
 
-	Array programs = slang_shader->get_kernels().duplicate();
-	programs.append_array(slang_shader->get_passes());
-	for (const Ref<SlangShaderProgram> kernel : programs) {
+	for (const Ref<SlangShaderProgram> kernel : slang_shader->get_programs()) {
 		const String compile_error = kernel->get_compile_error().trim_suffix("\n");
 		if (!compile_error.is_empty()) {
 			UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ module->get_file_path(), compile_error }));

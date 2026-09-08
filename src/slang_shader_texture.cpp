@@ -104,11 +104,12 @@ bool SlangShaderTexture::_has_alpha() const {
 void SlangShaderTexture::render() {
     if (task.is_null() || !texture_rd_rid.is_valid()) return;
 
-    const TypedArray<SlangShaderProgram> kernels = task->get_kernels();
+    const TypedArray<SlangShaderProgram> kernels = task->get_programs();
     const uint64_t kernel_count = kernels.size();
     for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
         Ref<SlangShaderProgram> kernel = kernels[kernel_index];
-        if (kernel.is_valid()) {
+        // the task exposes every program, so skip the ones that aren't dispatchable
+        if (kernel.is_valid() && kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
             const Vector3i local_size = kernel->get_thread_group_size();
             const Vector3i groups(
                     (get_width() - 1) / local_size.x + 1,
