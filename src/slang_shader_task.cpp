@@ -24,8 +24,42 @@ const StringName& shader_param_prefix() {
 	return prefix;
 }
 
-constexpr auto kernel_param_prefix_chars = "kernel_parameter/";
-constexpr int64_t kernel_param_prefix_length = std::char_traits<char>::length(kernel_param_prefix_chars);
+constexpr auto program_param_prefix_chars = "program_parameter/";
+constexpr int64_t program_param_prefix_length = std::char_traits<char>::length(program_param_prefix_chars);
+
+// Pre-rename spelling of program_param_prefix, still accepted when reading and writing
+// properties so scenes saved before the rename keep their values.
+constexpr auto legacy_program_param_prefix_chars = "kernel_parameter/";
+constexpr int64_t legacy_program_param_prefix_length = std::char_traits<char>::length(legacy_program_param_prefix_chars);
+
+const StringName& program_param_prefix() {
+	static const StringName prefix(program_param_prefix_chars);
+	return prefix;
+}
+
+const StringName& legacy_program_param_prefix() {
+	static const StringName prefix(legacy_program_param_prefix_chars);
+	return prefix;
+}
+
+// Splits a program parameter property into "<program>" and "<param>", under either spelling.
+bool split_program_param(const StringName& p_name, StringName& r_program_name, StringName& r_param_name) {
+	String path;
+	if (p_name.begins_with(program_param_prefix())) {
+		path = p_name.substr(program_param_prefix_length);
+	} else if (p_name.begins_with(legacy_program_param_prefix())) {
+		path = p_name.substr(legacy_program_param_prefix_length);
+	} else {
+		return false;
+	}
+	const int64_t first_slash_index = path.find("/");
+	if (first_slash_index < 0) {
+		return false;
+	}
+	r_program_name = path.substr(0, first_slash_index);
+	r_param_name = path.substr(first_slash_index + 1);
+	return true;
+}
 
 void SlangShaderTask::_write_assigned(ComputeShaderObject* object, const Object* context, const ParameterStore& store, const ParameterStore::DirtyPaths& dirty) {
 	for (const StringName& path : dirty) {
@@ -38,18 +72,13 @@ void SlangShaderTask::_write_assigned(ComputeShaderObject* object, const Object*
 	}
 }
 
-const StringName& kernel_param_prefix() {
-	static const StringName prefix(kernel_param_prefix_chars);
-	return prefix;
-}
-
 void SlangShaderTask::_bind_methods() {
 	BIND_GET_SET_RESOURCE(SlangShaderTask, shader, SlangShaderFile)
 	BIND_GET_SET_OBJECT(SlangShaderTask, rendering_device, RenderingDevice)
 	BIND_METHOD(SlangShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(SlangShaderTask, set_shader_parameter, "param", "value")
-	BIND_METHOD(SlangShaderTask, get_kernel_parameter, "kernel", "param")
-	BIND_METHOD(SlangShaderTask, set_kernel_parameter, "kernel", "param", "value")
+	BIND_METHOD(SlangShaderTask, get_program_parameter, "program", "param")
+	BIND_METHOD(SlangShaderTask, set_program_parameter, "program", "param", "value")
 	BIND_METHOD(SlangShaderTask, clear_shader_parameters)
 	ClassDB::bind_method(D_METHOD("dispatch", "kernel_name", "thread_groups", "context"), &SlangShaderTask::dispatch, DEFVAL(nullptr));
 	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &SlangShaderTask::dispatch_at, DEFVAL(nullptr));
@@ -58,9 +87,9 @@ void SlangShaderTask::_bind_methods() {
 	BIND_METHOD(SlangShaderTask, get_rids, "param")
 	BIND_METHOD(SlangShaderTask, get_buffer_data, "param")
 	BIND_METHOD(SlangShaderTask, get_buffer_data_async, "param", "callback")
-	BIND_METHOD(SlangShaderTask, get_kernel_rids, "kernel", "param")
-	BIND_METHOD(SlangShaderTask, get_kernel_buffer_data, "kernel", "param")
-	BIND_METHOD(SlangShaderTask, get_kernel_buffer_data_async, "kernel", "param", "callback")
+	BIND_METHOD(SlangShaderTask, get_program_rids, "program", "param")
+	BIND_METHOD(SlangShaderTask, get_program_buffer_data, "program", "param")
+	BIND_METHOD(SlangShaderTask, get_program_buffer_data_async, "program", "param", "callback")
 }
 
 SlangShaderTask::SlangShaderTask() :
@@ -124,19 +153,19 @@ void SlangShaderTask::set_shader_parameter(const StringName& param, const Varian
 void SlangShaderTask::clear_shader_parameters() {
 	std::lock_guard lock(*_mutex.ptr());
 	_shader_parameters.clear();
-	for (KeyValue<StringName, ParameterStore>& kernel_parameters : _kernel_parameters) {
-		kernel_parameters.value.clear();
+	for (KeyValue<StringName, ParameterStore>& program_parameters : _program_parameters) {
+		program_parameters.value.clear();
 	}
 }
 
-Variant SlangShaderTask::get_kernel_parameter(const StringName& kernel, const StringName& param) const {
-	const ParameterStore* kernel_parameters = _kernel_parameters.getptr(kernel);
-	return kernel_parameters ? kernel_parameters->get(param) : Variant{};
+Variant SlangShaderTask::get_program_parameter(const StringName& program, const StringName& param) const {
+	const ParameterStore* program_parameters = _program_parameters.getptr(program);
+	return program_parameters ? program_parameters->get(param) : Variant{};
 }
 
-void SlangShaderTask::set_kernel_parameter(const StringName& kernel, const StringName& param, const Variant& value) {
+void SlangShaderTask::set_program_parameter(const StringName& program, const StringName& param, const Variant& value) {
 	std::lock_guard lock(*_mutex.ptr());
-	_kernel_parameters[kernel].set(param, value);
+	_program_parameters[program].set(param, value);
 }
 
 void SlangShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
@@ -213,12 +242,12 @@ Dictionary SlangShaderTask::get_shader_parameters() const {
 	return params_shape->get_properties().duplicate();
 }
 
-Dictionary SlangShaderTask::get_kernel_parameters(const StringName& kernel_name) const {
+Dictionary SlangShaderTask::get_program_parameters(const StringName& program_name) const {
 	if (shader.is_null()) {
 		return {};
 	}
 	for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
-		if (kernel->get_program_name() == kernel_name) {
+		if (kernel->get_program_name() == program_name) {
 			const Ref<StructTypeLayoutShape> params_shape = kernel->get_parameters();
 			if (params_shape.is_null()) {
 				return {};
@@ -229,22 +258,22 @@ Dictionary SlangShaderTask::get_kernel_parameters(const StringName& kernel_name)
 	return {};
 }
 
-TypedArray<RID> SlangShaderTask::get_kernel_rids(const StringName& kernel, const StringName& param) const {
-	const ProgramData* program_data = _get_program_data(kernel);
+TypedArray<RID> SlangShaderTask::get_program_rids(const StringName& program, const StringName& param) const {
+	const ProgramData* program_data = _get_program_data(program);
 	ERR_FAIL_NULL_V(program_data, {});
 	ERR_FAIL_NULL_V(program_data->shader_object, {});
 	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_rids();
 }
 
-PackedByteArray SlangShaderTask::get_kernel_buffer_data(const StringName& kernel, const StringName& param) const {
-	const ProgramData* program_data = _get_program_data(kernel);
+PackedByteArray SlangShaderTask::get_program_buffer_data(const StringName& program, const StringName& param) const {
+	const ProgramData* program_data = _get_program_data(program);
 	ERR_FAIL_NULL_V(program_data, {});
 	ERR_FAIL_NULL_V(program_data->shader_object, {});
 	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data();
 }
 
-Error SlangShaderTask::get_kernel_buffer_data_async(const StringName& kernel, const StringName& param, const Callable& callback) const {
-	const ProgramData* program_data = _get_program_data(kernel);
+Error SlangShaderTask::get_program_buffer_data_async(const StringName& program, const StringName& param, const Callable& callback) const {
+	const ProgramData* program_data = _get_program_data(program);
 	ERR_FAIL_NULL_V(program_data, {});
 	ERR_FAIL_NULL_V(program_data->shader_object, {});
 	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data_async(callback);
@@ -256,15 +285,11 @@ bool SlangShaderTask::_set(const StringName& p_name, const Variant& p_value) {
 		set_shader_parameter(param_name, p_value);
 		return true;
 	}
-	if (p_name.begins_with(kernel_param_prefix())) {
-		const StringName path = p_name.substr(kernel_param_prefix_length);
-		const int64_t first_slash_index = path.find("/");
-		if (first_slash_index >= 0) {
-			const StringName kernel_name = path.substr(0, first_slash_index);
-			const StringName param_name = path.substr(first_slash_index + 1);
-			set_kernel_parameter(kernel_name, param_name, p_value);
-			return true;
-		}
+	StringName program_name;
+	StringName param_name;
+	if (split_program_param(p_name, program_name, param_name)) {
+		set_program_parameter(program_name, param_name, p_value);
+		return true;
 	}
 	return false;
 }
@@ -286,15 +311,13 @@ bool SlangShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
 			r_ret = value;
 			return true;
 		}
-	} else if (p_name.begins_with(kernel_param_prefix())) {
-		const StringName path = p_name.substr(kernel_param_prefix_length);
-		const int64_t first_slash_index = path.find("/");
-		if (first_slash_index >= 0) {
-			const StringName kernel_name = path.substr(0, first_slash_index);
-			const StringName param_name = path.substr(first_slash_index + 1);
+	} else {
+		StringName program_name;
+		StringName param_name;
+		if (split_program_param(p_name, program_name, param_name)) {
 			FieldShape field;
 			if (_property_get_reflection(p_name, field)) {
-				const Variant value = get_kernel_parameter(kernel_name, param_name);
+				const Variant value = get_program_parameter(program_name, param_name);
 				if (value.get_type() == Variant::NIL && field.default_value.get_type() != Variant::NIL) {
 					r_ret = field.default_value;
 					return true;
@@ -317,7 +340,7 @@ void SlangShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
 	if (shader.is_valid()) {
 		for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
-			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ kernel_param_prefix(), kernel->get_program_name() }, get_kernel_parameters(kernel->get_program_name()));
+			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ program_param_prefix(), kernel->get_program_name() }, get_program_parameters(kernel->get_program_name()));
 		}
 	}
 }
@@ -377,14 +400,12 @@ bool SlangShaderTask::_property_get_reflection(const StringName& p_name, FieldSh
 			r_reflection = FieldShape::from_dict(last);
 			return true;
 		}
-	} else if (p_name.begins_with(kernel_param_prefix())) {
-		const StringName path = p_name.substr(kernel_param_prefix_length);
-		const int64_t first_slash_index = path.find("/");
-		if (first_slash_index >= 0) {
-			const StringName kernel_name = path.substr(0, first_slash_index);
-			const StringName param_name = path.substr(first_slash_index + 1);
+	} else {
+		StringName program_name;
+		StringName param_name;
+		if (split_program_param(p_name, program_name, param_name)) {
 			const PackedStringArray parts = param_name.split("/");
-			Variant current = get_kernel_parameters(kernel_name);
+			Variant current = get_program_parameters(program_name);
 			int64_t i = 0;
 			bool valid;
 			for (; i < parts.size() - 1; ++i) {
@@ -455,13 +476,13 @@ SlangShaderTask::ProgramData* SlangShaderTask::_get_or_create_program(const int6
 	return program_data.get();
 }
 
-SlangShaderTask::ProgramData* SlangShaderTask::_get_program_data(const StringName& kernel_name) const {
+SlangShaderTask::ProgramData* SlangShaderTask::_get_program_data(const StringName& program_name) const {
 	if (shader.is_null())
 		return nullptr;
 	TypedArray<SlangShaderProgram> programs = shader->get_programs();
 	for (int64_t i = 0; i < programs.size(); i++) {
 		Ref<SlangShaderProgram> program = programs[i];
-		if (program.is_valid() && program->get_program_name() == kernel_name) {
+		if (program.is_valid() && program->get_program_name() == program_name) {
 			ERR_FAIL_INDEX_V(i, _program_data.size(), {});
 			return _program_data[i].get();
 		}
@@ -485,10 +506,10 @@ void SlangShaderTask::_dispatch(const int64_t kernel_index, const Vector3i threa
 	ERR_FAIL_NULL_MSG(rendering_device, "SlangShaderTask: Couldn't obtain rendering device for dispatch!");
 
 	const ProgramData* program_data = _get_or_create_program(kernel_index);
-	ERR_FAIL_NULL_MSG(program_data, "SlangShaderTask: Couldn't obtain kernel data!");
+	ERR_FAIL_NULL_MSG(program_data, "SlangShaderTask: Couldn't obtain program data!");
 
 	const StringName& kernel_name = kernel->get_program_name();
-	ParameterStore& kernel_parameters = _kernel_parameters[kernel_name];
+	ParameterStore& kernel_parameters = _program_parameters[kernel_name];
 
 	// both flags have to be taken, so don't let short-circuiting skip one
 	const bool shader_full_write = _shader_parameters.take_write_all() | _shader_object->take_needs_full_write();
