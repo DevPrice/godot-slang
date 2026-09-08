@@ -2,7 +2,7 @@
 
 [![Build GDExtension](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml/badge.svg)](https://github.com/DevPrice/godot-slang/actions/workflows/builds.yml)
 
-This project is a work-in-progress to support [Slang](https://shader-slang.org/)-based compute shaders in Godot. The primary goal of this project is to simplify working with compute shaders within Godot.
+This project is a work-in-progress to support [Slang](https://shader-slang.org/)-based shaders in Godot. The primary goal of this project is to simplify working with compute shaders within Godot, but basic support for vertex and fragment shaders is included as well.
 
 ## Features
 * Simple and straightforward handling of `.slang` files. You can `load("res://something.slang")` and it works exactly how you would expect.
