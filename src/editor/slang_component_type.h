@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "slang.h"
 #include "slang-com-ptr.h"
 
@@ -37,6 +39,10 @@ public:
 	godot::Ref<SlangBlob> compile_entry_point(int64_t entry_point_index = 0, int64_t target_index = 0) const;
 
 	godot::Ref<SlangShaderProgram> compile_kernel(const godot::Ref<ShaderTypeLayoutShape>& global_params_shape) const;
+	godot::Ref<SlangShaderProgram> compile_pass() const;
+
+	static std::optional<godot::RenderingDevice::ShaderStage> to_godot_shader_stage(SlangStage stage);
+	static std::optional<SlangStage> to_slang_stage(godot::RenderingDevice::ShaderStage stage);
 
 	static godot::Ref<SlangComponentType> create(slang::IComponentType* component_type, const godot::String& diagnostic = "");
 

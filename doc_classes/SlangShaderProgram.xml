@@ -3,10 +3,19 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		A single entry-point of a [SlangShaderFile]. Contains both the compiled SPIR-V associated with the kernel, and reflection metadata related to this particular kernel within a shader.
+		A single compiled program within a [SlangShaderFile]. Contains both the compiled SPIR-V and reflection metadata related to this particular program within a shader.
+		A compute program is built from one entry-point and appears in [member SlangShaderFile.kernels]; a raster program is built from a vertex and a fragment entry-point linked together and appears in [member SlangShaderFile.passes].
 	</description>
 	<tutorials>
 	</tutorials>
+	<methods>
+		<method name="get_compile_error" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the compile error reported for any stage of this program, or an empty string if it compiled successfully.
+			</description>
+		</method>
+	</methods>
 	<members>
 		<member name="kernel_name" type="StringName" setter="set_kernel_name" getter="get_kernel_name" default="&amp;&quot;&quot;">
 			The name of this kernel. By default, this will match the entry-point function name declared in the shader.
@@ -21,7 +30,10 @@
 			The space offset of this kernel's parameters, relative to the global parameters.
 		</member>
 		<member name="spirv" type="RDShaderSPIRV" setter="set_spirv" getter="get_spirv">
-			The SPIR-V intermediate representation of this kernel.
+			The SPIR-V intermediate representation of this program, with one bytecode entry per shader stage it provides.
+		</member>
+		<member name="stages" type="int" setter="set_stages" getter="get_stages" default="0">
+			The shader stages this program provides, as a bitmask of [code]RenderingDevice.SHADER_STAGE_*_BIT[/code] values.
 		</member>
 		<member name="thread_group_size" type="Vector3i" setter="set_thread_group_size" getter="get_thread_group_size" default="Vector3i(0, 0, 0)">
 			The thread group size declared for this kernel.

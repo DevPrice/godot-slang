@@ -3,7 +3,8 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		Compiled compute shader with SPIR-V and reflection information for each shader kernel.
+		Compiled Slang shader with SPIR-V and reflection information for each program it declares.
+		Compute entry-points are compiled into [member kernels]; a vertex and a fragment entry-point are linked together into a raster pass in [member passes].
 		In most cases, this can be used as a drop-in replacement for [RDShaderFile].
 	</description>
 	<tutorials>
@@ -15,6 +16,14 @@
 			<param index="1" name="kernel_index" type="int" default="0" />
 			<description>
 				Returns the SPIR-V intermediate representation of the specified kernel (at [param kernel_index]).
+			</description>
+		</method>
+		<method name="get_pass_spirv" qualifiers="const">
+			<return type="RDShaderSPIRV" />
+			<param index="0" name="version" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="1" name="pass_index" type="int" default="0" />
+			<description>
+				Returns the SPIR-V intermediate representation of the specified raster pass (at [param pass_index]), with one bytecode entry per shader stage.
 			</description>
 		</method>
 		<method name="get_version_list" qualifiers="const">
@@ -40,6 +49,9 @@
 		</member>
 		<member name="kernels" type="SlangShaderProgram[]" setter="set_kernels" getter="get_kernels">
 			The kernels declared in this shader file, one for each entry-point.
+		</member>
+		<member name="passes" type="SlangShaderProgram[]" setter="set_passes" getter="get_passes">
+			The raster passes declared in this shader file. A pass is a vertex and a fragment entry-point linked into a single program, so a shader file describes at most one.
 		</member>
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
 			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct descriptor slots.

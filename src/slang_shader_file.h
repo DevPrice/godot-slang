@@ -11,6 +11,7 @@ class SlangShaderFile : public godot::Resource {
 	GDCLASS(SlangShaderFile, Resource)
 
 	GET_SET_PROPERTY(godot::TypedArray<SlangShaderProgram>, kernels)
+	GET_SET_PROPERTY(godot::TypedArray<SlangShaderProgram>, passes)
 	GET_SET_PROPERTY(godot::String, base_error)
 	GET_SET_PROPERTY(godot::Ref<StructTypeLayoutShape>, parameters)
 
@@ -24,6 +25,8 @@ public:
 	void set_bytecode(const godot::Ref<godot::RDShaderSPIRV> &p_bytecode, const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0);
 	[[nodiscard]] godot::Ref<godot::RDShaderSPIRV> get_spirv(const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0) const;
 	[[nodiscard]] godot::TypedArray<godot::StringName> get_version_list(int64_t kernel_index = 0) const;
+
+	[[nodiscard]] godot::Ref<godot::RDShaderSPIRV> get_pass_spirv(const godot::StringName &p_version = godot::StringName(), int64_t pass_index = 0) const;
 
 	enum MatrixLayout {
 		UNKNOWN = ShaderTypeLayoutShape::MatrixLayout::UNKNOWN,
