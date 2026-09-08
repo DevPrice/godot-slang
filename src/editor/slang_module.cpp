@@ -65,7 +65,7 @@ Ref<SlangShaderProgram> SlangModule::_make_error_program(const String& program_n
 	Ref<RDShaderSPIRV> spirv;
 	spirv.instantiate();
 	spirv->set_stage_compile_error(stage, compile_error.trim_suffix("\n"));
-	program->set_kernel_name(program_name);
+	program->set_program_name(program_name);
 	program->set_spirv(spirv);
 	return program;
 }
@@ -260,7 +260,7 @@ Ref<SlangShaderProgram> SlangModule::_compile_pass(slang::IEntryPoint* vertex_en
 	component_type->set_session(get_session());
 	const Ref<SlangShaderProgram> pass = component_type->compile_pass();
 	if (pass.is_valid()) {
-		pass->set_kernel_name(pass_name);
+		pass->set_program_name(pass_name);
 	}
 	return pass;
 }
@@ -299,7 +299,7 @@ Ref<SlangShaderProgram> SlangModule::_compile_kernel(slang::IEntryPoint* entry_p
 			const Ref kernel = memnew(SlangShaderProgram);
 			const auto entry_point_function = entry_point->getFunctionReflection();
 			const String entry_point_name = entry_point_function->getName();
-			kernel->set_kernel_name(entry_point_name);
+			kernel->set_program_name(entry_point_name);
 			const Ref spirv = memnew(RDShaderSPIRV);
 			kernel->set_spirv(spirv);
 			spirv->set_stage_compile_error(RenderingDevice::SHADER_STAGE_COMPUTE, SlangBlob::blob_to_string(diagnostics_blob));

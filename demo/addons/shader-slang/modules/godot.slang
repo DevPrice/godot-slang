@@ -318,7 +318,7 @@ public struct gd_KernelGroupAttribute {
 /**
  Binds a parameter to the size of the output texture.
  Must be applied to a variable of type `int2`.
- Only available for `ComputeTexture`s.
+ Only available for `SlangShaderTexture`s.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_texture_OutputSizeAttribute {};
@@ -326,7 +326,7 @@ public struct gd_texture_OutputSizeAttribute {};
 /**
  Binds a parameter to the output texture.
  Must be applied to a variable of type `Texture2D` or `Sampler2D`.
- Only available for `ComputeTexture`s.
+ Only available for `SlangShaderTexture`s.
 */
 [__AttributeUsage(_AttributeTargets.Var)]
 public struct gd_texture_OutputTextureAttribute {};

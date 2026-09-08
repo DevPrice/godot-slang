@@ -54,7 +54,7 @@
 			The raster passes declared in this shader file. A pass is a vertex and a fragment entry-point linked into a single program, so a shader file describes at most one.
 		</member>
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
-			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct descriptor slots.
+			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [SlangShaderTask] to bind data to the correct descriptor slots.
 		</member>
 	</members>
 	<constants>

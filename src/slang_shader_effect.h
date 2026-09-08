@@ -5,12 +5,12 @@
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
 #include "binding_macros.h"
-#include "compute_shader_task.h"
+#include "slang_shader_task.h"
 
-class ComputeShaderEffect : public godot::CompositorEffect {
-	GDCLASS(ComputeShaderEffect, CompositorEffect)
+class SlangShaderEffect : public godot::CompositorEffect {
+	GDCLASS(SlangShaderEffect, CompositorEffect)
 
-	GET_SET_PROPERTY(godot::Ref<ComputeShaderTask>, task)
+	GET_SET_PROPERTY(godot::Ref<SlangShaderTask>, task)
 
 protected:
 	static void _bind_methods();
@@ -20,7 +20,7 @@ public:
 
 	void queue_dispatch(const godot::String& kernel_name);
 
-	GDVIRTUAL4(_bind_view, godot::Ref<ComputeShaderTask>, godot::Ref<SlangShaderProgram>, godot::RenderData*, int32_t)
+	GDVIRTUAL4(_bind_view, godot::Ref<SlangShaderTask>, godot::Ref<SlangShaderProgram>, godot::RenderData*, int32_t)
 
 private:
 	godot::Dictionary queued_kernels;

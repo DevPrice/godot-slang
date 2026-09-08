@@ -1,7 +1,7 @@
-#include "compute_texture.h"
+#include "slang_shader_texture.h"
 
 #include "attributes.h"
-#include "compute_dispatch_context.h"
+#include "slang_shader_context.h"
 
 #include "godot_cpp/classes/editor_file_system.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
@@ -12,31 +12,31 @@
 
 using namespace godot;
 
-void ComputeTexture::_bind_methods() {
-    BIND_METHOD(ComputeTexture, render)
-    BIND_GET_SET(ComputeTexture, size, Variant::VECTOR2I)
-    BIND_GET_SET(ComputeTexture, is_animated, Variant::BOOL)
-    BIND_GET_SET_RESOURCE(ComputeTexture, task, ComputeShaderTask)
-    BIND_GET_SET_METHOD(ComputeTexture, data_format)
+void SlangShaderTexture::_bind_methods() {
+    BIND_METHOD(SlangShaderTexture, render)
+    BIND_GET_SET(SlangShaderTexture, size, Variant::VECTOR2I)
+    BIND_GET_SET(SlangShaderTexture, is_animated, Variant::BOOL)
+    BIND_GET_SET_RESOURCE(SlangShaderTexture, task, SlangShaderTask)
+    BIND_GET_SET_METHOD(SlangShaderTexture, data_format)
 }
 
-ComputeTexture::ComputeTexture() : texture_rid(RenderingServer::get_singleton()), texture_rd_rid(UniqueRID(RenderingServer::get_singleton()->get_rendering_device())) {
+SlangShaderTexture::SlangShaderTexture() : texture_rid(RenderingServer::get_singleton()), texture_rd_rid(UniqueRID(RenderingServer::get_singleton()->get_rendering_device())) {
     size = Size2i(256, 256);
     data_format = RenderingDevice::DATA_FORMAT_R8G8B8A8_UNORM;
 }
 
-ComputeTexture::~ComputeTexture() {
+SlangShaderTexture::~SlangShaderTexture() {
     if (RenderingServer* rendering_server = RenderingServer::get_singleton()) {
-        const Callable callable = callable_mp(this, &ComputeTexture::render);
+        const Callable callable = callable_mp(this, &SlangShaderTexture::render);
         if (rendering_server->is_connected("frame_pre_draw", callable)) {
             rendering_server->disconnect("frame_pre_draw", callable);
         }
     }
 }
 
-Size2i ComputeTexture::get_size() const { return size; }
+Size2i SlangShaderTexture::get_size() const { return size; }
 
-void ComputeTexture::set_size(const Size2i p_size) {
+void SlangShaderTexture::set_size(const Size2i p_size) {
     ERR_FAIL_COND(p_size.x <= 0 || p_size.y <= 0);
     if (p_size != size) {
         size = p_size;
@@ -44,9 +44,9 @@ void ComputeTexture::set_size(const Size2i p_size) {
     }
 }
 
-RenderingDevice::DataFormat ComputeTexture::get_data_format() const { return data_format; }
+RenderingDevice::DataFormat SlangShaderTexture::get_data_format() const { return data_format; }
 
-void ComputeTexture::set_data_format(const RenderingDevice::DataFormat p_data_format) {
+void SlangShaderTexture::set_data_format(const RenderingDevice::DataFormat p_data_format) {
     ERR_FAIL_INDEX(p_data_format, RenderingDevice::DATA_FORMAT_MAX);
     if (p_data_format != data_format) {
         data_format = p_data_format;
@@ -54,11 +54,11 @@ void ComputeTexture::set_data_format(const RenderingDevice::DataFormat p_data_fo
     }
 }
 
-Ref<ComputeShaderTask> ComputeTexture::get_task() const { return task; }
+Ref<SlangShaderTask> SlangShaderTexture::get_task() const { return task; }
 
-void ComputeTexture::set_task(Ref<ComputeShaderTask> p_task) {
+void SlangShaderTexture::set_task(Ref<SlangShaderTask> p_task) {
     if (p_task != task) {
-        const Callable changed_callable = callable_mp(this, &ComputeTexture::_task_changed);
+        const Callable changed_callable = callable_mp(this, &SlangShaderTexture::_task_changed);
         if (task.is_valid() && task->is_connected("changed", changed_callable)) {
             task->disconnect("changed", changed_callable);
         }
@@ -70,20 +70,20 @@ void ComputeTexture::set_task(Ref<ComputeShaderTask> p_task) {
     }
 }
 
-int ComputeTexture::_get_width() const {
+int SlangShaderTexture::_get_width() const {
     return size.width;
 }
 
-int ComputeTexture::_get_height() const {
+int SlangShaderTexture::_get_height() const {
     return size.height;
 }
 
-bool ComputeTexture::get_is_animated() const { return is_animated; }
+bool SlangShaderTexture::get_is_animated() const { return is_animated; }
 
-void ComputeTexture::set_is_animated(const bool p_is_animated) {
+void SlangShaderTexture::set_is_animated(const bool p_is_animated) {
     if (is_animated != p_is_animated) {
         is_animated = p_is_animated;
-        const Callable callable = callable_mp(this, &ComputeTexture::render);
+        const Callable callable = callable_mp(this, &SlangShaderTexture::render);
         const bool is_connected = RenderingServer::get_singleton()->is_connected("frame_pre_draw", callable);
         if (p_is_animated && !is_connected) {
             RenderingServer::get_singleton()->connect("frame_pre_draw", callable);
@@ -93,15 +93,15 @@ void ComputeTexture::set_is_animated(const bool p_is_animated) {
     }
 }
 
-RID ComputeTexture::_get_rid() const {
+RID SlangShaderTexture::_get_rid() const {
     return texture_rid;
 }
 
-bool ComputeTexture::_has_alpha() const {
+bool SlangShaderTexture::_has_alpha() const {
     return false;
 }
 
-void ComputeTexture::render() {
+void SlangShaderTexture::render() {
     if (task.is_null() || !texture_rd_rid.is_valid()) return;
 
     const TypedArray<SlangShaderProgram> kernels = task->get_kernels();
@@ -114,7 +114,7 @@ void ComputeTexture::render() {
                     (get_width() - 1) / local_size.x + 1,
                     (get_height() - 1) / local_size.y + 1,
                     1);
-        	const Ref context = memnew(ComputeTextureDispatchContext);
+        	const Ref context = memnew(SlangShaderTextureContext);
         	context->set_output_texture_rid(texture_rd_rid);
         	context->set_output_size(size);
             task->dispatch_at(kernel_index, groups, context.ptr());
@@ -122,15 +122,15 @@ void ComputeTexture::render() {
     }
 }
 
-void ComputeTexture::_queue_update() {
+void SlangShaderTexture::_queue_update() {
     if (updated_queued) return;
     updated_queued = true;
     RenderingServer* rendering_server = RenderingServer::get_singleton();
     ERR_FAIL_NULL(rendering_server);
-    rendering_server->call_on_render_thread(callable_mp(this, &ComputeTexture::_update_textures));
+    rendering_server->call_on_render_thread(callable_mp(this, &SlangShaderTexture::_update_textures));
 }
 
-void ComputeTexture::_update_textures() {
+void SlangShaderTexture::_update_textures() {
     updated_queued = false;
     if (task.is_null()) return;
 
@@ -169,13 +169,13 @@ void ComputeTexture::_update_textures() {
     remote_data_format = new_format;
 }
 
-void ComputeTexture::_task_changed() {
-    const Ref<ComputeShaderTask> t = get_task();
+void SlangShaderTexture::_task_changed() {
+    const Ref<SlangShaderTask> t = get_task();
     if (t.is_null()) return;
     _queue_update();
     if (!get_is_animated()) {
         if (RenderingServer* rendering_server = RenderingServer::get_singleton()) {
-            rendering_server->call_on_render_thread(callable_mp(this, &ComputeTexture::render));
+            rendering_server->call_on_render_thread(callable_mp(this, &SlangShaderTexture::render));
         }
     }
 }

@@ -17,11 +17,11 @@
 		</method>
 	</methods>
 	<members>
-		<member name="kernel_name" type="StringName" setter="set_kernel_name" getter="get_kernel_name" default="&amp;&quot;&quot;">
+		<member name="program_name" type="StringName" setter="set_program_name" getter="get_program_name" default="&amp;&quot;&quot;">
 			The name of this kernel. By default, this will match the entry-point function name declared in the shader.
 		</member>
 		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
-			Get the reflection information of the parameters for this kernel. You typically won't need to access this, but it is used under the hood by [ComputeShaderTask] to bind data to the correct descriptor slots.
+			Get the reflection information of the parameters for this kernel. You typically won't need to access this, but it is used under the hood by [SlangShaderTask] to bind data to the correct descriptor slots.
 		</member>
 		<member name="slot_offset" type="int" setter="set_slot_offset" getter="get_slot_offset" default="0">
 			The slot offset of this kernel's parameters, relative to the global parameters.

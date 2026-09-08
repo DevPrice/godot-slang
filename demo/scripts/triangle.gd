@@ -45,7 +45,7 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	_rendering_device = RenderingServer.get_rendering_device()
 
-	_shader = _rendering_device.shader_create_from_spirv(shader.get_pass_spirv(), shader.passes[0].kernel_name)
+	_shader = _rendering_device.shader_create_from_spirv(shader.get_pass_spirv(), shader.passes[0].program_name)
 
 	var texture_format := RDTextureFormat.new()
 	texture_format.width = size.x

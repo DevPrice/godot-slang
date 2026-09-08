@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="CompositorEffectDispatchContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderEffectContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
-		The dispatch context used by [ComputeShaderEffect]. Exposes data from the render callback to the dispatch.
+		The dispatch context used by [SlangShaderEffect]. Exposes data from the render callback to the dispatch.
 	</description>
 	<tutorials>
 	</tutorials>

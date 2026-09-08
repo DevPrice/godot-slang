@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ComputeShaderEffect" inherits="CompositorEffect" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderEffect" inherits="CompositorEffect" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 		Allows using a compute shader to create a custom rendering effect.
 	</brief_description>
@@ -11,7 +11,7 @@
 	<methods>
 		<method name="_bind_view" qualifiers="virtual">
 			<return type="void" />
-			<param index="0" name="task" type="ComputeShaderTask" />
+			<param index="0" name="task" type="SlangShaderTask" />
 			<param index="1" name="kernel" type="SlangShaderProgram" />
 			<param index="2" name="render_data" type="RenderData" />
 			<param index="3" name="view" type="int" />
@@ -29,7 +29,7 @@
 		</method>
 	</methods>
 	<members>
-		<member name="task" type="ComputeShaderTask" setter="set_task" getter="get_task">
+		<member name="task" type="SlangShaderTask" setter="set_task" getter="get_task">
 			The task associated with this texture.
 		</member>
 	</members>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ComputeTexture" inherits="Texture2D" experimental="The implementation may change or be removed." xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderTexture" inherits="Texture2D" experimental="The implementation may change or be removed." xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 		Texture backed by a compute shader.
 	</brief_description>
 	<description>
-		A [Texture2D] resource backed by a [ComputeShaderTask].
+		A [Texture2D] resource backed by a [SlangShaderTask].
 	</description>
 	<tutorials>
 	</tutorials>
@@ -37,7 +37,7 @@
 		<member name="size" type="Vector2i" setter="set_size" getter="get_size" default="Vector2i(256, 256)">
 			The size of the backing texture.
 		</member>
-		<member name="task" type="ComputeShaderTask" setter="set_task" getter="get_task">
+		<member name="task" type="SlangShaderTask" setter="set_task" getter="get_task">
 			The task associated with this texture.
 		</member>
 	</members>

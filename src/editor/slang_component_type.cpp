@@ -73,7 +73,7 @@ Ref<SlangShaderProgram> SlangComponentType::compile_kernel(const Ref<ShaderTypeL
 	Ref kernel = memnew(SlangShaderProgram);
 	const Ref spirv = memnew(RDShaderSPIRV);
 	kernel->set_spirv(spirv);
-	kernel->set_kernel_name(entry_point_layout->getName());
+	kernel->set_program_name(entry_point_layout->getName());
 
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_layout->getFunction()));

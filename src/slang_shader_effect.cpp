@@ -1,4 +1,4 @@
-#include "compute_shader_effect.h"
+#include "slang_shader_effect.h"
 
 #include "godot_cpp/classes/editor_file_system.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
@@ -8,22 +8,22 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 
 #include "attributes.h"
-#include "compute_dispatch_context.h"
+#include "slang_shader_context.h"
 
 using namespace godot;
 
-void ComputeShaderEffect::_bind_methods() {
+void SlangShaderEffect::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("view_dispatching", PropertyInfo(Variant::INT, "view")));
-	BIND_GET_SET_RESOURCE(ComputeShaderEffect, task, ComputeShaderTask);
-	BIND_METHOD(ComputeShaderEffect, queue_dispatch, "kernel_name");
+	BIND_GET_SET_RESOURCE(SlangShaderEffect, task, SlangShaderTask);
+	BIND_METHOD(SlangShaderEffect, queue_dispatch, "kernel_name");
 	GDVIRTUAL_BIND(_bind_view, "task", "kernel", "render_data", "view");
 }
 
-Ref<ComputeShaderTask> ComputeShaderEffect::get_task() const { return task; }
+Ref<SlangShaderTask> SlangShaderEffect::get_task() const { return task; }
 
-void ComputeShaderEffect::set_task(Ref<ComputeShaderTask> p_task) {
+void SlangShaderEffect::set_task(Ref<SlangShaderTask> p_task) {
 	if (p_task != task) {
-		const Callable changed_callable = callable_mp(this, &ComputeShaderEffect::_task_changed);
+		const Callable changed_callable = callable_mp(this, &SlangShaderEffect::_task_changed);
 		if (task.is_valid() && task->is_connected("changed", changed_callable)) {
 			task->disconnect("changed", changed_callable);
 		}
@@ -35,7 +35,7 @@ void ComputeShaderEffect::set_task(Ref<ComputeShaderTask> p_task) {
 	}
 }
 
-void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type, RenderData* p_render_data) {
+void SlangShaderEffect::_render_callback(const int32_t p_effect_callback_type, RenderData* p_render_data) {
 	CompositorEffect::_render_callback(p_effect_callback_type, p_render_data);
 	if (task.is_null()) {
 		return;
@@ -49,7 +49,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		queued_kernels.clear();
 		for (const Ref<SlangShaderProgram> kernel : kernels) {
 			if (kernel->get_user_attributes().has(CompositorAttributes::once())) {
-				queue_dispatch(kernel->get_kernel_name());
+				queue_dispatch(kernel->get_program_name());
 			}
 		}
 	}
@@ -65,7 +65,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 		Ref<SlangShaderProgram> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
 		if (kernel.is_valid() && kernel->get_compile_error().is_empty()) {
-			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(CompositorAttributes::skip()) || kernel_attributes.has(CompositorAttributes::once()))) {
+			if (!queued_kernels.erase(kernel->get_program_name()) && (kernel_attributes.has(CompositorAttributes::skip()) || kernel_attributes.has(CompositorAttributes::once()))) {
 				continue;
 			}
 			const Vector3i local_size = kernel->get_thread_group_size();
@@ -76,7 +76,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 					1);
 			for (int32_t view = 0; view < view_count; ++view) {
 				GDVIRTUAL_CALL(_bind_view, task, kernel, p_render_data, view);
-				Ref<CompositorEffectDispatchContext> dispatch_context;
+				Ref<SlangShaderEffectContext> dispatch_context;
 				dispatch_context.instantiate();
 				dispatch_context->set_render_data(p_render_data);
 				dispatch_context->set_view(view);
@@ -87,13 +87,13 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	}
 }
 
-void ComputeShaderEffect::_task_changed() {
+void SlangShaderEffect::_task_changed() {
 	is_first_run = true;
 
 	// Work around render callback not being called?
 	set_effect_callback_type(get_effect_callback_type());
 }
 
-void ComputeShaderEffect::queue_dispatch(const String& kernel_name) {
+void SlangShaderEffect::queue_dispatch(const String& kernel_name) {
 	queued_kernels.set(kernel_name, true);
 }

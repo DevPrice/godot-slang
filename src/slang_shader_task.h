@@ -12,8 +12,8 @@
 #include "parameter_store.h"
 #include "sampler_cache.h"
 
-class ComputeShaderTask : public godot::Resource {
-	GDCLASS(ComputeShaderTask, Resource);
+class SlangShaderTask : public godot::Resource {
+	GDCLASS(SlangShaderTask, Resource);
 
 	GET_SET_PROPERTY(godot::Ref<SlangShaderFile>, shader)
 	GET_SET_OBJECT_PTR(godot::RenderingDevice, rendering_device)
@@ -22,7 +22,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	ComputeShaderTask();
+	SlangShaderTask();
 
 	[[nodiscard]] godot::TypedArray<SlangShaderProgram> get_kernels() const;
 

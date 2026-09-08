@@ -9,7 +9,7 @@
 class SlangShaderProgram : public godot::Resource {
 	GDCLASS(SlangShaderProgram, Resource)
 
-	GET_SET_PROPERTY(godot::StringName, kernel_name)
+	GET_SET_PROPERTY(godot::StringName, program_name)
 	GET_SET_PROPERTY(godot::Ref<godot::RDShaderSPIRV>, spirv)
 	// Bitmask of RenderingDevice::SHADER_STAGE_*_BIT for the stages this program provides.
 	GET_SET_PROPERTY(int64_t, stages)

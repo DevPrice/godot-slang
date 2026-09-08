@@ -1,8 +1,8 @@
 #include <memory>
 
 #include "attributes.h"
-#include "compute_dispatch_context.h"
-#include "compute_texture.h"
+#include "slang_shader_context.h"
+#include "slang_shader_texture.h"
 #include "rids.h"
 
 #include "godot_cpp/classes/engine.hpp"
@@ -133,7 +133,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(CompositorAttributes::color_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_color_layer(effect_context->get_view());
 					}
@@ -158,7 +158,7 @@ AttributeRegistry::AttributeRegistry() {
 		}
 		return [texture_format, texture_name, context_name, texture_size_override](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (RenderSceneBuffersRD* render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						const Vector2i texture_size = texture_size_override ? *texture_size_override : render_scene_buffers->get_internal_size();
 						// TODO: Make more of this configurable
@@ -181,7 +181,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(CompositorAttributes::depth_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_depth_layer(effect_context->get_view());
 					}
@@ -192,7 +192,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(CompositorAttributes::internal_size(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_internal_size();
 					}
@@ -203,7 +203,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(CompositorAttributes::scene_data(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const RenderData* render_data = effect_context->get_render_data()) {
 						if (const RenderSceneData* scene_data = render_data->get_render_scene_data()) {
 							value = scene_data->get_uniform_buffer();
@@ -219,7 +219,7 @@ AttributeRegistry::AttributeRegistry() {
 		const StringName context_name = context_attr.get(key_context, "__global_context");
 		return [texture_name, context_name](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const RenderSceneBuffersRD* render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_texture(context_name, texture_name);
 					}
@@ -230,7 +230,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(CompositorAttributes::velocity_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto effect_context = Object::cast_to<CompositorEffectDispatchContext>(context)) {
+				if (const auto effect_context = Object::cast_to<SlangShaderEffectContext>(context)) {
 					if (const auto render_scene_buffers = effect_context->get_render_scene_buffers()) {
 						value = render_scene_buffers->get_velocity_layer(effect_context->get_view());
 					}
@@ -241,7 +241,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(TextureAttributes::output_size(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
+				if (const auto texture_context = Object::cast_to<SlangShaderTextureContext>(context)) {
 					value = texture_context->get_output_size();
 				}
 			}
@@ -250,7 +250,7 @@ AttributeRegistry::AttributeRegistry() {
 	register_write_handler(TextureAttributes::output_texture(), [](const Dictionary&, const FieldShape&) {
 		return [](Variant& value, const Object* context) {
 			if (is_null(value) && context) {
-				if (const auto texture_context = Object::cast_to<ComputeTextureDispatchContext>(context)) {
+				if (const auto texture_context = Object::cast_to<SlangShaderTextureContext>(context)) {
 					value = texture_context->get_output_texture_rid();
 				}
 			}

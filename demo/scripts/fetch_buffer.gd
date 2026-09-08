@@ -1,6 +1,6 @@
 extends Node
 
-@export var task: ComputeShaderTask
+@export var task: SlangShaderTask
 
 func _ready() -> void:
 	task.dispatch_all(Vector3i(1, 1, 1))

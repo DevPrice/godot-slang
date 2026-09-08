@@ -4,12 +4,12 @@
 
 #include "binding_macros.h"
 #include "slang_shader_file.h"
-#include "compute_shader_task.h"
+#include "slang_shader_task.h"
 
-class ComputeTexture final : public godot::Texture2D {
-    GDCLASS(ComputeTexture, Texture2D)
+class SlangShaderTexture final : public godot::Texture2D {
+    GDCLASS(SlangShaderTexture, Texture2D)
 
-    GET_SET_PROPERTY(godot::Ref<ComputeShaderTask>, task)
+    GET_SET_PROPERTY(godot::Ref<SlangShaderTask>, task)
     GET_SET_PROPERTY(godot::Size2i, size)
     GET_SET_PROPERTY(godot::RenderingDevice::DataFormat, data_format)
     GET_SET_PROPERTY(bool, is_animated)
@@ -18,8 +18,8 @@ protected:
     static void _bind_methods();
 
 public:
-    ComputeTexture();
-    ~ComputeTexture() override;
+    SlangShaderTexture();
+    ~SlangShaderTexture() override;
 
     [[nodiscard]] int _get_width() const override;
     [[nodiscard]] int _get_height() const override;

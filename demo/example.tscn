@@ -9,11 +9,11 @@
 [ext_resource type="SlangShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="7_kkclv"]
 [ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_rujmf"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_rujmf"]
 shader = ExtResource("4_ugfer")
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_mt10o"]
-task = SubResource("ComputeShaderTask_rujmf")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_mt10o"]
+task = SubResource("SlangShaderTask_rujmf")
 resource_name = "Data mosh effect"
 enabled = false
 needs_motion_vectors = true
@@ -33,26 +33,26 @@ sky = SubResource("Sky_n51mc")
 tonemap_mode = 2
 glow_enabled = true
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ei00m"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_ei00m"]
 shader = ExtResource("2_wcwec")
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_2jas5"]
-task = SubResource("ComputeShaderTask_ei00m")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_2jas5"]
+task = SubResource("SlangShaderTask_ei00m")
 resource_name = "Grayscale effect"
 enabled = false
 effect_callback_type = 1
 access_resolved_color = false
 access_resolved_depth = false
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_ugfer"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_ugfer"]
 shader = ExtResource("3_ei00m")
 shader_parameter/push_constants/outline_size = 1.0
 shader_parameter/push_constants/outline_color = Color(0, 0, 0, 0.75000006)
 shader_parameter/push_constants/depth_sensitivity = 0.25
 shader_parameter/push_constants/normal_sensitivity = 0.1
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_ugfer"]
-task = SubResource("ComputeShaderTask_ugfer")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_ugfer"]
+task = SubResource("SlangShaderTask_ugfer")
 resource_name = "Outline effect"
 effect_callback_type = 1
 access_resolved_color = false
@@ -60,7 +60,7 @@ access_resolved_depth = true
 needs_normal_roughness = true
 
 [sub_resource type="Compositor" id="Compositor_ugfer"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_2jas5"), SubResource("ComputeShaderEffect_ugfer"), SubResource("ComputeShaderEffect_mt10o")])
+compositor_effects = Array[CompositorEffect]([SubResource("SlangShaderEffect_2jas5"), SubResource("SlangShaderEffect_ugfer"), SubResource("SlangShaderEffect_mt10o")])
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wcwec"]
 albedo_color = Color(0.2, 1, 1, 1)
@@ -72,34 +72,34 @@ albedo_color = Color(0.748747, 1, 0.518099, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugfer"]
 albedo_color = Color(1, 0.486275, 1, 1)
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_hl4on"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_hl4on"]
 shader = ExtResource("7_kkclv")
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_hl4on"]
-task = SubResource("ComputeShaderTask_hl4on")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_hl4on"]
+task = SubResource("SlangShaderTask_hl4on")
 resource_local_to_scene = true
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_mt10o"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_mt10o"]
 shader = ExtResource("6_rujmf")
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_kkclv"]
-task = SubResource("ComputeShaderTask_mt10o")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_kkclv"]
+task = SubResource("SlangShaderTask_mt10o")
 resource_local_to_scene = true
 needs_normal_roughness = true
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_v40a1"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_v40a1"]
 shader = ExtResource("3_ei00m")
 shader_parameter/push_constants/outline_size = 1.0
 shader_parameter/push_constants/outline_color = Color(0, 0, 0, 1)
 shader_parameter/push_constants/depth_sensitivity = 0.25
 shader_parameter/push_constants/normal_sensitivity = 0.1
 
-[sub_resource type="ComputeShaderEffect" id="ComputeShaderEffect_v40a1"]
-task = SubResource("ComputeShaderTask_v40a1")
+[sub_resource type="SlangShaderEffect" id="SlangShaderEffect_v40a1"]
+task = SubResource("SlangShaderTask_v40a1")
 resource_local_to_scene = true
 
 [sub_resource type="Compositor" id="Compositor_mt10o"]
-compositor_effects = Array[CompositorEffect]([SubResource("ComputeShaderEffect_hl4on"), SubResource("ComputeShaderEffect_kkclv"), SubResource("ComputeShaderEffect_v40a1")])
+compositor_effects = Array[CompositorEffect]([SubResource("SlangShaderEffect_hl4on"), SubResource("SlangShaderEffect_kkclv"), SubResource("SlangShaderEffect_v40a1")])
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_kkclv"]
 viewport_path = NodePath("NormalsViewport")
@@ -122,17 +122,17 @@ resource_local_to_scene = true
 material = SubResource("StandardMaterial3D_hl4on")
 size = Vector2(4, 4)
 
-[sub_resource type="ComputeShaderTask" id="ComputeShaderTask_kkclv"]
+[sub_resource type="SlangShaderTask" id="SlangShaderTask_kkclv"]
 shader = ExtResource("3_8lvy3")
 
-[sub_resource type="ComputeTexture" id="ComputeTexture_kkclv"]
+[sub_resource type="SlangShaderTexture" id="SlangShaderTexture_kkclv"]
 size = Vector2i(1024, 1024)
 is_animated = true
-task = SubResource("ComputeShaderTask_kkclv")
+task = SubResource("SlangShaderTask_kkclv")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mt10o"]
 albedo_color = Color(2.454227, 2.454227, 2.454227, 1)
-albedo_texture = SubResource("ComputeTexture_kkclv")
+albedo_texture = SubResource("SlangShaderTexture_kkclv")
 albedo_texture_force_srgb = true
 
 [sub_resource type="QuadMesh" id="QuadMesh_hl4on"]
@@ -141,7 +141,7 @@ size = Vector2(8, 8)
 
 [node name="Node" type="Node3D" unique_id=818183429]
 script = ExtResource("1_kkclv")
-data_mosh_effect = SubResource("ComputeShaderEffect_mt10o")
+data_mosh_effect = SubResource("SlangShaderEffect_mt10o")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=347714745]
 environment = SubResource("Environment_8lvy3")

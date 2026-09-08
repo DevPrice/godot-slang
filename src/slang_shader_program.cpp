@@ -3,7 +3,7 @@
 using namespace godot;
 
 void SlangShaderProgram::_bind_methods() {
-	BIND_GET_SET(SlangShaderProgram, kernel_name, Variant::STRING);
+	BIND_GET_SET(SlangShaderProgram, program_name, Variant::STRING);
 	BIND_GET_SET(SlangShaderProgram, thread_group_size, Variant::VECTOR3);
 	BIND_GET_SET(SlangShaderProgram, user_attributes, Variant::DICTIONARY);
 	BIND_GET_SET(SlangShaderProgram, used_binding_sets, Variant::DICTIONARY);
@@ -34,7 +34,7 @@ int64_t SlangShaderProgram::stage_bit(const RenderingDevice::ShaderStage stage) 
 	return int64_t(1) << static_cast<int64_t>(stage);
 }
 
-GET_SET_PROPERTY_IMPL(SlangShaderProgram, StringName, kernel_name);
+GET_SET_PROPERTY_IMPL(SlangShaderProgram, StringName, program_name);
 GET_SET_PROPERTY_IMPL(SlangShaderProgram, Ref<RDShaderSPIRV>, spirv);
 GET_SET_PROPERTY_IMPL(SlangShaderProgram, int64_t, stages);
 GET_SET_PROPERTY_IMPL(SlangShaderProgram, Vector3i, thread_group_size);
