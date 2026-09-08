@@ -104,10 +104,10 @@ bool ComputeTexture::_has_alpha() const {
 void ComputeTexture::render() {
     if (task.is_null() || !texture_rd_rid.is_valid()) return;
 
-    const TypedArray<ComputeShaderKernel> kernels = task->get_kernels();
+    const TypedArray<SlangShaderProgram> kernels = task->get_kernels();
     const uint64_t kernel_count = kernels.size();
     for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
-        Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+        Ref<SlangShaderProgram> kernel = kernels[kernel_index];
         if (kernel.is_valid()) {
             const Vector3i local_size = kernel->get_thread_group_size();
             const Vector3i groups(

@@ -4,7 +4,7 @@
 		Allows using a compute shader to create a custom rendering effect.
 	</brief_description>
 	<description>
-		This resource defines a custom rendering effect backed by a [ComputeShaderFile].
+		This resource defines a custom rendering effect backed by a [SlangShaderFile].
 	</description>
 	<tutorials>
 	</tutorials>
@@ -12,7 +12,7 @@
 		<method name="_bind_view" qualifiers="virtual">
 			<return type="void" />
 			<param index="0" name="task" type="ComputeShaderTask" />
-			<param index="1" name="kernel" type="ComputeShaderKernel" />
+			<param index="1" name="kernel" type="SlangShaderProgram" />
 			<param index="2" name="render_data" type="RenderData" />
 			<param index="3" name="view" type="int" />
 			<description>

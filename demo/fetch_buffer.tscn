@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://d1pxnlka8dbd1"]
 
 [ext_resource type="Script" uid="uid://212hjnw8mb6n" path="res://scripts/fetch_buffer.gd" id="1_xh7ir"]
-[ext_resource type="ComputeShaderFile" uid="uid://jtlqkpp3yyhg" path="res://shaders/square.slang" id="2_dpyg5"]
+[ext_resource type="SlangShaderFile" uid="uid://jtlqkpp3yyhg" path="res://shaders/square.slang" id="2_dpyg5"]
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_xh7ir"]
 shader = ExtResource("2_dpyg5")

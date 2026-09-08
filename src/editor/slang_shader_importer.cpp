@@ -7,8 +7,8 @@
 #include <godot_cpp/classes/resource_saver.hpp>
 
 #include "attributes.h"
-#include <compute_shader_file.h>
-#include <compute_shader_kernel.h>
+#include <slang_shader_file.h>
+#include <slang_shader_program.h>
 
 #include "slang_session.h"
 #include "slang_shader_editor_plugin.h"
@@ -69,7 +69,7 @@ String SlangShaderImporter::_get_save_extension() const {
 }
 
 String SlangShaderImporter::_get_resource_type() const {
-	return ComputeShaderFile::get_class_static();
+	return SlangShaderFile::get_class_static();
 }
 
 float SlangShaderImporter::_get_priority() const {
@@ -101,14 +101,14 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 
 	const Ref<gdslang::SlangModule> module = slang_session->load_module_from_source_string("__main_module", p_source_file.get_file(), shader_source);
 	ERR_FAIL_NULL_V_MSG(module, ERR_COMPILATION_FAILED, String("[%s] Failed to load module!") % p_source_file);
-	const Ref<ComputeShaderFile> slang_shader = module->compile_shader(p_options.get("entry_points", {}));
+	const Ref<SlangShaderFile> slang_shader = module->compile_shader(p_options.get("entry_points", {}));
 	ERR_FAIL_NULL_V_MSG(slang_shader, ERR_COMPILATION_FAILED, String("[%s] Failed to compile shader!") % module->get_file_path());
 	const String base_error = slang_shader->get_base_error();
 	if (!base_error.is_empty()) {
 		UtilityFunctions::push_error(String("[%s] %s") % Array { p_source_file, base_error });
 	}
 
-	for (const Ref<ComputeShaderKernel> kernel : slang_shader->get_kernels()) {
+	for (const Ref<SlangShaderProgram> kernel : slang_shader->get_kernels()) {
 		const String compile_error = kernel->get_compile_error().trim_suffix("\n");
 		if (!compile_error.is_empty()) {
 			UtilityFunctions::push_error(String("[%s] Slang compile error:\n%s") % Array({ module->get_file_path(), compile_error }));

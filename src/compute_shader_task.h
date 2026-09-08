@@ -7,7 +7,7 @@
 
 #include "binding_macros.h"
 #include "compute_shader_cursor.h"
-#include "compute_shader_file.h"
+#include "slang_shader_file.h"
 #include "compute_shader_shape.h"
 #include "parameter_store.h"
 #include "sampler_cache.h"
@@ -15,7 +15,7 @@
 class ComputeShaderTask : public godot::Resource {
 	GDCLASS(ComputeShaderTask, Resource);
 
-	GET_SET_PROPERTY(godot::Ref<ComputeShaderFile>, shader)
+	GET_SET_PROPERTY(godot::Ref<SlangShaderFile>, shader)
 	GET_SET_OBJECT_PTR(godot::RenderingDevice, rendering_device)
 
 protected:
@@ -24,7 +24,7 @@ protected:
 public:
 	ComputeShaderTask();
 
-	[[nodiscard]] godot::TypedArray<ComputeShaderKernel> get_kernels() const;
+	[[nodiscard]] godot::TypedArray<SlangShaderProgram> get_kernels() const;
 
 	[[nodiscard]] godot::Variant get_shader_parameter(const godot::StringName& param) const;
 	void set_shader_parameter(const godot::StringName& param, const godot::Variant& value);

@@ -40,14 +40,14 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	if (task.is_null()) {
 		return;
 	}
-	const TypedArray<ComputeShaderKernel> kernels = task->get_kernels();
+	const TypedArray<SlangShaderProgram> kernels = task->get_kernels();
 	if (kernels.is_empty())
 		return;
 
 	if (is_first_run) {
 		is_first_run = false;
 		queued_kernels.clear();
-		for (const Ref<ComputeShaderKernel> kernel : kernels) {
+		for (const Ref<SlangShaderProgram> kernel : kernels) {
 			if (kernel->get_user_attributes().has(CompositorAttributes::once())) {
 				queue_dispatch(kernel->get_kernel_name());
 			}
@@ -62,7 +62,7 @@ void ComputeShaderEffect::_render_callback(const int32_t p_effect_callback_type,
 	const uint32_t view_count = render_scene_buffers->get_view_count();
 	const uint64_t kernel_count = kernels.size();
 	for (int32_t kernel_index = 0; kernel_index < kernel_count; ++kernel_index) {
-		Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+		Ref<SlangShaderProgram> kernel = kernels[kernel_index];
 		const Dictionary kernel_attributes = kernel->get_user_attributes();
 		if (kernel.is_valid() && kernel->get_compile_error().is_empty()) {
 			if (!queued_kernels.erase(kernel->get_kernel_name()) && (kernel_attributes.has(CompositorAttributes::skip()) || kernel_attributes.has(CompositorAttributes::once()))) {

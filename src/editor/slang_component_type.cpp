@@ -56,7 +56,7 @@ Ref<SlangBlob> SlangComponentType::compile_entry_point(const int64_t entry_point
 	return SlangBlob::create(entry_point_blob.get(), diagnostics_blob.get());
 }
 
-Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderTypeLayoutShape>& global_params_shape) const {
+Ref<SlangShaderProgram> SlangComponentType::compile_kernel(const Ref<ShaderTypeLayoutShape>& global_params_shape) const {
 	ERR_FAIL_NULL_V(component_type, nullptr);
 
 	slang::ProgramLayout* program_layout = get_layout();
@@ -70,7 +70,7 @@ Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderType
 		}
 	}
 
-	Ref kernel = memnew(ComputeShaderKernel);
+	Ref kernel = memnew(SlangShaderProgram);
 	const Ref spirv = memnew(RDShaderSPIRV);
 	kernel->set_spirv(spirv);
 	kernel->set_kernel_name(entry_point_layout->getName());

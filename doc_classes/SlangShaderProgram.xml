@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ComputeShaderKernel" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderProgram" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
-		A single entry-point of a [ComputeShaderFile]. Contains both the compiled SPIR-V associated with the kernel, and reflection metadata related to this particular kernel within a shader.
+		A single entry-point of a [SlangShaderFile]. Contains both the compiled SPIR-V associated with the kernel, and reflection metadata related to this particular kernel within a shader.
 	</description>
 	<tutorials>
 	</tutorials>

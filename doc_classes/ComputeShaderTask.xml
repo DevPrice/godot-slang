@@ -3,7 +3,7 @@
 	<brief_description>
 	</brief_description>
 	<description>
-		Wraps a [ComputeShaderFile] into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
+		Wraps a [SlangShaderFile] into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -156,7 +156,7 @@
 		<member name="rendering_device" type="RenderingDevice" setter="set_rendering_device" getter="get_rendering_device">
 			The underlying [RenderingDevice] to use for dispatch. If not set, will use the rendering device associated with the [RenderingServer].
 		</member>
-		<member name="shader" type="ComputeShaderFile" setter="set_shader" getter="get_shader">
+		<member name="shader" type="SlangShaderFile" setter="set_shader" getter="get_shader">
 			The shader executed during dispatch of this task.
 		</member>
 	</members>

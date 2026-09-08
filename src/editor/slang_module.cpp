@@ -1,7 +1,7 @@
 #include "godot_cpp/classes/project_settings.hpp"
 
 #include "compute_shader_cursor.h"
-#include "compute_shader_file.h"
+#include "slang_shader_file.h"
 #include "reflection_context.h"
 #include "slang_entry_point.h"
 
@@ -49,7 +49,7 @@ PackedStringArray SlangModule::get_dependency_files() const {
 	return dependency_files;
 }
 
-Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_kernels, const Ref<ShaderTypeLayoutShape>& global_params_shape, const PackedStringArray& additional_entry_points) {
+Error SlangModule::_compile_kernels(TypedArray<Ref<SlangShaderProgram>>& out_kernels, const Ref<ShaderTypeLayoutShape>& global_params_shape, const PackedStringArray& additional_entry_points) {
 	ERR_FAIL_NULL_V(module, ERR_UNCONFIGURED);
 	std::vector<Slang::ComPtr<slang::IEntryPoint>> entry_points{};
 	entry_points.reserve(module->getDefinedEntryPointCount() + additional_entry_points.size());
@@ -77,7 +77,7 @@ Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_ke
 			if (SLANG_SUCCEEDED(module->findAndCheckEntryPoint(name_string.get_data(), SlangStage::SLANG_STAGE_COMPUTE, entry_point.writeRef(), diagnostics_blob.writeRef()))) {
 				entry_points.push_back(entry_point);
 			} else {
-				Ref<ComputeShaderKernel> kernel;
+				Ref<SlangShaderProgram> kernel;
 				kernel.instantiate();
 				Ref<RDShaderSPIRV> spirv;
 				spirv.instantiate();
@@ -93,7 +93,7 @@ Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_ke
 		}
 	}
 	for (const Slang::ComPtr<slang::IEntryPoint>& entry_point : entry_points) {
-		const Ref<ComputeShaderKernel> kernel = _compile_kernel(entry_point, global_params_shape);
+		const Ref<SlangShaderProgram> kernel = _compile_kernel(entry_point, global_params_shape);
 		if (kernel.is_valid()) {
 			out_kernels.push_back(kernel);
 		}
@@ -102,13 +102,13 @@ Error SlangModule::_compile_kernels(TypedArray<Ref<ComputeShaderKernel>>& out_ke
 	return OK;
 }
 
-Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& additional_entry_points) {
-	const Ref slang_shader = memnew(ComputeShaderFile);
+Ref<SlangShaderFile> SlangModule::compile_shader(const PackedStringArray& additional_entry_points) {
+	const Ref slang_shader = memnew(SlangShaderFile);
 	const String diagnostic = get_diagnostic();
 	if (diagnostic.is_empty()) {
 		const Ref<StructTypeLayoutShape> global_params = get_params_shape();
 		slang_shader->set_parameters(global_params);
-		TypedArray<Ref<ComputeShaderKernel>> kernels;
+		TypedArray<Ref<SlangShaderProgram>> kernels;
 		if (const Error compile_error = _compile_kernels(kernels, global_params.ptr(), additional_entry_points)) {
 			slang_shader->set_base_error(UtilityFunctions::error_string(compile_error));
 		} else if (kernels.is_empty()) {
@@ -120,7 +120,7 @@ Ref<ComputeShaderFile> SlangModule::compile_shader(const PackedStringArray& addi
 		slang_shader->set_base_error(diagnostic);
 	}
 
-	slang_shader->set_meta("godot_version", ComputeShaderFile::get_godot_version_string());
+	slang_shader->set_meta("godot_version", SlangShaderFile::get_godot_version_string());
 	return slang_shader;
 }
 
@@ -163,7 +163,7 @@ Ref<SlangEntryPoint> SlangModule::find_and_check_entry_point(const String& name,
 	return entry_point;
 }
 
-Ref<ComputeShaderKernel> SlangModule::_compile_kernel(slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape) {
+Ref<SlangShaderProgram> SlangModule::_compile_kernel(slang::IEntryPoint* entry_point, const Ref<ShaderTypeLayoutShape>& global_params_shape) {
 	ERR_FAIL_NULL_V(module, nullptr);
 	slang::ISession* session = module->getSession();
 
@@ -194,7 +194,7 @@ Ref<ComputeShaderKernel> SlangModule::_compile_kernel(slang::IEntryPoint* entry_
 				linked_program.writeRef(),
 				diagnostics_blob.writeRef());
 		if (result != OK) {
-			const Ref kernel = memnew(ComputeShaderKernel);
+			const Ref kernel = memnew(SlangShaderProgram);
 			const auto entry_point_function = entry_point->getFunctionReflection();
 			const String entry_point_name = entry_point_function->getName();
 			kernel->set_kernel_name(entry_point_name);

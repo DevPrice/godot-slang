@@ -44,7 +44,7 @@ const StringName& kernel_param_prefix() {
 }
 
 void ComputeShaderTask::_bind_methods() {
-	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, ComputeShaderFile)
+	BIND_GET_SET_RESOURCE(ComputeShaderTask, shader, SlangShaderFile)
 	BIND_GET_SET_OBJECT(ComputeShaderTask, rendering_device, RenderingDevice)
 	BIND_METHOD(ComputeShaderTask, get_shader_parameter, "param")
 	BIND_METHOD(ComputeShaderTask, set_shader_parameter, "param", "value")
@@ -68,16 +68,16 @@ ComputeShaderTask::ComputeShaderTask() :
 	_mutex.instantiate();
 }
 
-TypedArray<ComputeShaderKernel> ComputeShaderTask::get_kernels() const {
+TypedArray<SlangShaderProgram> ComputeShaderTask::get_kernels() const {
 	if (shader.is_valid()) {
 		return shader->get_kernels().duplicate();
 	}
 	return {};
 }
 
-Ref<ComputeShaderFile> ComputeShaderTask::get_shader() const { return shader; }
+Ref<SlangShaderFile> ComputeShaderTask::get_shader() const { return shader; }
 
-void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
+void ComputeShaderTask::set_shader(Ref<SlangShaderFile> p_shader) {
 	std::lock_guard lock(*_mutex.ptr());
 	if (shader != p_shader) {
 		const Callable changed_callable = callable_mp(this, &ComputeShaderTask::_shader_changed);
@@ -89,7 +89,7 @@ void ComputeShaderTask::set_shader(Ref<ComputeShaderFile> p_shader) {
 			p_shader->connect("changed", changed_callable);
 			if (p_shader->has_meta("godot_version")) {
 				const String version = p_shader->get_meta("godot_version");
-				if (version != ComputeShaderFile::get_godot_version_string()) {
+				if (version != SlangShaderFile::get_godot_version_string()) {
 					UtilityFunctions::push_error(String("'%s' was compiled for a different version of Godot (%s). Reimport this resource.") % Array { p_shader->get_path().get_file(), version });
 				}
 			}
@@ -142,7 +142,7 @@ void ComputeShaderTask::set_kernel_parameter(const StringName& kernel, const Str
 void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
 		_dispatch(i, thread_groups, context);
 	}
@@ -151,9 +151,9 @@ void ComputeShaderTask::dispatch_all(const Vector3i thread_groups, const Object*
 void ComputeShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
-		Ref<ComputeShaderKernel> kernel = kernels[i];
+		Ref<SlangShaderProgram> kernel = kernels[i];
 		if (kernel.is_valid() && kernel->get_kernel_name() == kernel_name) {
 			_dispatch(i, thread_groups, context);
 		}
@@ -168,9 +168,9 @@ void ComputeShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i t
 void ComputeShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Object* context) {
 	std::lock_guard lock(*_mutex.ptr());
 	ERR_FAIL_NULL(shader);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
-		const Ref<ComputeShaderKernel> kernel = kernels[i];
+		const Ref<SlangShaderProgram> kernel = kernels[i];
 		if (kernel.is_valid()) {
 			const Dictionary attributes = kernel->get_user_attributes();
 			if (attributes.has(GodotAttributes::kernel_group())) {
@@ -213,7 +213,7 @@ Dictionary ComputeShaderTask::get_kernel_parameters(const StringName& kernel_nam
 	if (shader.is_null()) {
 		return {};
 	}
-	for (const Ref<ComputeShaderKernel> kernel : shader->get_kernels()) {
+	for (const Ref<SlangShaderProgram> kernel : shader->get_kernels()) {
 		if (kernel->get_kernel_name() == kernel_name) {
 			const Ref<StructTypeLayoutShape> params_shape = kernel->get_parameters();
 			if (params_shape.is_null()) {
@@ -312,7 +312,7 @@ void ComputeShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
 	ERR_FAIL_NULL(p_list);
 	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
 	if (shader.is_valid()) {
-		for (const Ref<ComputeShaderKernel> kernel : shader->get_kernels()) {
+		for (const Ref<SlangShaderProgram> kernel : shader->get_kernels()) {
 			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ kernel_param_prefix(), kernel->get_kernel_name() }, get_kernel_parameters(kernel->get_kernel_name()));
 		}
 	}
@@ -439,9 +439,9 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const in
 	}
 	RenderingDevice* rd = _get_active_rendering_device();
 	ERR_FAIL_NULL_V(rd, nullptr);
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_V(kernel_index, kernels.size(), nullptr);
-	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+	const Ref<SlangShaderProgram> kernel = kernels[kernel_index];
 	const RID shader_rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
 	kernel_data = std::make_unique<KernelData>(KernelData{
 		UniqueRID(rd, shader_rid),
@@ -454,9 +454,9 @@ ComputeShaderTask::KernelData* ComputeShaderTask::_get_or_create_kernel(const in
 ComputeShaderTask::KernelData* ComputeShaderTask::_get_kernel_data(const StringName& kernel_name) const {
 	if (shader.is_null())
 		return nullptr;
-	TypedArray<ComputeShaderKernel> kernels = shader->get_kernels();
+	TypedArray<SlangShaderProgram> kernels = shader->get_kernels();
 	for (int64_t i = 0; i < kernels.size(); i++) {
-		Ref<ComputeShaderKernel> kernel = kernels[i];
+		Ref<SlangShaderProgram> kernel = kernels[i];
 		if (kernel.is_valid() && kernel->get_kernel_name() == kernel_name) {
 			ERR_FAIL_INDEX_V(i, _kernel_data.size(), {});
 			return _kernel_data[i].get();
@@ -469,10 +469,10 @@ void ComputeShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thr
 	std::lock_guard lock(*_mutex.ptr());
 	if (shader.is_null() || !_shader_object)
 		return;
-	const TypedArray<ComputeShaderKernel>& kernels = shader->get_kernels();
+	const TypedArray<SlangShaderProgram>& kernels = shader->get_kernels();
 	ERR_FAIL_INDEX_MSG(kernel_index, kernels.size(), String("Attempted to dispatch invalid kernel index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(kernels.size() - 1) }));
 
-	const Ref<ComputeShaderKernel> kernel = kernels[kernel_index];
+	const Ref<SlangShaderProgram> kernel = kernels[kernel_index];
 	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid kernel index %s (found: nil)!") % String::num_int64(kernel_index));
 	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
 

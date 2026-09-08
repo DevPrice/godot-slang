@@ -3,7 +3,7 @@
 #include <godot_cpp/classes/texture2d.hpp>
 
 #include "binding_macros.h"
-#include "compute_shader_file.h"
+#include "slang_shader_file.h"
 #include "compute_shader_task.h"
 
 class ComputeTexture final : public godot::Texture2D {

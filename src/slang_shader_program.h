@@ -6,8 +6,8 @@
 #include "binding_macros.h"
 #include "compute_shader_shape.h"
 
-class ComputeShaderKernel : public godot::Resource {
-	GDCLASS(ComputeShaderKernel, Resource)
+class SlangShaderProgram : public godot::Resource {
+	GDCLASS(SlangShaderProgram, Resource)
 
 	GET_SET_PROPERTY(godot::StringName, kernel_name)
 	GET_SET_PROPERTY(godot::Ref<godot::RDShaderSPIRV>, spirv)
@@ -22,8 +22,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	ComputeShaderKernel() = default;
-	~ComputeShaderKernel() override = default;
+	SlangShaderProgram() = default;
+	~SlangShaderProgram() override = default;
 
 	godot::String get_compile_error() const;
 };

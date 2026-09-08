@@ -20,7 +20,7 @@ public:
 
 	void queue_dispatch(const godot::String& kernel_name);
 
-	GDVIRTUAL4(_bind_view, godot::Ref<ComputeShaderTask>, godot::Ref<ComputeShaderKernel>, godot::RenderData*, int32_t)
+	GDVIRTUAL4(_bind_view, godot::Ref<ComputeShaderTask>, godot::Ref<SlangShaderProgram>, godot::RenderData*, int32_t)
 
 private:
 	godot::Dictionary queued_kernels;

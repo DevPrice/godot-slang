@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://dh0oj81pufivs"]
 
 [ext_resource type="Script" uid="uid://ucf0vmfhscp3" path="res://scripts/example.gd" id="1_kkclv"]
-[ext_resource type="ComputeShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_wcwec"]
-[ext_resource type="ComputeShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="3_8lvy3"]
-[ext_resource type="ComputeShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="3_ei00m"]
-[ext_resource type="ComputeShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="4_ugfer"]
-[ext_resource type="ComputeShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="6_rujmf"]
-[ext_resource type="ComputeShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="7_kkclv"]
+[ext_resource type="SlangShaderFile" uid="uid://kldngffisnjm" path="res://shaders/grayscale.slang" id="2_wcwec"]
+[ext_resource type="SlangShaderFile" uid="uid://cf7opoytwnryw" path="res://shaders/ring.slang" id="3_8lvy3"]
+[ext_resource type="SlangShaderFile" uid="uid://c3dx8jm428dtf" path="res://shaders/outline.slang" id="3_ei00m"]
+[ext_resource type="SlangShaderFile" uid="uid://drcr6fv2t323a" path="res://shaders/data_mosh.slang" id="4_ugfer"]
+[ext_resource type="SlangShaderFile" uid="uid://b1h1shyxl3loe" path="res://shaders/normals.slang" id="6_rujmf"]
+[ext_resource type="SlangShaderFile" uid="uid://beo0gjpqyq8cc" path="res://shaders/blur.slang" id="7_kkclv"]
 [ext_resource type="Script" uid="uid://ddqdn3luxc08h" path="res://scripts/fly_camera.gd" id="7_rujmf"]
 
 [sub_resource type="ComputeShaderTask" id="ComputeShaderTask_rujmf"]

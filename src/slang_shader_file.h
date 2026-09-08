@@ -4,13 +4,13 @@
 #include "godot_cpp/classes/resource.hpp"
 
 #include "binding_macros.h"
-#include "compute_shader_kernel.h"
+#include "slang_shader_program.h"
 #include "compute_shader_shape.h"
 
-class ComputeShaderFile : public godot::Resource {
-	GDCLASS(ComputeShaderFile, Resource)
+class SlangShaderFile : public godot::Resource {
+	GDCLASS(SlangShaderFile, Resource)
 
-	GET_SET_PROPERTY(godot::TypedArray<ComputeShaderKernel>, kernels)
+	GET_SET_PROPERTY(godot::TypedArray<SlangShaderProgram>, kernels)
 	GET_SET_PROPERTY(godot::String, base_error)
 	GET_SET_PROPERTY(godot::Ref<StructTypeLayoutShape>, parameters)
 
@@ -18,8 +18,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	ComputeShaderFile() = default;
-	~ComputeShaderFile() override = default;
+	SlangShaderFile() = default;
+	~SlangShaderFile() override = default;
 
 	void set_bytecode(const godot::Ref<godot::RDShaderSPIRV> &p_bytecode, const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0);
 	[[nodiscard]] godot::Ref<godot::RDShaderSPIRV> get_spirv(const godot::StringName &p_version = godot::StringName(), int64_t kernel_index = 0) const;
@@ -34,4 +34,4 @@ public:
 	static godot::String get_godot_version_string();
 };
 
-VARIANT_ENUM_CAST(ComputeShaderFile::MatrixLayout)
+VARIANT_ENUM_CAST(SlangShaderFile::MatrixLayout)
