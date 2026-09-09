@@ -2,6 +2,7 @@ module godot;
 
 __include "scene_data";
 __include "data_format";
+__include "material";
 
 namespace gd {
 

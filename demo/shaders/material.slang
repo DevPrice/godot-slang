@@ -4,7 +4,6 @@
 // than SPIR-V, so it can be assigned to a mesh and lit by Godot's own renderer.
 
 import godot;
-import material;
 
 [gd::Export] float3 albedo_tint;
 [gd::Color] float4 rim_color;

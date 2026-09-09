@@ -1,4 +1,4 @@
-module material;
+implementing godot;
 
 namespace gd {
 
