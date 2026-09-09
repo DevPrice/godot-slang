@@ -56,6 +56,13 @@ struct CompositorAttributes {
     DECLARE_COMPOSITOR_ATTRIBUTE(velocity_texture, VelocityTexture)
 };
 
+#define DECLARE_MATERIAL_ATTRIBUTE(function_name, attribute_name) DECLARE_GODOT_ATTRIBUTE(function_name, material_##attribute_name)
+
+struct MaterialAttributes {
+    DECLARE_GODOT_ATTRIBUTE(material, Material)
+    DECLARE_MATERIAL_ATTRIBUTE(render_mode, RenderMode)
+};
+
 struct TextureAttributes {
     DECLARE_TEXTURE_ATTRIBUTE(output_size, OutputSize)
     DECLARE_TEXTURE_ATTRIBUTE(output_texture, OutputTexture)

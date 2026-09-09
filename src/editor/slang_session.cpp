@@ -100,10 +100,12 @@ void gdslang::SlangSession::_bind_methods() {
 	BIND_GET_SET(SlangSession, preprocessor_macros, Variant::DICTIONARY);
 	BIND_GET_SET_ENUM(SlangSession, default_matrix_layout, ShaderTypeLayoutShape::get_matrix_layout_hint_string());
 	BIND_GET_SET(SlangSession, enable_glsl, Variant::BOOL);
+	BIND_GET_SET(SlangSession, emit_godot_shader, Variant::BOOL);
 	BIND_METHOD(SlangSession, load_module_from_source_file, "module_name", "path");
 	BIND_METHOD(SlangSession, load_module_from_source_string, "module_name", "path", "source_text");
 	BIND_METHOD(SlangSession, create_composite_component_type, "component_types");
 	BIND_STATIC_METHOD(SlangSession, create_default_session);
+	BIND_STATIC_METHOD(SlangSession, create_material_session);
 	BIND_STATIC_METHOD(SlangSession, get_builtin_modules_path);
 	BIND_STATIC_METHOD(SlangSession, get_builtin_macros);
 }
@@ -122,6 +124,18 @@ slang::ISession* gdslang::SlangSession::get_or_create_session() {
 	slang::TargetDesc target_desc = {};
 	target_desc.format = format;
 	target_desc.profile = global_session->findProfile(profile.utf8().get_data());
+
+	slang::CompilerOptionEntry godot_option{};
+	if (emit_godot_shader) {
+		// Godot's shader preprocessor has no #line, so the directives Slang would otherwise
+		// emit would reach its parser as garbage.
+		target_desc.lineDirectiveMode = SLANG_LINE_DIRECTIVE_MODE_NONE;
+		godot_option.name = slang::CompilerOptionName::EmitGodotShader;
+		godot_option.value.kind = slang::CompilerOptionValueKind::Int;
+		godot_option.value.intValue0 = 1;
+		target_desc.compilerOptionEntries = &godot_option;
+		target_desc.compilerOptionEntryCount = 1;
+	}
 
 	session_desc.targets = &target_desc;
 	session_desc.targetCount = 1;
@@ -202,6 +216,17 @@ Ref<gdslang::SlangSession> gdslang::SlangSession::create_default_session() {
 	search_paths.push_back(get_builtin_modules_path());
 	session->set_search_paths(search_paths);
 	session->set_preprocessor_macros(get_builtin_macros());
+	return session;
+}
+
+Ref<gdslang::SlangSession> gdslang::SlangSession::create_material_session() {
+	const Ref<SlangSession> session = create_default_session();
+	session->set_format(SLANG_GLSL);
+	session->set_profile("glsl_450");
+	session->set_emit_godot_shader(true);
+	// GDShader's matrices are GLSL's, which are column-major. Emitting for the row-major
+	// default would silently transpose every matrix parameter.
+	session->set_default_matrix_layout(ShaderTypeLayoutShape::MatrixLayout::COLUMN_MAJOR);
 	return session;
 }
 
@@ -287,6 +312,13 @@ bool gdslang::SlangSession::get_enable_glsl() const { return enable_glsl; }
 void gdslang::SlangSession::set_enable_glsl(const bool p_enable_glsl) {
 	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
 	enable_glsl = p_enable_glsl;
+}
+
+bool gdslang::SlangSession::get_emit_godot_shader() const { return emit_godot_shader; }
+
+void gdslang::SlangSession::set_emit_godot_shader(const bool p_emit_godot_shader) {
+	ERR_FAIL_COND_MSG(session, "Session may not be modified after loading module(s)!");
+	emit_godot_shader = p_emit_godot_shader;
 }
 
 ShaderTypeLayoutShape::MatrixLayout gdslang::SlangSession::get_default_matrix_layout() const { return default_matrix_layout; }

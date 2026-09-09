@@ -29,6 +29,18 @@ public:
 	godot::Error _compile_programs(godot::TypedArray<godot::Ref<SlangShaderProgram>>& out_programs, const godot::Ref<ShaderTypeLayoutShape>& global_params_shape, const godot::PackedStringArray& additional_entry_points = godot::PackedStringArray{});
 	godot::Ref<SlangShaderFile> compile_shader(const godot::PackedStringArray& additional_entry_points);
 
+	// Returns the GDShader source for this module's [gd::Material] entry point, preceded by the
+	// `shader_type` and `render_mode` its attributes ask for, or an empty string if the module
+	// declares no material. Diagnostics are reported through `r_error`.
+	//
+	// The module must have been loaded in a session from SlangSession::create_material_session();
+	// in any other session the emitted code is GLSL or SPIR-V, not GDShader.
+	godot::String compile_material(godot::String& r_error);
+
+	// True if this module declares a [gd::Material] entry point. Such a file can legitimately
+	// produce no SPIR-V programs at all, which is otherwise an error.
+	bool has_material_entry_point() const;
+
 	int64_t get_defined_entry_point_count() const;
 	godot::Ref<SlangEntryPoint> get_defined_entry_point(int64_t index) const;
 	godot::Ref<SlangEntryPoint> find_entry_point(const godot::String& name) const;
@@ -54,6 +66,9 @@ private:
 
 	static int64_t _raster_stages();
 	static SlangStage _get_entry_point_stage(slang::IEntryPoint* entry_point);
+	static slang::Attribute* _find_attribute(slang::FunctionReflection* function, const godot::StringName& attribute_name);
+	static godot::String _get_string_argument(slang::Attribute* attribute, uint32_t argument_index, const godot::String& fallback);
+	static bool _is_material_entry_point(slang::IEntryPoint* entry_point);
 	static godot::Ref<SlangShaderProgram> _make_error_program(const godot::String& program_name, int64_t stages, godot::RenderingDevice::ShaderStage error_stage, const godot::String& compile_error);
 };
 

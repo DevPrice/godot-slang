@@ -49,6 +49,45 @@ PackedStringArray SlangModule::get_dependency_files() const {
 	return dependency_files;
 }
 
+slang::Attribute* SlangModule::_find_attribute(slang::FunctionReflection* function, const StringName& attribute_name) {
+	if (function == nullptr) {
+		return nullptr;
+	}
+	for (unsigned int i = 0; i < function->getUserAttributeCount(); ++i) {
+		slang::Attribute* attribute = function->getUserAttributeByIndex(i);
+		if (attribute && attribute_name == StringName(attribute->getName())) {
+			return attribute;
+		}
+	}
+	return nullptr;
+}
+
+String SlangModule::_get_string_argument(slang::Attribute* attribute, const uint32_t argument_index, const String& fallback) {
+	if (attribute == nullptr) {
+		return fallback;
+	}
+	size_t size{};
+	if (const char* value = attribute->getArgumentValueString(argument_index, &size)) {
+		return String::utf8(value, size);
+	}
+	return fallback;
+}
+
+bool SlangModule::_is_material_entry_point(slang::IEntryPoint* entry_point) {
+	return entry_point && _find_attribute(entry_point->getFunctionReflection(), MaterialAttributes::material());
+}
+
+bool SlangModule::has_material_entry_point() const {
+	ERR_FAIL_NULL_V(module, false);
+	for (int32_t i = 0; i < module->getDefinedEntryPointCount(); ++i) {
+		Slang::ComPtr<slang::IEntryPoint> entry_point;
+		if (module->getDefinedEntryPoint(i, entry_point.writeRef()) == OK && _is_material_entry_point(entry_point)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 int64_t SlangModule::_raster_stages() {
 	return SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_VERTEX) | SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_FRAGMENT);
 }
@@ -104,7 +143,11 @@ Error SlangModule::_compile_programs(TypedArray<Ref<SlangShaderProgram>>& out_pr
 					vertex_entry_points.push_back(entry_point);
 					break;
 				case SLANG_STAGE_FRAGMENT:
-					fragment_entry_points.push_back(entry_point);
+					// A material is compiled to GDShader by compile_material() instead, and has
+					// no vertex stage to pair with here.
+					if (!_is_material_entry_point(entry_point)) {
+						fragment_entry_points.push_back(entry_point);
+					}
 					break;
 				default:
 					UtilityFunctions::push_warning(String("[%s] Slang: Skipping entry point '%s' (unsupported shader stage)") % Array({ get_file_path(), String(entry_point->getFunctionReflection()->getName()) }));
@@ -161,7 +204,9 @@ Ref<SlangShaderFile> SlangModule::compile_shader(const PackedStringArray& additi
 		TypedArray<Ref<SlangShaderProgram>> programs;
 		if (const Error compile_error = _compile_programs(programs, global_params.ptr(), additional_entry_points)) {
 			slang_shader->set_base_error(UtilityFunctions::error_string(compile_error));
-		} else if (programs.is_empty()) {
+		} else if (programs.is_empty() && !has_material_entry_point()) {
+			// A material-only file legitimately produces no programs: its entry point is
+			// compiled to GDShader by compile_material(), not to SPIR-V.
 			slang_shader->set_base_error("No entry points found!");
 		} else {
 			slang_shader->set_programs(programs);
@@ -172,6 +217,75 @@ Ref<SlangShaderFile> SlangModule::compile_shader(const PackedStringArray& additi
 
 	slang_shader->set_meta("godot_version", SlangShaderFile::get_godot_version_string());
 	return slang_shader;
+}
+
+String SlangModule::compile_material(String& r_error) {
+	ERR_FAIL_NULL_V(module, {});
+
+	Slang::ComPtr<slang::IEntryPoint> material_entry_point;
+	for (int32_t i = 0; i < module->getDefinedEntryPointCount(); ++i) {
+		Slang::ComPtr<slang::IEntryPoint> entry_point;
+		if (module->getDefinedEntryPoint(i, entry_point.writeRef()) != OK) {
+			continue;
+		}
+		if (!_is_material_entry_point(entry_point)) {
+			continue;
+		}
+		if (material_entry_point) {
+			r_error = "A shader may declare only one [gd::Material] entry point!";
+			return {};
+		}
+		material_entry_point = entry_point;
+	}
+	if (!material_entry_point) {
+		return {};
+	}
+
+	slang::ISession* session = module->getSession();
+	Slang::ComPtr<slang::IComponentType> composed_program;
+	{
+		const std::array<slang::IComponentType*, 2> component_types = {
+			module,
+			material_entry_point,
+		};
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		if (session->createCompositeComponentType(component_types.data(), component_types.size(), composed_program.writeRef(), diagnostics_blob.writeRef()) != OK) {
+			r_error = SlangBlob::blob_to_string(diagnostics_blob);
+			return {};
+		}
+	}
+
+	Slang::ComPtr<slang::IComponentType> linked_program;
+	{
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		if (composed_program->link(linked_program.writeRef(), diagnostics_blob.writeRef()) != OK) {
+			r_error = SlangBlob::blob_to_string(diagnostics_blob);
+			return {};
+		}
+	}
+
+	Slang::ComPtr<slang::IBlob> compiled_blob;
+	{
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		if (linked_program->getEntryPointCode(0, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef()) != OK) {
+			r_error = SlangBlob::blob_to_string(diagnostics_blob);
+			return {};
+		}
+	}
+
+	slang::FunctionReflection* material_function = material_entry_point->getFunctionReflection();
+	const String shader_type = _get_string_argument(_find_attribute(material_function, MaterialAttributes::material()), 0, "spatial");
+	const String render_mode = _get_string_argument(_find_attribute(material_function, MaterialAttributes::render_mode()), 0, {});
+
+	// The emitter deliberately leaves the preamble to us: `shader_type` and `render_mode` come
+	// from attributes, which are reflection the host already has and the compiler does not.
+	String source = String("// Generated from %s. Edits to this shader will be lost on reimport.\n") % get_file_path().get_file();
+	source += String("shader_type %s;\n") % shader_type;
+	if (!render_mode.is_empty()) {
+		source += String("render_mode %s;\n") % render_mode;
+	}
+	source += "\n";
+	return source + SlangBlob::blob_to_string(compiled_blob);
 }
 
 int64_t SlangModule::get_defined_entry_point_count() const {

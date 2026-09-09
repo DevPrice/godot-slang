@@ -32,7 +32,8 @@ int32_t SlangShaderImporter::_get_format_version() const {
 	// 1: FieldShape gained "sync_mode" (SyncMode)
 	// 2: vertex/fragment entry points are compiled into SlangShaderFile::passes
 	// 3: kernels and passes unified into SlangShaderFile::programs
-	return 3;
+	// 4: [gd::Material] entry points are compiled to SlangShaderFile::material_shader
+	return 4;
 }
 
 int32_t SlangShaderImporter::_get_preset_count() const {
@@ -108,6 +109,28 @@ Error SlangShaderImporter::_import(const String& p_source_file, const String& p_
 	const String base_error = slang_shader->get_base_error();
 	if (!base_error.is_empty()) {
 		UtilityFunctions::push_error(String("[%s] %s") % Array { p_source_file, base_error });
+	}
+
+	// Materials need a second pass: they are emitted as GDShader rather than SPIR-V, which is a
+	// different target, profile and matrix layout, so they get their own session and the compute
+	// and raster paths above are left exactly as they were.
+	{
+		const Ref material_session = gdslang::SlangSession::create_material_session();
+		material_session->set_enable_glsl(p_source_file.ends_with(".glsl"));
+		const Ref<gdslang::SlangModule> material_module = material_session->load_module_from_source_string("__main_module", p_source_file.get_file(), shader_source);
+		if (material_module.is_valid()) {
+			String material_error;
+			const String material_source = material_module->compile_material(material_error);
+			if (!material_error.is_empty()) {
+				UtilityFunctions::push_error(String("[%s] Slang material error:\n%s") % Array({ p_source_file, material_error }));
+				slang_shader->set_material_error(material_error);
+			} else if (!material_source.is_empty()) {
+				const Ref shader = memnew(Shader);
+				shader->set_code(material_source);
+				slang_shader->set_material_source(material_source);
+				slang_shader->set_material_shader(shader);
+			}
+		}
 	}
 
 	for (const Ref<SlangShaderProgram> kernel : slang_shader->get_programs()) {

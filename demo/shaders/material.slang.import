@@ -1,0 +1,17 @@
+[remap]
+
+importer="slang.shader.importer"
+importer_version=4
+type="SlangShaderFile"
+uid="uid://elcb7fj023dd"
+path="res://.godot/imported/material.slang-5309bb7a3116c3437451fc15ca2e0e7b.res"
+
+[deps]
+
+source_file="res://shaders/material.slang"
+dest_files=["res://.godot/imported/material.slang-5309bb7a3116c3437451fc15ca2e0e7b.res"]
+
+[params]
+
+entry_points=PackedStringArray()
+default_matrix_layout=1

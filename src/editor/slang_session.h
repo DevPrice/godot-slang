@@ -20,6 +20,7 @@ public:
 	GET_SET_PROPERTY(godot::PackedStringArray, search_paths)
 	GET_SET_PROPERTY(godot::Dictionary, preprocessor_macros)
 	GET_SET_PROPERTY(bool, enable_glsl)
+	GET_SET_PROPERTY(bool, emit_godot_shader)
 	GET_SET_PROPERTY(ShaderTypeLayoutShape::MatrixLayout, default_matrix_layout)
 
 protected:
@@ -36,6 +37,10 @@ public:
 	godot::Ref<SlangComponentType> create_composite_component_type(const godot::TypedArray<SlangComponentType>& component_types);
 
 	static godot::Ref<SlangSession> create_default_session();
+	// A session that emits GDShader instead of SPIR-V, for compiling materials. Kept separate
+	// from the default session so the compute and raster paths are unaffected by the target,
+	// profile and matrix layout a material needs.
+	static godot::Ref<SlangSession> create_material_session();
 	static godot::String get_builtin_modules_path();
 	static godot::PackedStringArray get_additional_search_paths();
 	static godot::Dictionary get_builtin_macros();
