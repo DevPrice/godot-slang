@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cdsfspkp4xqy7"]
+
+[ext_resource type="Script" uid="uid://cnhrlo3prhf0n" path="res://scripts/triangle.gd" id="1_4kgpj"]
+[ext_resource type="SlangShaderFile" uid="uid://rw7ueqbjna8w" path="res://shaders/triangle.slang" id="2_74syq"]
+
+[node name="Raster" type="TextureRect" unique_id=1861096794 node_paths=PackedStringArray("target")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4kgpj")
+shader = ExtResource("2_74syq")
+target = NodePath(".")
+size = Vector2i(1024, 512)

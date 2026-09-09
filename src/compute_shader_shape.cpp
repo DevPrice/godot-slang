@@ -1,7 +1,7 @@
 #include "compute_shader_shape.h"
 
 #include "compute_shader_cursor.h"
-#include "compute_shader_file.h"
+#include "slang_shader_file.h"
 #include "enums.h"
 #include "variant_serializer.h"
 

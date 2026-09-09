@@ -1,0 +1,17 @@
+[remap]
+
+importer="slang.shader.importer"
+importer_version=3
+type="SlangShaderFile"
+uid="uid://rw7ueqbjna8w"
+path="res://.godot/imported/triangle.slang-28c329e7cfeafaa895655dbe1df7dc8f.res"
+
+[deps]
+
+source_file="res://shaders/triangle.slang"
+dest_files=["res://.godot/imported/triangle.slang-28c329e7cfeafaa895655dbe1df7dc8f.res"]
+
+[params]
+
+entry_points=PackedStringArray()
+default_matrix_layout=1

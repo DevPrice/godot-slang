@@ -69,7 +69,7 @@ When applied to a texture, a value passed as a ``Texture2D`` will be read as sRG
 gd::DefaultBlack
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind a 4x4 black texture if no texture is provided.
+When used within a ``SlangShaderTask``, will bind a 4x4 black texture if no texture is provided.
 
 **Target:** ``Var``
 
@@ -85,7 +85,7 @@ When used within a ``ComputeShaderTask``, will bind a 4x4 black texture if no te
 gd::DefaultWhite
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind a 4x4 white texture if no texture is provided.
+When used within a ``SlangShaderTask``, will bind a 4x4 white texture if no texture is provided.
 
 **Target:** ``Var``
 
@@ -101,7 +101,7 @@ When used within a ``ComputeShaderTask``, will bind a 4x4 white texture if no te
 gd::Export
 ---------------------
 
-Indicates that a variable should be exported within Godot. This will expose it within a ``ComputeShaderTask``'s property inspector and allow its value to be serialized with that task.
+Indicates that a variable should be exported within Godot. This will expose it within a ``SlangShaderTask``'s property inspector and allow its value to be serialized with that task.
 
 **Target:** ``Var``
 
@@ -137,7 +137,7 @@ Is only valid on parameters of an entry-point function parameter.
 gd::FrameID
 ---------------------
 
-When used within a ``ComputeShaderTask``, will automatically bind the current frame (fetched via `get_frames_drawn <https://docs.godotengine.org/en/4.4/classes/class_engine.html#class-engine-method-get-frames-drawn>`_).
+When used within a ``SlangShaderTask``, will automatically bind the current frame (fetched via `get_frames_drawn <https://docs.godotengine.org/en/4.4/classes/class_engine.html#class-engine-method-get-frames-drawn>`_).
 
 **Target:** ``Var``
 
@@ -153,7 +153,7 @@ When used within a ``ComputeShaderTask``, will automatically bind the current fr
 gd::GlobalParam
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind the value of the corresponding `global shader parameter <https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms>`_ if no value is otherwise provided.
+When used within a ``SlangShaderTask``, will bind the value of the corresponding `global shader parameter <https://godotengine.org/article/godot-40-gets-global-and-instance-shader-uniforms/#global-uniforms>`_ if no value is otherwise provided.
 
 **Target:** ``Var``
 
@@ -222,7 +222,7 @@ Currently, an entry-point may be associated with at most one kernel group.
 
  .. code-tab:: gdscript
 
-    var task: ComputeShaderTask = get_task()
+    var task: SlangShaderTask = get_task()
     task.dispatch_group("my_group", thread_groups)
 
 .. _gd_MousePositionAttribute:
@@ -230,7 +230,7 @@ Currently, an entry-point may be associated with at most one kernel group.
 gd::MousePosition
 ---------------------
 
-When used within a ``ComputeShaderTask``, will automatically bind the mouse position within the root window.
+When used within a ``SlangShaderTask``, will automatically bind the mouse position within the root window.
 
 **Target:** ``Var``
 
@@ -280,7 +280,7 @@ The specified name will be emitted in the reflection metadata instead of the nam
 
  .. code-tab:: gdscript
 
-    var task: ComputeShaderTask = get_task()
+    var task: SlangShaderTask = get_task()
     task.set_shader_parameter("exposed_parameter/exposed_name", 1234.0)
 
 .. _gd_PropertyHintAttribute:
@@ -323,7 +323,7 @@ See the `@export_custom documentation <https://docs.godotengine.org/en/stable/tu
 gd::Sampler
 ---------------------
 
-When used within a ``ComputeShaderTask``, will bind a cached sampler with the specified filter and repeat mode if no sampler is provided.
+When used within a ``SlangShaderTask``, will bind a cached sampler with the specified filter and repeat mode if no sampler is provided.
 
 **Target:** ``Var``
 
@@ -356,7 +356,7 @@ gd::Sync
 ---------------------
 
 Controls whether a parameter is written before every dispatch, or only when it is assigned.
-Synced parameters are written on every dispatch, so the value held by the ``ComputeShaderTask`` always wins.
+Synced parameters are written on every dispatch, so the value held by the ``SlangShaderTask`` always wins.
 Unsynced parameters are written only when they are assigned, leaving whatever the shader wrote into them intact between dispatches.
 
 Parameters that the shader can write to, such as ``RWStructuredBuffer`` or ``RWTexture2D``, are unsynced by default, and every other parameter is synced by default.
@@ -398,7 +398,7 @@ Push constants are re-sent on every dispatch by construction, so marking a push 
 
  .. code-tab:: gdscript
 
-    var task: ComputeShaderTask = get_task()
+    var task: SlangShaderTask = get_task()
 
     # seeds the accumulator
     task.set_shader_parameter("accumulator", [0.0, 0.0, 0.0])
@@ -415,7 +415,7 @@ Push constants are re-sent on every dispatch by construction, so marking a push 
 gd::Time
 ---------------------
 
-When used within a ``ComputeShaderTask``, will automatically bind the current time in seconds (fetched via `get_ticks_msec <https://docs.godotengine.org/en/stable/classes/class_time.html#class-time-method-get-ticks-msec>`_).
+When used within a ``SlangShaderTask``, will automatically bind the current time in seconds (fetched via `get_ticks_msec <https://docs.godotengine.org/en/stable/classes/class_time.html#class-time-method-get-ticks-msec>`_).
 
 **Target:** ``Var``
 

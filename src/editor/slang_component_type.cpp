@@ -56,7 +56,7 @@ Ref<SlangBlob> SlangComponentType::compile_entry_point(const int64_t entry_point
 	return SlangBlob::create(entry_point_blob.get(), diagnostics_blob.get());
 }
 
-Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderTypeLayoutShape>& global_params_shape) const {
+Ref<SlangShaderProgram> SlangComponentType::compile_kernel(const Ref<ShaderTypeLayoutShape>& global_params_shape) const {
 	ERR_FAIL_NULL_V(component_type, nullptr);
 
 	slang::ProgramLayout* program_layout = get_layout();
@@ -65,15 +65,16 @@ Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderType
 	ERR_FAIL_NULL_V(entry_point_layout, nullptr);
 	{
 		if (entry_point_layout->getStage() != SLANG_STAGE_COMPUTE) {
-			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % entry_point_layout->getName());
+			UtilityFunctions::push_warning(String("Slang: Skipping compilation of kernel '%s' (non-compute shader)") % String(entry_point_layout->getName()));
 			return nullptr;
 		}
 	}
 
-	Ref kernel = memnew(ComputeShaderKernel);
+	Ref kernel = memnew(SlangShaderProgram);
 	const Ref spirv = memnew(RDShaderSPIRV);
 	kernel->set_spirv(spirv);
-	kernel->set_kernel_name(entry_point_layout->getName());
+	kernel->set_stages(SlangShaderProgram::stage_bit(RenderingDevice::SHADER_STAGE_COMPUTE));
+	kernel->set_program_name(entry_point_layout->getName());
 
 	const SlangReflectionContext reflection_context(program_layout);
 	kernel->set_user_attributes(reflection_context.get_attributes(entry_point_layout->getFunction()));
@@ -118,6 +119,83 @@ Ref<ComputeShaderKernel> SlangComponentType::compile_kernel(const Ref<ShaderType
 	}
 
 	return kernel;
+}
+
+Ref<SlangShaderProgram> SlangComponentType::compile_pass() const {
+	ERR_FAIL_NULL_V(component_type, nullptr);
+
+	slang::ProgramLayout* program_layout = get_layout();
+	ERR_FAIL_NULL_V(program_layout, nullptr);
+
+	Ref pass = memnew(SlangShaderProgram);
+	const Ref spirv = memnew(RDShaderSPIRV);
+	pass->set_spirv(spirv);
+
+	const SlangReflectionContext reflection_context(program_layout);
+
+	int64_t stages{};
+	const uint32_t entry_point_count = program_layout->getEntryPointCount();
+	for (uint32_t entry_point_index = 0; entry_point_index < entry_point_count; ++entry_point_index) {
+		slang::EntryPointReflection* entry_point_layout = program_layout->getEntryPointByIndex(entry_point_index);
+		const std::optional<RenderingDevice::ShaderStage> stage = to_godot_shader_stage(entry_point_layout->getStage());
+		if (!stage.has_value()) {
+			UtilityFunctions::push_warning(String("Slang: Skipping entry point '%s' (unsupported shader stage)") % String(entry_point_layout->getName()));
+			continue;
+		}
+
+		stages |= SlangShaderProgram::stage_bit(*stage);
+
+		// the fragment entry point stands in for the pass as a whole
+		if (*stage == RenderingDevice::SHADER_STAGE_FRAGMENT) {
+			pass->set_user_attributes(reflection_context.get_attributes(entry_point_layout->getFunction()));
+		}
+
+		// each entry point is emitted as its own SPIR-V module, so both stages get an entry
+		// point named "main", which is the name Godot expects. Asking for the whole target's
+		// code instead would put both entry points in one module and collide.
+		Slang::ComPtr<slang::IBlob> compiled_blob;
+		Slang::ComPtr<slang::IBlob> diagnostics_blob;
+		const SlangResult result = component_type->getEntryPointCode(
+				entry_point_index, 0, compiled_blob.writeRef(), diagnostics_blob.writeRef());
+		if (SLANG_FAILED(result) || compiled_blob.get() == nullptr) {
+			const String diagnostic = SlangBlob::blob_to_string(diagnostics_blob);
+			spirv->set_stage_compile_error(*stage, diagnostic.is_empty()
+					? String("Failed to compile entry point '%s'!") % String(entry_point_layout->getName())
+					: diagnostic);
+			continue;
+		}
+
+		spirv->set_stage_bytecode(*stage, SlangBlob::blob_to_bytes(compiled_blob));
+	}
+	pass->set_stages(stages);
+
+	return pass;
+}
+
+std::optional<RenderingDevice::ShaderStage> SlangComponentType::to_godot_shader_stage(const SlangStage stage) {
+	switch (stage) {
+		case SLANG_STAGE_VERTEX:
+			return RenderingDevice::SHADER_STAGE_VERTEX;
+		case SLANG_STAGE_FRAGMENT:
+			return RenderingDevice::SHADER_STAGE_FRAGMENT;
+		case SLANG_STAGE_COMPUTE:
+			return RenderingDevice::SHADER_STAGE_COMPUTE;
+		default:
+			return std::nullopt;
+	}
+}
+
+std::optional<SlangStage> SlangComponentType::to_slang_stage(const RenderingDevice::ShaderStage stage) {
+	switch (stage) {
+		case RenderingDevice::SHADER_STAGE_VERTEX:
+			return SLANG_STAGE_VERTEX;
+		case RenderingDevice::SHADER_STAGE_FRAGMENT:
+			return SLANG_STAGE_FRAGMENT;
+		case RenderingDevice::SHADER_STAGE_COMPUTE:
+			return SLANG_STAGE_COMPUTE;
+		default:
+			return std::nullopt;
+	}
 }
 
 void SlangComponentType::_get_used_bindings_sets(slang::IMetadata* metadata, const Ref<ShaderTypeLayoutShape>& global_params_shape, const Ref<ShaderTypeLayoutShape>& entry_point_params_shape, Dictionary& out_used_binding_sets, int64_t kernel_space_offset, int64_t kernel_slot_offset) {

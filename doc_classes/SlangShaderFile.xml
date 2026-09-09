@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangShaderFile" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Compiled Slang shader with SPIR-V and reflection information for each program it declares.
+		Every compiled program in the file is listed in [member programs]. A compute entry-point becomes one program on its own; a vertex and a fragment entry-point are linked together into a single raster pass program. Check [member SlangShaderProgram.stages] to tell them apart.
+		In most cases, this can be used as a drop-in replacement for [RDShaderFile].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_spirv" qualifiers="const">
+			<return type="RDShaderSPIRV" />
+			<param index="0" name="version" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="1" name="program_index" type="int" default="0" />
+			<description>
+				Returns the SPIR-V intermediate representation of the specified program (at [param program_index]), with one bytecode entry per shader stage it provides.
+			</description>
+		</method>
+		<method name="get_version_list" qualifiers="const">
+			<return type="StringName[]" />
+			<param index="0" name="program_index" type="int" default="0" />
+			<description>
+				Returns the list of compiled versions for this shader. This is always empty for Slang shaders.
+			</description>
+		</method>
+		<method name="set_bytecode">
+			<return type="void" />
+			<param index="0" name="bytecode" type="RDShaderSPIRV" />
+			<param index="1" name="version" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="2" name="program_index" type="int" default="0" />
+			<description>
+				Sets the SPIR-V [param bytecode] that will be compiled for the specified program (at [param program_index]).
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="base_error" type="String" setter="set_base_error" getter="get_base_error">
+			The base compilation error message, which indicates errors not related to a specific shader stage if non-empty. If empty, shader compilation is not necessarily successful (check each [SlangShaderProgram]'s [RDShaderSPIRV] error message members).
+		</member>
+		<member name="programs" type="SlangShaderProgram[]" setter="set_programs" getter="get_programs">
+			Every program compiled from this shader file: one per compute entry-point, plus one for each vertex/fragment pair linked into a raster pass.
+		</member>
+		<member name="parameters" type="StructTypeLayoutShape" setter="set_parameters" getter="get_parameters">
+			Get the reflection information of the global parameters for this shader. You typically won't need to access this, but it is used under the hood by [SlangShaderTask] to bind data to the correct descriptor slots.
+		</member>
+	</members>
+	<constants>
+		<constant name="UNKNOWN" value="0" enum="MatrixLayout">
+			Unknown matrix layout.
+		</constant>
+		<constant name="ROW_MAJOR" value="1" enum="MatrixLayout">
+			Matrices are stored using row-major order.
+		</constant>
+		<constant name="COLUMN_MAJOR" value="2" enum="MatrixLayout">
+			Matrices are stored using column-major order.
+		</constant>
+	</constants>
+</class>

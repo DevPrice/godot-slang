@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ComputeShaderTask" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderTask" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
-		Wraps a [ComputeShaderFile] into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
+		Wraps a [SlangShaderFile] into a dispatchable unit of compute work. Functions similarly to a [ShaderMaterial], storing parameter values and sending them to the GPU during dispatch.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -30,7 +30,7 @@
 			<param index="0" name="thread_groups" type="Vector3i" />
 			<param index="1" name="context" type="Object" default="null" />
 			<description>
-				Dispatches all kernels associated with this task with the specified number of thread groups. Dispatch is ordered based on each kernel's index.
+				Dispatches every compute program associated with this task with the specified number of thread groups, in [member SlangShaderFile.programs] order. Programs that are not compute kernels are skipped.
 			</description>
 		</method>
 		<method name="dispatch_at">
@@ -39,7 +39,7 @@
 			<param index="1" name="thread_groups" type="Vector3i" />
 			<param index="2" name="context" type="Object" default="null" />
 			<description>
-				Dispatches a kernel by index with the specified number of thread groups.
+				Dispatches the compute program at [param kernel_index] in [member SlangShaderFile.programs] with the specified number of thread groups. Errors if that program is not a compute kernel.
 			</description>
 		</method>
 		<method name="dispatch_group">
@@ -66,37 +66,37 @@
 				Fetches the data for the buffer associated with [param param]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
 			</description>
 		</method>
-		<method name="get_kernel_buffer_data" qualifiers="const">
+		<method name="get_program_buffer_data" qualifiers="const">
 			<return type="PackedByteArray" />
-			<param index="0" name="kernel" type="StringName" />
+			<param index="0" name="program" type="StringName" />
 			<param index="1" name="param" type="StringName" />
 			<description>
-				Fetch the raw bytes for [param param] in [param kernel]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param. See: [method RenderingDevice.buffer_get_data].
+				Fetch the raw bytes for [param param] in [param program]. If this parameter is a buffer, this returns the full buffer. If this parameter is a region of a buffer, returns only the region associated with this param. See: [method RenderingDevice.buffer_get_data].
 			</description>
 		</method>
-		<method name="get_kernel_buffer_data_async" qualifiers="const">
+		<method name="get_program_buffer_data_async" qualifiers="const">
 			<return type="int" enum="Error" />
-			<param index="0" name="kernel" type="StringName" />
+			<param index="0" name="program" type="StringName" />
 			<param index="1" name="param" type="StringName" />
 			<param index="2" name="callback" type="Callable" />
 			<description>
-				Fetches the data for the buffer associated with [param param] in [param kernel]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
+				Fetches the data for the buffer associated with [param param] in [param program]. See: [method get_buffer_data] and [method RenderingDevice.buffer_get_data_async].
 			</description>
 		</method>
-		<method name="get_kernel_parameter" qualifiers="const">
+		<method name="get_program_parameter" qualifiers="const">
 			<return type="Variant" />
-			<param index="0" name="kernel" type="StringName" />
+			<param index="0" name="program" type="StringName" />
 			<param index="1" name="param" type="StringName" />
 			<description>
-				Gets a kernel parameter by name.
+				Gets a program parameter by name.
 			</description>
 		</method>
-		<method name="get_kernel_rids" qualifiers="const">
+		<method name="get_program_rids" qualifiers="const">
 			<return type="RID[]" />
-			<param index="0" name="kernel" type="StringName" />
+			<param index="0" name="program" type="StringName" />
 			<param index="1" name="param" type="StringName" />
 			<description>
-				Gets the uniform [RID]s associated with [param param] in [param kernel] for the most recent dispatch.
+				Gets the uniform [RID]s associated with [param param] in [param program] for the most recent dispatch.
 			</description>
 		</method>
 		<method name="get_rids" qualifiers="const">
@@ -113,13 +113,13 @@
 				Gets a shader parameter value by name.
 			</description>
 		</method>
-		<method name="set_kernel_parameter">
+		<method name="set_program_parameter">
 			<return type="void" />
-			<param index="0" name="kernel" type="StringName" />
+			<param index="0" name="program" type="StringName" />
 			<param index="1" name="param" type="StringName" />
 			<param index="2" name="value" type="Variant" />
 			<description>
-				Set's a parameter value of the entry-point [param kernel] by name. See [method set_shader_parameter] for more information.
+				Set's a parameter value of the entry-point [param program] by name. See [method set_shader_parameter] for more information.
 			</description>
 		</method>
 		<method name="set_shader_parameter">
@@ -156,7 +156,7 @@
 		<member name="rendering_device" type="RenderingDevice" setter="set_rendering_device" getter="get_rendering_device">
 			The underlying [RenderingDevice] to use for dispatch. If not set, will use the rendering device associated with the [RenderingServer].
 		</member>
-		<member name="shader" type="ComputeShaderFile" setter="set_shader" getter="get_shader">
+		<member name="shader" type="SlangShaderFile" setter="set_shader" getter="get_shader">
 			The shader executed during dispatch of this task.
 		</member>
 	</members>

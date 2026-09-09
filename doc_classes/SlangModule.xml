@@ -12,10 +12,10 @@
 	</tutorials>
 	<methods>
 		<method name="compile_shader">
-			<return type="ComputeShaderFile" />
+			<return type="SlangShaderFile" />
 			<param index="0" name="additional_entry_points" type="PackedStringArray" default="PackedStringArray()" />
 			<description>
-				Compiles this module into a [ComputeShaderFile].
+				Compiles this module into a [SlangShaderFile].
 			</description>
 		</method>
 		<method name="find_and_check_entry_point" qualifiers="const">

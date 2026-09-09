@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="ComputeTextureDispatchContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+<class name="SlangShaderTextureContext" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
-		The dispatch context used by [ComputeTexture]. Exposes data about the render texture to the dispatch.
+		The dispatch context used by [SlangShaderTexture]. Exposes data about the render texture to the dispatch.
 	</description>
 	<tutorials>
 	</tutorials>

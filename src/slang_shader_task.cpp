@@ -1,0 +1,559 @@
+#include "godot_cpp/classes/editor_file_system.hpp"
+#include "godot_cpp/classes/editor_interface.hpp"
+#include "godot_cpp/classes/engine.hpp"
+#include "godot_cpp/classes/rd_uniform.hpp"
+#include "godot_cpp/classes/rendering_server.hpp"
+#include "godot_cpp/classes/uniform_set_cache_rd.hpp"
+#include "godot_cpp/classes/window.hpp"
+
+#include "attributes.h"
+#include "compute_shader_cursor.h"
+#include "compute_shader_shape.h"
+#include "sampler_cache.h"
+
+#include "slang_shader_task.h"
+
+using namespace godot;
+using namespace gdslang;
+
+constexpr auto shader_param_prefix_chars = "shader_parameter/";
+constexpr int64_t shader_param_prefix_length = std::char_traits<char>::length(shader_param_prefix_chars);
+
+const StringName& shader_param_prefix() {
+	static const StringName prefix(shader_param_prefix_chars);
+	return prefix;
+}
+
+constexpr auto program_param_prefix_chars = "program_parameter/";
+constexpr int64_t program_param_prefix_length = std::char_traits<char>::length(program_param_prefix_chars);
+
+// Pre-rename spelling of program_param_prefix, still accepted when reading and writing
+// properties so scenes saved before the rename keep their values.
+constexpr auto legacy_program_param_prefix_chars = "kernel_parameter/";
+constexpr int64_t legacy_program_param_prefix_length = std::char_traits<char>::length(legacy_program_param_prefix_chars);
+
+const StringName& program_param_prefix() {
+	static const StringName prefix(program_param_prefix_chars);
+	return prefix;
+}
+
+const StringName& legacy_program_param_prefix() {
+	static const StringName prefix(legacy_program_param_prefix_chars);
+	return prefix;
+}
+
+// Splits a program parameter property into "<program>" and "<param>", under either spelling.
+bool split_program_param(const StringName& p_name, StringName& r_program_name, StringName& r_param_name) {
+	String path;
+	if (p_name.begins_with(program_param_prefix())) {
+		path = p_name.substr(program_param_prefix_length);
+	} else if (p_name.begins_with(legacy_program_param_prefix())) {
+		path = p_name.substr(legacy_program_param_prefix_length);
+	} else {
+		return false;
+	}
+	const int64_t first_slash_index = path.find("/");
+	if (first_slash_index < 0) {
+		return false;
+	}
+	r_program_name = path.substr(0, first_slash_index);
+	r_param_name = path.substr(first_slash_index + 1);
+	return true;
+}
+
+void SlangShaderTask::_write_assigned(ComputeShaderObject* object, const Object* context, const ParameterStore& store, const ParameterStore::DirtyPaths& dirty) {
+	for (const StringName& path : dirty) {
+		const ComputeShaderCursor rooted = ComputeShaderCursor(object, context).path(path);
+		if (!rooted.writes_on_assignment_only()) {
+			// not GPU-owned, so the dispatch walk above already wrote it
+			continue;
+		}
+		rooted.with_scope(WriteScope::ASSIGNED).write(store.get(path));
+	}
+}
+
+void SlangShaderTask::_bind_methods() {
+	BIND_GET_SET_RESOURCE(SlangShaderTask, shader, SlangShaderFile)
+	BIND_GET_SET_OBJECT(SlangShaderTask, rendering_device, RenderingDevice)
+	BIND_METHOD(SlangShaderTask, get_shader_parameter, "param")
+	BIND_METHOD(SlangShaderTask, set_shader_parameter, "param", "value")
+	BIND_METHOD(SlangShaderTask, get_program_parameter, "program", "param")
+	BIND_METHOD(SlangShaderTask, set_program_parameter, "program", "param", "value")
+	BIND_METHOD(SlangShaderTask, clear_shader_parameters)
+	ClassDB::bind_method(D_METHOD("dispatch", "kernel_name", "thread_groups", "context"), &SlangShaderTask::dispatch, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_at", "kernel_index", "thread_groups", "context"), &SlangShaderTask::dispatch_at, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_all", "thread_groups", "context"), &SlangShaderTask::dispatch_all, DEFVAL(nullptr));
+	ClassDB::bind_method(D_METHOD("dispatch_group", "group_name", "thread_groups", "context"), &SlangShaderTask::dispatch_group, DEFVAL(nullptr));
+	BIND_METHOD(SlangShaderTask, get_rids, "param")
+	BIND_METHOD(SlangShaderTask, get_buffer_data, "param")
+	BIND_METHOD(SlangShaderTask, get_buffer_data_async, "param", "callback")
+	BIND_METHOD(SlangShaderTask, get_program_rids, "program", "param")
+	BIND_METHOD(SlangShaderTask, get_program_buffer_data, "program", "param")
+	BIND_METHOD(SlangShaderTask, get_program_buffer_data_async, "program", "param", "callback")
+}
+
+SlangShaderTask::SlangShaderTask() :
+		_shader_object(nullptr) {
+	_mutex.instantiate();
+}
+
+TypedArray<SlangShaderProgram> SlangShaderTask::get_programs() const {
+	if (shader.is_valid()) {
+		return shader->get_programs().duplicate();
+	}
+	return {};
+}
+
+Ref<SlangShaderFile> SlangShaderTask::get_shader() const { return shader; }
+
+void SlangShaderTask::set_shader(Ref<SlangShaderFile> p_shader) {
+	std::lock_guard lock(*_mutex.ptr());
+	if (shader != p_shader) {
+		const Callable changed_callable = callable_mp(this, &SlangShaderTask::_shader_changed);
+		if (shader.is_valid() && shader->is_connected("changed", changed_callable)) {
+			shader->disconnect("changed", changed_callable);
+		}
+		shader = p_shader;
+		if (p_shader.is_valid()) {
+			p_shader->connect("changed", changed_callable);
+			if (p_shader->has_meta("godot_version")) {
+				const String version = p_shader->get_meta("godot_version");
+				if (version != SlangShaderFile::get_godot_version_string()) {
+					UtilityFunctions::push_error(String("'%s' was compiled for a different version of Godot (%s). Reimport this resource.") % Array { p_shader->get_path().get_file(), version });
+				}
+			}
+		}
+		RenderingServer::get_singleton()->call_on_render_thread(changed_callable);
+		emit_changed();
+	}
+}
+
+RenderingDevice* SlangShaderTask::get_rendering_device() const {
+	return cast_to<RenderingDevice>(ObjectDB::get_instance(rendering_device_id));
+}
+
+void SlangShaderTask::set_rendering_device(RenderingDevice* p_rendering_device) {
+	ERR_FAIL_COND_MSG(p_rendering_device, "Overriding the rendering_device is not yet supported!");
+	std::lock_guard lock(*_mutex.ptr());
+	if (p_rendering_device != ObjectDB::get_instance(rendering_device_id)) {
+		rendering_device_id = p_rendering_device ? p_rendering_device->get_instance_id() : ObjectID{};
+		RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &SlangShaderTask::_reset));
+	}
+}
+
+Variant SlangShaderTask::get_shader_parameter(const StringName& param) const {
+	return _shader_parameters.get(param);
+}
+
+void SlangShaderTask::set_shader_parameter(const StringName& param, const Variant& value) {
+	std::lock_guard lock(*_mutex.ptr());
+	_shader_parameters.set(param, value);
+}
+
+void SlangShaderTask::clear_shader_parameters() {
+	std::lock_guard lock(*_mutex.ptr());
+	_shader_parameters.clear();
+	for (KeyValue<StringName, ParameterStore>& program_parameters : _program_parameters) {
+		program_parameters.value.clear();
+	}
+}
+
+Variant SlangShaderTask::get_program_parameter(const StringName& program, const StringName& param) const {
+	const ParameterStore* program_parameters = _program_parameters.getptr(program);
+	return program_parameters ? program_parameters->get(param) : Variant{};
+}
+
+void SlangShaderTask::set_program_parameter(const StringName& program, const StringName& param, const Variant& value) {
+	std::lock_guard lock(*_mutex.ptr());
+	_program_parameters[program].set(param, value);
+}
+
+void SlangShaderTask::dispatch_all(const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
+	ERR_FAIL_NULL(shader);
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		const Ref<SlangShaderProgram> program = programs[i];
+		// programs is every compiled program, so skip anything that isn't dispatchable
+		if (program.is_valid() && program->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
+			_dispatch(i, thread_groups, context);
+		}
+	}
+}
+
+void SlangShaderTask::dispatch(const StringName& kernel_name, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
+	ERR_FAIL_NULL(shader);
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		Ref<SlangShaderProgram> program = programs[i];
+		if (program.is_valid() && program->get_program_name() == kernel_name && program->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
+			_dispatch(i, thread_groups, context);
+		}
+	}
+}
+
+void SlangShaderTask::dispatch_at(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
+	_dispatch(kernel_index, thread_groups, context);
+}
+
+void SlangShaderTask::dispatch_group(const StringName& group_name, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
+	ERR_FAIL_NULL(shader);
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		const Ref<SlangShaderProgram> kernel = programs[i];
+		if (kernel.is_valid() && kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE)) {
+			const Dictionary attributes = kernel->get_user_attributes();
+			if (attributes.has(GodotAttributes::kernel_group())) {
+				const Dictionary kernel_group_attr = attributes[GodotAttributes::kernel_group()];
+				if (kernel_group_attr["group_name"] == group_name) {
+					_dispatch(i, thread_groups, context);
+				}
+			}
+		}
+	}
+}
+
+TypedArray<RID> SlangShaderTask::get_rids(const StringName& param) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_rids();
+}
+
+PackedByteArray SlangShaderTask::get_buffer_data(const StringName& param) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_buffer_data();
+}
+
+Error SlangShaderTask::get_buffer_data_async(const StringName& param, const Callable& callback) const {
+	ERR_FAIL_NULL_V(_shader_object, {});
+	return ComputeShaderCursor(_shader_object.get()).path(param).get_buffer_data_async(callback);
+}
+
+Dictionary SlangShaderTask::get_shader_parameters() const {
+	if (shader.is_null()) {
+		return {};
+	}
+	const Ref<StructTypeLayoutShape> params_shape = shader->get_parameters();
+	if (params_shape.is_null()) {
+		return {};
+	}
+	return params_shape->get_properties().duplicate();
+}
+
+Dictionary SlangShaderTask::get_program_parameters(const StringName& program_name) const {
+	if (shader.is_null()) {
+		return {};
+	}
+	for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
+		if (kernel->get_program_name() == program_name) {
+			const Ref<StructTypeLayoutShape> params_shape = kernel->get_parameters();
+			if (params_shape.is_null()) {
+				return {};
+			}
+			return params_shape->get_properties().duplicate();
+		}
+	}
+	return {};
+}
+
+TypedArray<RID> SlangShaderTask::get_program_rids(const StringName& program, const StringName& param) const {
+	const ProgramData* program_data = _get_program_data(program);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_rids();
+}
+
+PackedByteArray SlangShaderTask::get_program_buffer_data(const StringName& program, const StringName& param) const {
+	const ProgramData* program_data = _get_program_data(program);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data();
+}
+
+Error SlangShaderTask::get_program_buffer_data_async(const StringName& program, const StringName& param, const Callable& callback) const {
+	const ProgramData* program_data = _get_program_data(program);
+	ERR_FAIL_NULL_V(program_data, {});
+	ERR_FAIL_NULL_V(program_data->shader_object, {});
+	return ComputeShaderCursor(program_data->shader_object.get()).path(param).get_buffer_data_async(callback);
+}
+
+bool SlangShaderTask::_set(const StringName& p_name, const Variant& p_value) {
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
+		set_shader_parameter(param_name, p_value);
+		return true;
+	}
+	StringName program_name;
+	StringName param_name;
+	if (split_program_param(p_name, program_name, param_name)) {
+		set_program_parameter(program_name, param_name, p_value);
+		return true;
+	}
+	return false;
+}
+
+bool SlangShaderTask::_get(const StringName& p_name, Variant& r_ret) const {
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
+		FieldShape field;
+		if (_property_get_reflection(p_name, field)) {
+			const Variant value = get_shader_parameter(param_name);
+			if (value.get_type() == Variant::NIL && field.default_value.get_type() != Variant::NIL) {
+				r_ret = field.default_value;
+				return true;
+			}
+			if (field.property_info) {
+				r_ret = UtilityFunctions::type_convert(value, field.property_info->type);
+				return true;
+			}
+			r_ret = value;
+			return true;
+		}
+	} else {
+		StringName program_name;
+		StringName param_name;
+		if (split_program_param(p_name, program_name, param_name)) {
+			FieldShape field;
+			if (_property_get_reflection(p_name, field)) {
+				const Variant value = get_program_parameter(program_name, param_name);
+				if (value.get_type() == Variant::NIL && field.default_value.get_type() != Variant::NIL) {
+					r_ret = field.default_value;
+					return true;
+				}
+				if (field.property_info) {
+					r_ret = UtilityFunctions::type_convert(value, field.property_info->type);
+					return true;
+				}
+				r_ret = value;
+				return true;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+void SlangShaderTask::_get_property_list(List<PropertyInfo>* p_list) const {
+	ERR_FAIL_NULL(p_list);
+	_get_property_list(p_list, shader_param_prefix(), get_shader_parameters());
+	if (shader.is_valid()) {
+		for (const Ref<SlangShaderProgram> kernel : shader->get_programs()) {
+			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ program_param_prefix(), kernel->get_program_name() }, get_program_parameters(kernel->get_program_name()));
+		}
+	}
+}
+
+void SlangShaderTask::_get_property_list(List<PropertyInfo>* p_list, const String& prefix, const Dictionary& properties) {
+	ERR_FAIL_NULL(p_list);
+	for (const StringName property_name : properties.keys()) {
+		const FieldShape field = FieldShape::from_dict(properties[property_name]);
+		if (field.property_info && _can_show_property_info(*field.property_info)) {
+			PropertyInfo property_info = *field.property_info;
+			property_info.name = prefix + property_info.name;
+			p_list->push_back(property_info);
+		} else if (const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr())) {
+			_get_property_list(p_list, String("%s%s/") % TypedArray<String>{ prefix, property_name }, structured_shape->get_properties());
+		}
+	}
+}
+
+bool SlangShaderTask::_can_show_property_info(const PropertyInfo& property_info) {
+	return property_info.type != Variant::NIL && property_info.type != Variant::RID && (property_info.type != Variant::OBJECT || property_info.hint == PROPERTY_HINT_RESOURCE_TYPE || property_info.hint == PROPERTY_HINT_NODE_TYPE);
+}
+
+bool SlangShaderTask::_property_can_revert(const StringName& p_name) const {
+	FieldShape field;
+	return _property_get_reflection(p_name, field);
+}
+
+bool SlangShaderTask::_property_get_revert(const StringName& p_name, Variant& r_property) const {
+	FieldShape field;
+	if (_property_get_reflection(p_name, field) && field.default_value.get_type() != Variant::NIL) {
+		r_property = field.default_value;
+		return true;
+	}
+	if (field.property_info) {
+		r_property = UtilityFunctions::type_convert({}, field.property_info->type);
+		return true;
+	}
+	return false;
+}
+
+bool SlangShaderTask::_property_get_reflection(const StringName& p_name, FieldShape& r_reflection) const {
+	if (p_name.begins_with(shader_param_prefix())) {
+		const StringName param_name = p_name.substr(shader_param_prefix_length);
+		const PackedStringArray parts = param_name.split("/");
+		Variant current = get_shader_parameters();
+		int64_t i = 0;
+		bool valid;
+		for (; i < parts.size() - 1; ++i) {
+			const FieldShape field = FieldShape::from_dict(current.get_named(parts[i], valid));
+			const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr());
+			if (!valid || !structured_shape)
+				return false;
+			current = structured_shape->get_properties();
+		}
+		const Variant last = current.get_named(parts[i], valid);
+		if (valid) {
+			r_reflection = FieldShape::from_dict(last);
+			return true;
+		}
+	} else {
+		StringName program_name;
+		StringName param_name;
+		if (split_program_param(p_name, program_name, param_name)) {
+			const PackedStringArray parts = param_name.split("/");
+			Variant current = get_program_parameters(program_name);
+			int64_t i = 0;
+			bool valid;
+			for (; i < parts.size() - 1; ++i) {
+				const FieldShape field = FieldShape::from_dict(current.get_named(parts[i], valid));
+				const auto structured_shape = cast_to<StructTypeLayoutShape>(field.shape.ptr());
+				if (!valid || !structured_shape)
+					return false;
+				current = structured_shape->get_properties();
+			}
+			const Variant last = current.get_named(parts[i], valid);
+			if (valid) {
+				r_reflection = FieldShape::from_dict(last);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void SlangShaderTask::_reset() {
+	std::lock_guard lock(*_mutex.ptr());
+	const int64_t num_programs = get_programs().size();
+	_program_data.resize(num_programs);
+	for (int64_t i = 0; i < num_programs; i++) {
+		_program_data[i] = nullptr;
+	}
+	RenderingDevice* rd = _get_active_rendering_device();
+	ERR_FAIL_NULL_MSG(rd, "SlangShaderTask: Couldn't obtain rendering device for reset!");
+	_sampler_cache = std::make_unique<SamplerCache>(rd);
+	if (shader.is_valid() && shader->get_base_error().is_empty() && shader->get_parameters().is_valid()) {
+		_shader_object = std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), shader->get_parameters());
+	} else {
+		_shader_object = nullptr;
+	}
+}
+
+void SlangShaderTask::_shader_changed() {
+	_reset();
+	notify_property_list_changed();
+}
+
+RenderingDevice* SlangShaderTask::_get_active_rendering_device() const {
+	if (RenderingDevice* rendering_device = get_rendering_device()) {
+		return rendering_device;
+	}
+	const RenderingServer* rendering_server = RenderingServer::get_singleton();
+	return rendering_server ? rendering_server->get_rendering_device() : nullptr;
+}
+
+SlangShaderTask::ProgramData* SlangShaderTask::_get_or_create_program(const int64_t kernel_index) {
+	std::lock_guard lock(*_mutex.ptr());
+	ERR_FAIL_INDEX_V(kernel_index, _program_data.size(), nullptr);
+	std::unique_ptr<ProgramData>& program_data = _program_data[kernel_index];
+	if (program_data) {
+		return program_data.get();
+	}
+	RenderingDevice* rd = _get_active_rendering_device();
+	ERR_FAIL_NULL_V(rd, nullptr);
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	ERR_FAIL_INDEX_V(kernel_index, programs.size(), nullptr);
+	const Ref<SlangShaderProgram> kernel = programs[kernel_index];
+	const RID shader_rid = rd->shader_create_from_spirv(kernel->get_spirv(), shader->get_name().get_file());
+	program_data = std::make_unique<ProgramData>(ProgramData{
+		UniqueRID(rd, shader_rid),
+		UniqueRID(rd, rd->compute_pipeline_create(shader_rid)),
+		std::make_unique<ComputeShaderObject>(rd, _sampler_cache.get(), kernel->get_parameters(), kernel->get_space_offset(), kernel->get_slot_offset()),
+	});
+	return program_data.get();
+}
+
+SlangShaderTask::ProgramData* SlangShaderTask::_get_program_data(const StringName& program_name) const {
+	if (shader.is_null())
+		return nullptr;
+	TypedArray<SlangShaderProgram> programs = shader->get_programs();
+	for (int64_t i = 0; i < programs.size(); i++) {
+		Ref<SlangShaderProgram> program = programs[i];
+		if (program.is_valid() && program->get_program_name() == program_name) {
+			ERR_FAIL_INDEX_V(i, _program_data.size(), {});
+			return _program_data[i].get();
+		}
+	}
+	return nullptr;
+}
+
+void SlangShaderTask::_dispatch(const int64_t kernel_index, const Vector3i thread_groups, const Object* context) {
+	std::lock_guard lock(*_mutex.ptr());
+	if (shader.is_null() || !_shader_object)
+		return;
+	const TypedArray<SlangShaderProgram>& programs = shader->get_programs();
+	ERR_FAIL_INDEX_MSG(kernel_index, programs.size(), String("Attempted to dispatch invalid program index %s (max %s)!") % PackedStringArray({ String::num_int64(kernel_index), String::num_int64(programs.size() - 1) }));
+
+	const Ref<SlangShaderProgram> kernel = programs[kernel_index];
+	ERR_FAIL_NULL_MSG(kernel, String("Attempted to dispatch invalid program index %s (found: nil)!") % String::num_int64(kernel_index));
+	ERR_FAIL_COND_MSG(!kernel->has_stage(RenderingDevice::SHADER_STAGE_COMPUTE), String("Program '%s' is not a compute kernel and can't be dispatched!") % kernel->get_program_name());
+	ERR_FAIL_COND_MSG(!kernel->get_compile_error().is_empty(), "Can't dispatch kernel with compile error!");
+
+	RenderingDevice* rendering_device = _get_active_rendering_device();
+	ERR_FAIL_NULL_MSG(rendering_device, "SlangShaderTask: Couldn't obtain rendering device for dispatch!");
+
+	const ProgramData* program_data = _get_or_create_program(kernel_index);
+	ERR_FAIL_NULL_MSG(program_data, "SlangShaderTask: Couldn't obtain program data!");
+
+	const StringName& kernel_name = kernel->get_program_name();
+	ParameterStore& kernel_parameters = _program_parameters[kernel_name];
+
+	// both flags have to be taken, so don't let short-circuiting skip one
+	const bool shader_full_write = _shader_parameters.take_write_all() | _shader_object->take_needs_full_write();
+	const bool kernel_full_write = kernel_parameters.take_write_all() | program_data->shader_object->take_needs_full_write();
+	const ParameterStore::DirtyPaths shader_dirty = _shader_parameters.take_dirty();
+	const ParameterStore::DirtyPaths kernel_dirty = kernel_parameters.take_dirty();
+
+	ComputeShaderCursor(_shader_object.get(), context, !shader_full_write).write(_shader_parameters.values());
+	ComputeShaderCursor(program_data->shader_object.get(), context, !kernel_full_write).write(kernel_parameters.values());
+	if (!shader_full_write) {
+		_write_assigned(_shader_object.get(), context, _shader_parameters, shader_dirty);
+	}
+	if (!kernel_full_write) {
+		_write_assigned(program_data->shader_object.get(), context, kernel_parameters, kernel_dirty);
+	}
+
+	_shader_object->flush_buffers();
+	program_data->shader_object->flush_buffers();
+	const int64_t compute_list = rendering_device->compute_list_begin();
+	rendering_device->compute_list_bind_compute_pipeline(compute_list, program_data->pipeline_rid);
+
+	ComputeShaderObject::DescriptorSets descriptor_sets{};
+	uint64_t next_space_index = 0;
+	const uint64_t active_space_index = _shader_object->get_descriptor_sets(descriptor_sets, next_space_index);
+	program_data->shader_object->get_descriptor_sets(descriptor_sets, active_space_index, next_space_index);
+
+	const Dictionary used_binding_sets = kernel->get_used_binding_sets();
+	for (const auto& [space_index, uniforms] : descriptor_sets) {
+		if (used_binding_sets.get(space_index, false)) {
+			// TODO: UniformSetCacheRD only works with the default rendering device
+			const RID uniform_set = UniformSetCacheRD::get_cache(program_data->shader_rid, space_index, uniforms);
+			rendering_device->compute_list_bind_uniform_set(compute_list, uniform_set, space_index);
+		}
+	}
+
+	// from the docs:
+	// the Slang compiler only supports having a single ConstantBuffer<> with the [[vk::push_constant]] attribute being in scope for each entry point
+	// (meaning either a single global buffer for all stages, or distinct per-entry-point buffers).
+	if (const PackedByteArray& global_push_constants = _shader_object->get_push_constants(); global_push_constants.size() > 0) {
+		rendering_device->compute_list_set_push_constant(compute_list, global_push_constants, global_push_constants.size());
+	} else if (const PackedByteArray& kernel_push_constants = program_data->shader_object->get_push_constants(); kernel_push_constants.size() > 0) {
+		rendering_device->compute_list_set_push_constant(compute_list, kernel_push_constants, kernel_push_constants.size());
+	}
+
+	rendering_device->compute_list_dispatch(compute_list, thread_groups.x, thread_groups.y, thread_groups.z);
+	rendering_device->compute_list_end();
+}

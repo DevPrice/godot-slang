@@ -1,6 +1,6 @@
 extends Node3D
 
-@export var data_mosh_effect: ComputeShaderEffect
+@export var data_mosh_effect: SlangShaderEffect
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_data_mosh"):
