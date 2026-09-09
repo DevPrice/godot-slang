@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SlangMaterialImporter" inherits="EditorImportPlugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		Enables importing materials written in Slang.
+		A [code].slang[/code] file with an entry-point marked [code][gd::Material][/code] is compiled to Godot shading language and imported as a plain [Shader], which can be assigned to the [member ShaderMaterial.shader] of any [ShaderMaterial].
+		A file is imported as either a material or a [SlangShaderFile], never both. [SlangShaderImporter] is the default for [code].slang[/code] files; pick [code]Slang Material[/code] under [b]Import As[/b] in the Import dock to use this one instead.
+	</description>
+	<tutorials>
+	</tutorials>
+</class>

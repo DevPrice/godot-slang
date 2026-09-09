@@ -1,7 +1,7 @@
 [remap]
 
 importer="slang.shader.importer"
-importer_version=4
+importer_version=5
 type="SlangShaderFile"
 uid="uid://rw7ueqbjna8w"
 path="res://.godot/imported/triangle.slang-28c329e7cfeafaa895655dbe1df7dc8f.res"

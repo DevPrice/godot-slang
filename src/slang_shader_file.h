@@ -2,7 +2,6 @@
 
 #include "godot_cpp/classes/rd_shader_file.hpp"
 #include "godot_cpp/classes/resource.hpp"
-#include "godot_cpp/classes/shader.hpp"
 
 #include "binding_macros.h"
 #include "slang_shader_program.h"
@@ -14,13 +13,6 @@ class SlangShaderFile : public godot::Resource {
 	GET_SET_PROPERTY(godot::TypedArray<SlangShaderProgram>, programs)
 	GET_SET_PROPERTY(godot::String, base_error)
 	GET_SET_PROPERTY(godot::Ref<StructTypeLayoutShape>, parameters)
-	// The material declared by this file's [gd::Material] entry point, if it has one. Null for
-	// a file that only declares compute kernels or raster passes.
-	GET_SET_PROPERTY(godot::Ref<godot::Shader>, material_shader)
-	// The generated GDShader source behind `material_shader`. Kept so it can be read back when
-	// Godot reports an error against generated code the shader's author never wrote.
-	GET_SET_PROPERTY(godot::String, material_source)
-	GET_SET_PROPERTY(godot::String, material_error)
 
 protected:
 	static void _bind_methods();

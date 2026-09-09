@@ -14,6 +14,7 @@
 #include "slang_shader_texture.h"
 
 #ifdef SLANG_IMPORT_ENABLED
+#include "slang_material_importer.h"
 #include "slang_shader_editor_plugin.h"
 #include "slang_shader_importer.h"
 #include "slang_blob.h"
@@ -51,6 +52,7 @@ void initialize_gdextension_types(const ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_CLASS(SlangShaderEditorPlugin);
 		GDREGISTER_CLASS(SlangShaderImporter);
+		GDREGISTER_CLASS(SlangMaterialImporter);
 		EditorPlugins::add_by_type<SlangShaderEditorPlugin>();
 	}
 #endif

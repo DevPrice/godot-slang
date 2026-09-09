@@ -34,6 +34,8 @@ void SlangShaderEditorPlugin::_enter_tree() {
 	EditorPlugin::_enter_tree();
 	import_plugin = Ref(memnew(SlangShaderImporter));
 	add_import_plugin(import_plugin);
+	material_import_plugin = Ref(memnew(SlangMaterialImporter));
+	add_import_plugin(material_import_plugin);
 	_register_project_settings();
 }
 
@@ -42,5 +44,9 @@ void SlangShaderEditorPlugin::_exit_tree() {
 	if (import_plugin.is_valid()) {
 		remove_import_plugin(import_plugin);
 		import_plugin.unref();
+	}
+	if (material_import_plugin.is_valid()) {
+		remove_import_plugin(material_import_plugin);
+		material_import_plugin.unref();
 	}
 }

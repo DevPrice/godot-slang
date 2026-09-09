@@ -11,9 +11,6 @@ void SlangShaderFile::_bind_methods() {
 	BIND_GET_SET_RESOURCE_ARRAY(SlangShaderFile, programs, SlangShaderProgram)
 	BIND_GET_SET(SlangShaderFile, base_error, Variant::STRING)
 	BIND_GET_SET_RESOURCE(SlangShaderFile, parameters, StructTypeLayoutShape);
-	BIND_GET_SET_RESOURCE(SlangShaderFile, material_shader, Shader);
-	BIND_GET_SET(SlangShaderFile, material_source, Variant::STRING)
-	BIND_GET_SET(SlangShaderFile, material_error, Variant::STRING)
 	ClassDB::bind_method(D_METHOD("set_bytecode", "bytecode", "version", "program_index"), &SlangShaderFile::set_bytecode, DEFVAL(StringName("")), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("get_spirv", "version", "program_index"), &SlangShaderFile::get_spirv, DEFVAL(StringName("")), DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("get_version_list", "program_index"), &SlangShaderFile::get_version_list, DEFVAL(0));
@@ -50,6 +47,3 @@ String SlangShaderFile::get_godot_version_string() {
 GET_SET_PROPERTY_IMPL(SlangShaderFile, TypedArray<SlangShaderProgram>, programs)
 GET_SET_PROPERTY_IMPL(SlangShaderFile, String, base_error)
 GET_SET_PROPERTY_IMPL(SlangShaderFile, Ref<StructTypeLayoutShape>, parameters);
-GET_SET_PROPERTY_IMPL(SlangShaderFile, Ref<Shader>, material_shader)
-GET_SET_PROPERTY_IMPL(SlangShaderFile, String, material_source)
-GET_SET_PROPERTY_IMPL(SlangShaderFile, String, material_error)

@@ -1,0 +1,39 @@
+[gd_scene load_steps=7 format=3 uid="uid://bm4tqxvh3n7kd"]
+
+[ext_resource type="Shader" uid="uid://elcb7fj023dd" path="res://shaders/material.slang" id="1_mat"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+
+[sub_resource type="Sky" id="Sky_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_env"]
+background_mode = 2
+sky = SubResource("Sky_sky")
+tonemap_mode = 2
+
+[sub_resource type="SphereMesh" id="SphereMesh_sphere"]
+radius = 1.0
+height = 2.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_surface"]
+shader = ExtResource("1_mat")
+shader_parameter/albedo_tint = Vector3(0.2, 0.45, 0.8)
+shader_parameter/rim_color = Color(1, 0.5, 0.1, 1)
+shader_parameter/rim_power = 3.0
+
+[node name="Material" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_env")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.766, 0, 0.6428, 0.4924, 0.6428, -0.5868, -0.4132, 0.766, 0.4924, 0, 4, 0)
+shadow_enabled = true
+
+[node name="Sphere" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_sphere")
+surface_material_override/0 = SubResource("ShaderMaterial_surface")

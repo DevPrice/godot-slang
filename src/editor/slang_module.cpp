@@ -204,10 +204,12 @@ Ref<SlangShaderFile> SlangModule::compile_shader(const PackedStringArray& additi
 		TypedArray<Ref<SlangShaderProgram>> programs;
 		if (const Error compile_error = _compile_programs(programs, global_params.ptr(), additional_entry_points)) {
 			slang_shader->set_base_error(UtilityFunctions::error_string(compile_error));
-		} else if (programs.is_empty() && !has_material_entry_point()) {
-			// A material-only file legitimately produces no programs: its entry point is
-			// compiled to GDShader by compile_material(), not to SPIR-V.
-			slang_shader->set_base_error("No entry points found!");
+		} else if (programs.is_empty()) {
+			// A [gd::Material] entry point produces no SPIR-V at all: it is compiled to GDShader
+			// by SlangMaterialImporter instead.
+			slang_shader->set_base_error(has_material_entry_point()
+							? "No entry points found! Import this file as a Slang Material instead."
+							: "No entry points found!");
 		} else {
 			slang_shader->set_programs(programs);
 		}

@@ -2,6 +2,7 @@
 
 #include "godot_cpp/classes/editor_plugin.hpp"
 
+#include "slang_material_importer.h"
 #include "slang_shader_importer.h"
 
 class SlangShaderEditorPlugin : public godot::EditorPlugin {
@@ -12,6 +13,7 @@ protected:
 
 private:
 	godot::Ref<SlangShaderImporter> import_plugin;
+	godot::Ref<SlangMaterialImporter> material_import_plugin;
 
 	static void _register_project_settings();
 	static void _register_project_setting(const godot::String& name, godot::Variant::Type type, godot::PropertyHint hint = godot::PROPERTY_HINT_NONE, const godot::String& hint_string = "", const godot::Variant& default_value = godot::Variant{});
